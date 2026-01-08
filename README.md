@@ -1,6 +1,6 @@
-# MERN minimal starter
+# MERN Starter
 
-Estructura base para API Express + MongoDB y cliente React con Vite.
+Estructura mínima MERN: backend (Express+TS+Mongo) y frontend (Vite+React+TS).
 
 ## Requisitos
 - Node.js 18+
@@ -20,17 +20,19 @@ Estructura base para API Express + MongoDB y cliente React con Vite.
    - Web: http://localhost:4173
    - API: http://localhost:4000/api/health
 
-## Scripts principales
-- Desarrollo full-stack: `npm run dev`
-- Solo API: `npm run dev:server`
-- Solo web: `npm run dev:client`
-- Lint: `npm run lint`
-- Build: `npm run build`
-- Producción API: `npm start`
+## Scripts
+- `npm run dev` – levanta backend + frontend
+- `npm run dev:backend` – solo API
+- `npm run dev:frontend` – solo web
+- `npm run build` – compila ambos
+- `npm run status` – dashboard en consola
+- `npm start` – producción (API)
 
-## API de ejemplo
-- GET `/api/health` devuelve `{ status: "ok", uptime }`.
+## Estructura
+```
+backend/       Express + TypeScript + MongoDB
+frontend/      Vite + React + TypeScript
+scripts/       dashboard.mjs para estado
+```
 
-## Notas
-- `client` usa Vite + React + TypeScript.
-- `server` usa Express + TypeScript y se conecta a Mongo si `MONGODB_URI` está definido.
+Endpoint de prueba: `GET /api/health` devuelve `{ status, uptime, db }`.

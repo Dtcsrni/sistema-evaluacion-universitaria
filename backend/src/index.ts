@@ -1,38 +1,21 @@
-import cors from 'cors';
-import dotenv from 'dotenv';
-import express from 'express';
-import mongoose from 'mongoose';
-import healthRouter from './routes/health';
+/**
+ * Punto de entrada del backend docente.
+ * Inicializa configuracion, base de datos y servidor HTTP.
+ */
+import { crearApp } from './app';
+import { configuracion } from './configuracion';
+import { conectarBaseDatos } from './infraestructura/baseDatos/mongoose';
 
-dotenv.config();
+async function iniciar() {
+  await conectarBaseDatos();
 
-const app = express();
-app.use(cors());
-app.use(express.json());
-
-app.use('/api/health', healthRouter);
-
-const port = process.env.PORT || 4000;
-const mongoUri = process.env.MONGODB_URI;
-
-async function start() {
-  if (mongoUri) {
-    try {
-      await mongoose.connect(mongoUri);
-      console.log('Connected to MongoDB');
-    } catch (error) {
-      console.error('MongoDB connection failed', error);
-    }
-  } else {
-    console.warn('MONGODB_URI is not set; skipping database connection');
-  }
-
-  app.listen(port, () => {
-    console.log(`API listening on port ${port}`);
+  const app = crearApp();
+  app.listen(configuracion.puerto, () => {
+    console.log(`API docente escuchando en puerto ${configuracion.puerto}`);
   });
 }
 
-start().catch((error) => {
-  console.error('Server failed to start', error);
+iniciar().catch((error) => {
+  console.error('Error al iniciar el servidor', error);
   process.exit(1);
 });

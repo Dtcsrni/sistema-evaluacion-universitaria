@@ -1,11 +1,11 @@
-// Simple console dashboard for MERN project
-// Uses Node 18+ global fetch
+// Dashboard de consola para revisar API + Web local.
+// Usa fetch global de Node y lee VITE_API_BASE_URL/WEB_URL.
 
-const apiBase = process.env.VITE_API_BASE_URL || 'http://localhost:4000/api';
-const apiHealth = apiBase.endsWith('/health') ? apiBase : `${apiBase.replace(/\/$/, '')}/health`;
-const webUrl = process.env.WEB_URL || 'http://localhost:4173';
+const baseApi = process.env.VITE_API_BASE_URL || 'http://localhost:4000/api';
+const urlSalud = baseApi.endsWith('/salud') ? baseApi : `${baseApi.replace(/\/$/, '')}/salud`;
+const urlWeb = process.env.WEB_URL || 'http://localhost:4173';
 
-async function safeFetch(url, options = {}) {
+async function fetchSeguro(url, options = {}) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), options.timeout || 2500);
   try {
@@ -18,46 +18,46 @@ async function safeFetch(url, options = {}) {
   }
 }
 
-async function checkApi() {
-  const res = await safeFetch(apiHealth);
+async function verificarApi() {
+  const res = await fetchSeguro(urlSalud);
   if (!res || !res.ok) return { up: false };
   const data = await res.json().catch(() => ({}));
   return {
     up: true,
-    uptime: typeof data.uptime === 'number' ? Math.round(data.uptime) : undefined,
-    db: data.db || undefined,
+    tiempoActivo: typeof data.tiempoActivo === 'number' ? Math.round(data.tiempoActivo) : undefined,
+    db: data.db || undefined
   };
 }
 
-async function checkWeb() {
-  const res = await safeFetch(webUrl);
+async function verificarWeb() {
+  const res = await fetchSeguro(urlWeb);
   if (!res) return { up: false };
   return { up: res.ok };
 }
 
-function line(label, value) {
+function linea(label, value) {
   return `- ${label}: ${value}`;
 }
 
 (async () => {
-  const [api, web] = await Promise.all([checkApi(), checkWeb()]);
+  const [api, web] = await Promise.all([verificarApi(), verificarWeb()]);
 
-  console.log('MERN Project Dashboard');
-  console.log(line('API Base', apiBase));
-  console.log(line('Web', webUrl));
+  console.log('Dashboard del proyecto');
+  console.log(linea('API Base', baseApi));
+  console.log(linea('Web', urlWeb));
   console.log('');
 
-  console.log(line('API Status', api.up ? 'UP' : 'DOWN'));
+  console.log(linea('Estado API', api.up ? 'UP' : 'DOWN'));
   if (api.up) {
-    if (api.uptime !== undefined) console.log(line('API Uptime', `${api.uptime}s`));
+    if (api.tiempoActivo !== undefined) console.log(linea('API Tiempo Activo', `${api.tiempoActivo}s`));
     if (api.db) {
-      const dbText = typeof api.db.status === 'string' ? api.db.status : String(api.db.state);
-      console.log(line('DB', dbText));
+      const dbText = typeof api.db.descripcion === 'string' ? api.db.descripcion : String(api.db.estado);
+      console.log(linea('DB', dbText));
     }
   }
-  console.log(line('Web Status', web.up ? 'UP' : 'DOWN'));
+  console.log(linea('Estado Web', web.up ? 'UP' : 'DOWN'));
 
   console.log('\nTips:');
-  console.log(line('Health URL', apiHealth));
-  console.log(line('Open Frontend', webUrl));
+  console.log(linea('URL Salud', urlSalud));
+  console.log(linea('Abrir Frontend', urlWeb));
 })();

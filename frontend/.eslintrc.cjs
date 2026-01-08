@@ -1,4 +1,4 @@
-// ESLint config for the frontend (React + TypeScript).
+// Configuracion ESLint para el frontend (React + TypeScript).
 module.exports = {
   env: {
     browser: true,

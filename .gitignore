@@ -1,7 +1,8 @@
-# Common build artifacts and local env files.
+# Artefactos comunes y archivos locales de entorno.
 node_modules/
 dist/
 .vscode/
+data/
 .env
 .env.*
 .DS_Store

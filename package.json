@@ -2,14 +2,19 @@
   "name": "proyecto-mern",
   "version": "0.1.0",
   "private": true,
-  "workspaces": ["backend", "frontend"],
+  "workspaces": ["backend", "frontend", "portal_alumno_cloud"],
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "dev": "npm-run-all --parallel dev:backend dev:frontend",
     "dev:backend": "npm --prefix backend run dev",
     "dev:frontend": "npm --prefix frontend run dev",
+    "dev:portal": "npm --prefix portal_alumno_cloud run dev",
     "build": "npm run --workspaces --if-present build",
     "lint": "npm run --workspaces --if-present lint",
     "start": "npm --prefix backend run start",
+    "start:portal": "npm --prefix portal_alumno_cloud run start",
     "status": "node scripts/dashboard.mjs"
   },
   "devDependencies": {

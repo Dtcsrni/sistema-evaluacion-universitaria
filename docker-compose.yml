@@ -1,37 +1,83 @@
-# Local stack: MongoDB + API + Web.
+# Stack local: MongoDB + API + Web.
 services:
-  mongo:
+  mongo_local:
     image: mongo:latest
     restart: unless-stopped
     ports:
       - "27017:27017"
     volumes:
       - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    profiles: ["dev", "prod"]
 
-  api:
+  api_docente_local:
     build:
       context: ./backend
       dockerfile: Dockerfile
     env_file:
       - .env
     environment:
-      - MONGODB_URI=${MONGODB_URI:-mongodb://mongo:27017/mern_app}
-      - PORT=${PORT:-4000}
+      - MONGODB_URI=${MONGODB_URI:-mongodb://mongo_local:27017/mern_app}
+      - PUERTO_API=${PUERTO_API:-4000}
     depends_on:
-      - mongo
+      mongo_local:
+        condition: service_healthy
     ports:
       - "4000:4000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:4000/api/salud').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    profiles: ["dev"]
 
-  web:
+  web_docente_local:
     build:
       context: ./frontend
       dockerfile: Dockerfile
       args:
         - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://localhost:4000/api}
+        - VITE_APP_DESTINO=docente
     depends_on:
-      - api
+      api_docente_local:
+        condition: service_healthy
     ports:
       - "4173:4173"
+    profiles: ["dev"]
+
+  api_docente_prod:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    environment:
+      - MONGODB_URI=${MONGODB_URI:-mongodb://mongo_local:27017/mern_app}
+      - PUERTO_API=${PUERTO_API:-4000}
+    depends_on:
+      mongo_local:
+        condition: service_healthy
+    ports:
+      - "4000:4000"
+    profiles: ["prod"]
+
+  web_docente_prod:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://localhost:4000/api}
+        - VITE_APP_DESTINO=docente
+    depends_on:
+      api_docente_prod:
+        condition: service_healthy
+    ports:
+      - "4173:4173"
+    profiles: ["prod"]
 
 volumes:
   mongo-data:

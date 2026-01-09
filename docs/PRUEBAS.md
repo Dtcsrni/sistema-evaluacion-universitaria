@@ -36,29 +36,31 @@ pruebas repetibles y aisladas.
   ```
 - Directo en backend:
   ```bash
-  npm --prefix backend run test
+  npm --prefix apps/backend run test
   ```
 - Directo en portal:
   ```bash
-  npm --prefix portal_alumno_cloud run test
+  npm --prefix apps/portal_alumno_cloud run test
   ```
 - Directo en frontend:
   ```bash
-  npm --prefix frontend run test
+  npm --prefix apps/frontend run test
   ```
 
 ## Estructura
-- `backend/tests/`: pruebas unitarias y smoke del backend.
-- `backend/tests/integracion/`: pruebas de integracion y flujo.
-- `backend/tests/contrato/`: pruebas de validacion de payload.
-- `backend/tests/utils/`: helpers para Mongo y tokens.
-- `backend/vitest.config.ts`: configuracion de pruebas backend.
-- `portal_alumno_cloud/tests/`: pruebas del portal alumno.
-- `portal_alumno_cloud/vitest.config.ts`: configuracion de pruebas portal.
-- `frontend/tests/`: pruebas de componentes React.
-- `frontend/vitest.config.ts`: configuracion de pruebas frontend.
+- `apps/backend/tests/`: pruebas unitarias y smoke del backend.
+- `apps/backend/tests/integracion/`: pruebas de integracion y flujo.
+- `apps/backend/tests/contrato/`: pruebas de validacion de payload.
+- `apps/backend/tests/utils/`: helpers para Mongo y tokens.
+- `apps/backend/vitest.config.ts`: configuracion de pruebas backend.
+- `apps/portal_alumno_cloud/tests/`: pruebas del portal alumno.
+- `apps/portal_alumno_cloud/vitest.config.ts`: configuracion de pruebas portal.
+- `apps/frontend/tests/`: pruebas de componentes React.
+- `apps/frontend/vitest.config.ts`: configuracion de pruebas frontend.
 
 ## Notas
 - Las pruebas de integracion usan MongoDB en memoria.
 - El flujo de examen genera PDF local en `data/examenes` durante la prueba.
 - El smoke test de salud valida el formato base de respuesta.
+
+

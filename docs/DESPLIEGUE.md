@@ -24,7 +24,7 @@
   ```
 
 ## Cloud Run (portal alumno)
-- Servicio separado: `portal_alumno_cloud`.
+- Servicio separado: `apps/portal_alumno_cloud`.
 - API solo lectura y UI `app_alumno`.
 - Despliegue recomendado:
   1) Build y push de imagen Docker del portal.

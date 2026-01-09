@@ -5,9 +5,9 @@ Incluye generacion de PDFs, vinculacion por QR, escaneo OMR (pipeline base) y
 calificacion exacta sin redondeos.
 
 ## Arquitectura
-- `backend/`: API docente modular en TypeScript con MongoDB.
-- `frontend/`: UI React con apps docente y alumno.
-- `portal_alumno_cloud/`: API del portal alumno (solo lectura).
+- `apps/backend/`: API docente modular en TypeScript con MongoDB.
+- `apps/frontend/`: UI React con apps docente y alumno.
+- `apps/portal_alumno_cloud/`: API del portal alumno (solo lectura).
 - `docs/`: decisiones de arquitectura, flujo de examen, seguridad y PDF.
 - `scripts/`: utilidades de consola para revisar estado del stack.
 - `docker-compose.yml`: stack local con Mongo, API y Web.
@@ -63,7 +63,7 @@ calificacion exacta sin redondeos.
 
 ## Pruebas automatizadas
 - Backend (unitarias + smoke): `npm run test`
-- Backend directo: `npm --prefix backend run test`
+- Backend directo: `npm --prefix apps/backend run test`
 
 ## API base
 - GET `/api/salud` devuelve `{ estado, tiempoActivo, db }`.
@@ -77,3 +77,5 @@ calificacion exacta sin redondeos.
 - Formato PDF y OMR: `docs/FORMATO_PDF.md`
 - Pruebas automatizadas: `docs/PRUEBAS.md`
 - Mapa de archivos: `docs/FILES.md`
+
+

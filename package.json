@@ -2,23 +2,23 @@
   "name": "proyecto-mern",
   "version": "0.1.0",
   "private": true,
-  "workspaces": ["backend", "frontend", "portal_alumno_cloud"],
+  "workspaces": ["apps/backend", "apps/frontend", "apps/portal_alumno_cloud"],
   "engines": {
     "node": ">=24"
   },
   "scripts": {
     "dev": "npm-run-all --parallel dev:backend dev:frontend",
     "dev:backend": "docker compose --profile dev up --build mongo_local api_docente_local",
-    "dev:frontend": "npm --prefix frontend run dev",
-    "dev:portal": "npm --prefix portal_alumno_cloud run dev",
-    "test": "npm --prefix backend run test",
-    "test:backend": "npm --prefix backend run test",
-    "test:portal": "npm --prefix portal_alumno_cloud run test",
-    "test:frontend": "npm --prefix frontend run test",
+    "dev:frontend": "npm --prefix apps/frontend run dev",
+    "dev:portal": "npm --prefix apps/portal_alumno_cloud run dev",
+    "test": "npm --prefix apps/backend run test",
+    "test:backend": "npm --prefix apps/backend run test",
+    "test:portal": "npm --prefix apps/portal_alumno_cloud run test",
+    "test:frontend": "npm --prefix apps/frontend run test",
     "build": "npm run --workspaces --if-present build",
     "lint": "npm run --workspaces --if-present lint",
     "start": "docker compose --profile prod up --build mongo_local api_docente_prod",
-    "start:portal": "npm --prefix portal_alumno_cloud run start",
+    "start:portal": "npm --prefix apps/portal_alumno_cloud run start",
     "status": "node scripts/dashboard.mjs"
   },
   "devDependencies": {

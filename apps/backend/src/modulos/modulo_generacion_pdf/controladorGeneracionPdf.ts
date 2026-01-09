@@ -58,7 +58,7 @@ export async function generarExamen(req: SolicitudDocente, res: Response) {
     return {
       id: String(pregunta._id),
       enunciado: version.enunciado,
-      imagenUrl: version.imagenUrl,
+      imagenUrl: version.imagenUrl ?? undefined,
       opciones: version.opciones
     };
   });
@@ -94,3 +94,4 @@ export async function generarExamen(req: SolicitudDocente, res: Response) {
 
   res.status(201).json({ examenGenerado });
 }
+

@@ -211,6 +211,7 @@ function SeccionAutenticacion({ onIngresar }: { onIngresar: (token: string) => v
   const [contrasena, setContrasena] = useState('');
   const [nombreCompleto, setNombreCompleto] = useState('');
   const [mensaje, setMensaje] = useState('');
+  const [modo, setModo] = useState<'ingresar' | 'registrar'>('ingresar');
 
   async function ingresar() {
     try {
@@ -237,10 +238,34 @@ function SeccionAutenticacion({ onIngresar }: { onIngresar: (token: string) => v
   return (
     <div className="panel">
       <h2>Acceso docente</h2>
-      <label className="campo">
-        Nombre completo
-        <input value={nombreCompleto} onChange={(event) => setNombreCompleto(event.target.value)} />
-      </label>
+      <div className="acciones">
+        <button
+          className={modo === 'ingresar' ? 'boton' : 'boton secundario'}
+          type="button"
+          onClick={() => {
+            setModo('ingresar');
+            setMensaje('');
+          }}
+        >
+          Ingresar
+        </button>
+        <button
+          className={modo === 'registrar' ? 'boton' : 'boton secundario'}
+          type="button"
+          onClick={() => {
+            setModo('registrar');
+            setMensaje('');
+          }}
+        >
+          Registrar
+        </button>
+      </div>
+      {modo === 'registrar' && (
+        <label className="campo">
+          Nombre completo
+          <input value={nombreCompleto} onChange={(event) => setNombreCompleto(event.target.value)} />
+        </label>
+      )}
       <label className="campo">
         Correo
         <input value={correo} onChange={(event) => setCorreo(event.target.value)} />
@@ -250,11 +275,8 @@ function SeccionAutenticacion({ onIngresar }: { onIngresar: (token: string) => v
         <input type="password" value={contrasena} onChange={(event) => setContrasena(event.target.value)} />
       </label>
       <div className="acciones">
-        <button className="boton" type="button" onClick={ingresar}>
-          Ingresar
-        </button>
-        <button className="boton secundario" type="button" onClick={registrar}>
-          Registrar
+        <button className="boton" type="button" onClick={modo === 'ingresar' ? ingresar : registrar}>
+          {modo === 'ingresar' ? 'Ingresar' : 'Crear cuenta'}
         </button>
       </div>
       {mensaje && <p>{mensaje}</p>}

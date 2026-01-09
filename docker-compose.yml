@@ -12,10 +12,11 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
   api_docente_local:
     build:
-      context: ./apps/backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/backend/Dockerfile
     env_file:
       - .env
     environment:
@@ -31,10 +32,11 @@ services:
       interval: 15s
       timeout: 5s
       retries: 5
+
   web_docente_local:
     build:
-      context: ./apps/frontend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/frontend/Dockerfile
       args:
         - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://localhost:4000/api}
         - VITE_APP_DESTINO=docente
@@ -43,10 +45,11 @@ services:
         condition: service_healthy
     ports:
       - "4173:4173"
+
   api_docente_prod:
     build:
-      context: ./apps/backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/backend/Dockerfile
     env_file:
       - .env
     environment:
@@ -61,8 +64,8 @@ services:
 
   web_docente_prod:
     build:
-      context: ./apps/frontend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/frontend/Dockerfile
       args:
         - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://localhost:4000/api}
         - VITE_APP_DESTINO=docente
@@ -75,4 +78,3 @@ services:
 
 volumes:
   mongo-data:
-

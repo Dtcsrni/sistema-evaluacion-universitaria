@@ -1,18 +1,26 @@
-# Etapa de build: instala deps y compila TypeScript en dist/.
-FROM node:24-alpine AS builder
+# Etapa de build: instala deps del monorepo y compila el backend.
+FROM node:24-slim AS builder
 WORKDIR /app
 COPY package*.json ./
-RUN npm install
-COPY tsconfig.json ./
-COPY src ./src
-RUN npm run build
+COPY package-lock.json ./
+COPY tsconfig.base.json ./
+COPY apps/backend/package*.json ./apps/backend/
+COPY apps/backend/tsconfig.json ./apps/backend/
+COPY apps/backend/src ./apps/backend/src
+RUN npm install --include=optional
+RUN npm --workspace apps/backend run build
 
-# Etapa runtime: imagen minima con dependencias de produccion.
-FROM node:24-alpine AS runner
+# Etapa runtime: solo dependencias de produccion.
+FROM node:24-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 COPY package*.json ./
-RUN npm install --omit=dev
-COPY --from=builder /app/dist ./dist
+COPY package-lock.json ./
+COPY apps/backend/package*.json ./apps/backend/
+RUN npm install --omit=dev --include=optional --workspace apps/backend
+RUN npm install --omit=dev --include=optional --workspace apps/backend --os=linux --cpu=x64 --no-save sharp
+COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
 EXPOSE 4000
-CMD ["node", "dist/index.js"]
+CMD ["node", "apps/backend/dist/index.js"]
+
+

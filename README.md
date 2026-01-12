@@ -1,8 +1,7 @@
 # Sistema de Evaluacion Universitaria
 
 Monorepo MERN del Sistema de Evaluacion Universitaria con backend docente local (Express + MongoDB) y frontend React.
-Incluye generacion de PDFs, vinculacion por QR, escaneo OMR (pipeline base) y
-calificacion exacta sin redondeos.
+Incluye generacion de PDFs, vinculacion por QR, escaneo OMR (pipeline base) para calificación automatizada.
 
 ## Arquitectura
 - `apps/backend/`: API docente modular en TypeScript con MongoDB.

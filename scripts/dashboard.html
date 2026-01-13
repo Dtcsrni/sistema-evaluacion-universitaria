@@ -1,4 +1,10 @@
 <!doctype html>
+<!--
+  Dashboard UI for local control.
+  - Talks to the local Node server on /api/*.
+  - Focuses on main functions, with detailed status in a separate tab.
+  - Uses large controls for laptop screens and safe hold-to-toggle actions.
+-->
 <html lang="es">
 <head>
   <meta charset="utf-8" />
@@ -6,181 +12,924 @@
   <title>Dashboard - Sistema de Evaluacion Universitaria</title>
   <style>
     :root {
-      --bg: #f4f7fb;
+      --bg: #f5f7fb;
       --panel: #ffffff;
-      --ink: #1b2430;
-      --ink-soft: #415a77;
+      --ink: #182232;
+      --ink-soft: #4b6278;
       --accent: #0b3a6b;
-      --accent-soft: #e6effa;
-      --warn: #fff1f0;
-      --ok: #e8f7ef;
-      --border: #d9e2ec;
+      --accent-2: #1d6fb8;
+      --accent-3: #2fa4dd;
+      --accent-soft: #e6f0fb;
+      --warn: #fff2f1;
+      --ok: #e9f7ef;
+      --border: #d5e2ef;
+      --shadow: 0 10px 24px rgba(15, 23, 42, 0.1);
     }
+
     * { box-sizing: border-box; }
+
     body {
       margin: 0;
       font-family: "Trebuchet MS", "Candara", sans-serif;
-      background: var(--bg);
+      font-size: 15px;
+      background: radial-gradient(circle at 12% 18%, #eaf2ff, transparent 40%),
+                  radial-gradient(circle at 88% 12%, #eef9ff, transparent 30%),
+                  linear-gradient(180deg, #f7fbff 0%, #f5f7fb 100%);
       color: var(--ink);
     }
+
     header {
-      background: var(--accent);
+      background: linear-gradient(120deg, #0b3a6b, #1d6fb8 60%, #2fa4dd);
       color: #ffffff;
-      padding: 18px 24px;
-    }
-    header h1 {
-      margin: 0;
-      font-size: 20px;
-      letter-spacing: 0.2px;
-    }
-    main {
-      display: grid;
-      grid-template-columns: 360px 1fr;
+      padding: 18px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       gap: 16px;
-      padding: 18px;
+      position: sticky;
+      top: 0;
+      z-index: 3;
+      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.25);
     }
-    section {
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .logo {
+      width: 46px;
+      height: 46px;
+      background: rgba(255, 255, 255, 0.14);
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+    }
+
+    .logo svg { width: 26px; height: 26px; fill: #ffffff; }
+
+    .title {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
+
+    .subtitle {
+      font-size: 12px;
+      opacity: 0.88;
+    }
+
+    .header-chips {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .chip {
+      background: rgba(255, 255, 255, 0.16);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    main {
+      padding: 16px 20px 30px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 12px;
+      margin: 12px 0 18px;
+      flex-wrap: wrap;
+    }
+
+    .tab-btn {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 10px 18px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--ink-soft);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn.active {
+      color: #ffffff;
+      background: linear-gradient(120deg, #0b3a6b, #1d6fb8);
+      box-shadow: 0 8px 16px rgba(13, 58, 107, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .tab-panel {
+      display: none;
+      animation: fadeUp 0.35s ease both;
+    }
+
+    .tab-panel.active { display: block; }
+
+    .panel-grid {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 18px;
+    }
+
+    .card {
       background: var(--panel);
       border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 14px;
-      box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
-      margin-bottom: 14px;
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+      animation: fadeUp 0.35s ease both;
     }
-    h2 {
-      font-size: 14px;
+
+    .card::after {
+      content: '';
+      position: absolute;
+      top: -40%;
+      right: -30%;
+      width: 180px;
+      height: 180px;
+      background: radial-gradient(circle, rgba(47, 164, 221, 0.12), transparent 70%);
+      pointer-events: none;
+    }
+
+    .card + .card { margin-top: 16px; }
+
+    .card h2 {
+      font-size: 12px;
       text-transform: uppercase;
       letter-spacing: 1px;
-      margin: 0 0 10px 0;
+      margin: 0 0 12px 0;
       color: var(--ink-soft);
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
-    .stack {
-      display: grid;
-      gap: 10px;
+
+    .icon {
+      width: 16px;
+      height: 16px;
+      fill: var(--accent-2);
     }
+
+    .stack { display: grid; gap: 12px; }
+
+    .hint {
+      font-size: 12px;
+      color: var(--ink-soft);
+      margin: 0 0 12px 0;
+    }
+
     button {
       border: 1px solid var(--border);
       background: var(--accent-soft);
-      padding: 10px 12px;
-      border-radius: 8px;
+      padding: 12px 14px;
+      border-radius: 12px;
       cursor: pointer;
       font-weight: 600;
-      font-size: 14px;
-      text-align: left;
-      transition: transform 0.05s ease, background 0.2s ease;
+      font-size: 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: transform 0.08s ease, background 0.2s ease, box-shadow 0.2s ease;
     }
-    button:hover { background: #d9e9ff; }
+
+    button:hover { background: #d9e9ff; box-shadow: 0 8px 16px rgba(13, 58, 107, 0.15); }
     button:active { transform: translateY(1px); }
-    .danger { background: var(--warn); }
-    .ok { background: var(--ok); }
-    .links a {
-      display: block;
+
+    button.danger { background: var(--warn); }
+    button.ok { background: var(--ok); }
+
+    .toggle-btn {
+      position: relative;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: 28px 1fr auto;
+      align-items: center;
+      gap: 12px;
+      height: 72px;
+      background: #f4f9ff;
+    }
+
+    .toggle-btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      width: calc(var(--hold, 0) * 1%);
+      background: linear-gradient(90deg, rgba(13, 58, 107, 0.18), rgba(13, 58, 107, 0.06));
+      pointer-events: none;
+      transition: width 0.05s linear;
+    }
+
+    .toggle-btn.active { background: #eef7ff; }
+    .toggle-btn.pending { opacity: 0.85; }
+
+    .toggle-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      z-index: 1;
+    }
+
+    .toggle-title { font-size: 15px; font-weight: 700; }
+    .toggle-sub { font-size: 12px; color: var(--ink-soft); }
+
+    .toggle-state {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--ink-soft);
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #eef3f9;
+      border: 1px solid var(--border);
+      z-index: 1;
+    }
+
+    .toggle-btn.active .toggle-state {
+      background: #e9f7ef;
+      color: #1f6b3a;
+      border-color: #bde6cd;
+    }
+
+    .toggle-btn.pending .toggle-state {
+      background: #fff6e6;
+      color: #8a5800;
+      border-color: #ffd9a8;
+    }
+
+    .status-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #94a3b8;
+      box-shadow: 0 0 0 4px rgba(148, 163, 184, 0.15);
+      z-index: 1;
+    }
+
+    .toggle-btn.active .status-dot {
+      background: #22c55e;
+      box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.2);
+      animation: pulse 1.6s ease-in-out infinite;
+    }
+
+    .links {
+      display: grid;
+      gap: 12px;
+    }
+
+    .link-item {
+      background: #f8fbff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 10px 12px;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+    }
+
+    .link-item.inactive {
+      border-style: dashed;
+      opacity: 0.6;
+    }
+
+    .link-item a {
+      display: flex;
+      align-items: center;
+      gap: 12px;
       text-decoration: none;
-      color: var(--accent);
-      padding: 6px 2px;
+      color: var(--ink);
+      font-weight: 700;
+    }
+
+    .link-item .icon {
+      fill: var(--accent-2);
+    }
+
+    .link-copy {
+      display: grid;
+      gap: 2px;
+    }
+
+    .link-title {
+      font-size: 14px;
+      color: var(--ink);
+    }
+
+    .link-meta {
+      font-size: 12px;
+      color: var(--ink-soft);
       font-weight: 600;
     }
+
+    .link-chip {
+      margin-left: auto;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      border: 1px solid var(--border);
+      background: #eef3f9;
+      color: var(--ink-soft);
+    }
+
+    .link-chip.dev {
+      background: #e8f3ff;
+      color: #0b3a6b;
+      border-color: #c7ddf6;
+    }
+
+    .link-chip.prod {
+      background: #e9f7ef;
+      color: #1f6b3a;
+      border-color: #bde6cd;
+    }
+
+    .link-chip.api {
+      background: #fff3e6;
+      color: #8a5800;
+      border-color: #ffd9a8;
+    }
+
+    .link-note {
+      margin-left: 32px;
+      margin-top: 6px;
+      font-size: 12px;
+      color: var(--ink-soft);
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .metric {
+      background: #f7fafd;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px;
+      display: grid;
+      gap: 6px;
+      min-height: 78px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .metric::after {
+      content: '';
+      position: absolute;
+      inset: auto -20% -45% -20%;
+      height: 70%;
+      background: linear-gradient(120deg, rgba(47, 164, 221, 0.12), transparent 70%);
+    }
+
+    .metric .label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--ink-soft);
+    }
+
+    .metric .value {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .summary-card {
+      background: linear-gradient(135deg, #eef4ff, #ffffff);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .summary-card .label {
+      font-size: 11px;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      letter-spacing: 0.6px;
+    }
+
+    .summary-card .value {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .quote {
+      background: linear-gradient(135deg, #edf4ff, #ffffff);
+      border: 1px solid rgba(29, 111, 184, 0.18);
+      border-radius: 16px;
+      padding: 16px 18px;
+      display: grid;
+      gap: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .quote-tag {
+      align-self: start;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--accent);
+      background: var(--accent-soft);
+      border: 1px solid rgba(29, 111, 184, 0.2);
+      padding: 4px 10px;
+      border-radius: 999px;
+    }
+
+    .quote-text {
+      margin: 0;
+      font-size: 16px;
+      line-height: 1.5;
+      color: var(--ink);
+      font-weight: 600;
+    }
+
+    .quote-author {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--ink-soft);
+    }
+
     .status-grid {
       display: grid;
       gap: 8px;
       font-size: 14px;
       color: var(--ink-soft);
     }
+
     .status-grid span {
       color: var(--ink);
       font-weight: 700;
     }
-    .log {
+
+    .log-shell {
+      border: 1px solid var(--border);
+      border-radius: 16px;
       background: #0f172a;
       color: #e2e8f0;
-      border-radius: 8px;
-      padding: 12px;
-      height: 380px;
+      overflow: hidden;
+      transition: max-height 0.3s ease, opacity 0.3s ease;
+    }
+
+    .log-shell.collapsed {
+      max-height: 0;
+      opacity: 0;
+      padding: 0;
+      border: none;
+    }
+
+    .log-body {
+      padding: 14px;
+      height: 440px;
       overflow: auto;
       font-family: Consolas, monospace;
       font-size: 12px;
-      white-space: pre-wrap;
     }
-    .row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    .log-line {
+      padding: 4px 0;
+      border-bottom: 1px dashed rgba(226, 232, 240, 0.12);
+      animation: fadeIn 0.2s ease both;
+    }
+
+    .log-line .meta { color: #94a3b8; margin-right: 6px; }
+    .log-line.error { color: #fecaca; }
+    .log-line.warn { color: #fde68a; }
+    .log-line.ok { color: #bbf7d0; }
+    .log-line.system { color: #bae6fd; }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--ink-soft);
+      font-weight: 600;
+    }
+
+    .toggle input { accent-color: var(--accent-2); }
+
+    .search {
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 12px;
+      min-width: 200px;
+    }
+
+    .pills { display: flex; gap: 10px; flex-wrap: wrap; }
+
     .pill {
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
       background: #eef3f9;
       border: 1px solid var(--border);
       border-radius: 999px;
-      padding: 4px 10px;
+      padding: 6px 12px;
       font-size: 12px;
       font-weight: 700;
       color: var(--ink-soft);
     }
-    @media (max-width: 980px) {
-      main { grid-template-columns: 1fr; }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #94a3b8;
+    }
+
+    .dot.active {
+      background: #22c55e;
+      animation: pulse 1.6s ease-in-out infinite;
+    }
+
+    .toast-wrap {
+      position: fixed;
+      top: 86px;
+      right: 18px;
+      display: grid;
+      gap: 10px;
+      z-index: 10;
+    }
+
+    .toast {
+      background: #ffffff;
+      color: var(--ink);
+      border-radius: 12px;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      min-width: 220px;
+      animation: toastIn 0.3s ease both;
+    }
+
+    .toast.ok { border-left: 4px solid #22c55e; }
+    .toast.warn { border-left: 4px solid #f59e0b; }
+    .toast.error { border-left: 4px solid #ef4444; }
+    .toast.info { border-left: 4px solid #0ea5e9; }
+
+    @keyframes fadeUp {
+      from { transform: translateY(8px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.35); opacity: 0.7; }
+    }
+
+    @keyframes toastIn {
+      from { transform: translateY(-6px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    @media (max-width: 1050px) {
+      .panel-grid { grid-template-columns: 1fr; }
+      header { position: static; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * { animation: none !important; transition: none !important; }
     }
   </style>
 </head>
 <body>
   <header>
-    <h1>Dashboard - Sistema de Evaluacion Universitaria</h1>
+    <div class="brand">
+      <div class="logo">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 2l9 4.5v6c0 5-4.1 9.5-9 9.5s-9-4.5-9-9.5v-6L12 2zm0 2.2L5 7v5.3c0 3.9 3.2 7.7 7 7.7s7-3.8 7-7.7V7l-7-2.8zm-1 4.6h2v6h-2v-6zm0 7.5h2v2h-2v-2z"/>
+        </svg>
+      </div>
+      <div>
+        <div class="title">Dashboard - Sistema de Evaluacion Universitaria</div>
+        <div class="subtitle">Control local del stack, tareas y salud de servicios</div>
+      </div>
+    </div>
+    <div class="header-chips">
+      <span class="chip" id="mode-chip">Modo: -</span>
+      <span class="chip" id="running-chip">Procesos: -</span>
+    </div>
   </header>
+
+  <div class="toast-wrap" id="toast-wrap"></div>
+
   <main>
-    <div>
-      <section>
-        <h2>Inicio rapido</h2>
-        <div class="stack">
-          <button data-start="dev">Iniciar dev (Docker + Web)</button>
-          <button data-start="prod">Iniciar prod (Docker API)</button>
-          <button data-start="portal">Iniciar portal alumno (API)</button>
-        </div>
-      </section>
-      <section>
-        <h2>Control</h2>
-        <div class="stack">
-          <button class="danger" data-stop="dev">Detener dev</button>
-          <button class="danger" data-stop="prod">Detener prod</button>
-          <button class="danger" data-stop="portal">Detener portal alumno</button>
-          <button class="danger" data-run="docker-down">Docker compose down</button>
-        </div>
-      </section>
-      <section>
-        <h2>Abrir</h2>
-        <div class="links">
-          <a href="http://localhost:4173" target="_blank">Web docente (http://localhost:4173)</a>
-          <a href="http://localhost:4000/api/salud" target="_blank">API docente salud (http://localhost:4000/api/salud)</a>
-          <a href="http://localhost:8080/api/portal/salud" target="_blank">API portal salud (http://localhost:8080/api/portal/salud)</a>
-        </div>
-      </section>
-      <section>
-        <h2>Diagnostico</h2>
-        <div class="stack">
-          <button class="ok" data-run="status">Estado de servicios</button>
-          <button class="ok" data-run="docker-ps">Docker ps</button>
-          <button class="ok" id="clear-logs">Limpiar salida</button>
-        </div>
-      </section>
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="main">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v7H4V4zm9 0h7v7h-7V4zM4 13h7v7H4v-7zm9 0h7v7h-7v-7z"/></svg>
+        Principal
+      </button>
+      <button class="tab-btn" data-tab="status">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16v2H4v-2zM6 4h4v11H6V4zm6 3h4v8h-4V7z"/></svg>
+        Estado y logs
+      </button>
     </div>
-    <div>
-      <section>
-        <h2>Estado</h2>
-        <div class="status-grid">
-          <div>Proyecto: <span id="root">-</span></div>
-          <div>Modo: <span id="mode">-</span></div>
-          <div>Node: <span id="node">-</span></div>
-          <div>npm: <span id="npm">-</span></div>
-          <div>Docker: <span id="docker">-</span></div>
-          <div>Procesos: <span id="running">-</span></div>
+
+    <section class="tab-panel active" data-panel="main">
+      <div class="panel-grid">
+        <div>
+          <div class="card">
+            <h2>
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M8 5v14l11-7L8 5z"/>
+              </svg>
+              Entornos
+            </h2>
+            <p class="hint">Mantener presionado 1.2s para alternar el estado. Evita clics accidentales.</p>
+            <div class="stack">
+              <button class="toggle-btn" data-env="dev" data-hold-ms="1200" aria-pressed="false">
+                <span class="status-dot" data-dot></span>
+                <span class="toggle-meta">
+                  <span class="toggle-title">Dev local (Docker + Web)</span>
+                  <span class="toggle-sub" data-sub>Mantener presionado para iniciar</span>
+                </span>
+                <span class="toggle-state" data-state>Detenido</span>
+              </button>
+              <button class="toggle-btn" data-env="prod" data-hold-ms="1200" aria-pressed="false">
+                <span class="status-dot" data-dot></span>
+                <span class="toggle-meta">
+                  <span class="toggle-title">Prod local (Docker API)</span>
+                  <span class="toggle-sub" data-sub>Mantener presionado para iniciar</span>
+                </span>
+                <span class="toggle-state" data-state>Detenido</span>
+              </button>
+              <button class="toggle-btn" data-env="portal" data-hold-ms="1200" aria-pressed="false">
+                <span class="status-dot" data-dot></span>
+                <span class="toggle-meta">
+                  <span class="toggle-title">Portal alumno (API)</span>
+                  <span class="toggle-sub" data-sub>Mantener presionado para iniciar</span>
+                </span>
+                <span class="toggle-state" data-state>Detenido</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M6 7h12v2H6V7zm0 4h12v2H6v-2zm0 4h8v2H6v-2z"/>
+              </svg>
+              Acciones principales
+            </h2>
+            <div class="stack">
+              <button class="danger" data-run="docker-down" data-hold-ms="1400">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16v10H4zM7 10h4v4H7z"/></svg>
+                Docker compose down (mantener)
+              </button>
+            </div>
+          </div>
         </div>
-      </section>
-      <section>
-        <h2>Salida</h2>
-        <div class="row">
-          <span class="pill" id="log-size">0 lineas</span>
-          <span class="pill" id="last-refresh">-</span>
+
+        <div>
+          <div class="card">
+            <h2>
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 4h16v16H4V4zm2 2v4h12V6H6zm0 6v6h12v-6H6z"/>
+              </svg>
+              Resumen rapido
+            </h2>
+            <div class="summary-grid">
+              <div class="summary-card">
+                <div class="label">Modo actual</div>
+                <div class="value" id="mode">-</div>
+              </div>
+              <div class="summary-card">
+                <div class="label">Procesos activos</div>
+                <div class="value" id="running">-</div>
+              </div>
+              <div class="summary-card">
+                <div class="label">Ruido filtrado</div>
+                <div class="value" id="noise-total">0</div>
+              </div>
+              <div class="summary-card">
+                <div class="label">Ultima actualizacion</div>
+                <div class="value" id="last-refresh">-</div>
+              </div>
+            </div>
+            <div class="status-grid">
+              <div>Proyecto: <span id="root">-</span></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 3l7 4v6c0 4-3.2 7.5-7 9-3.8-1.5-7-5-7-9V7l7-4zm0 2.2L7 7.2V13c0 3 2.2 5.8 5 7 2.8-1.2 5-4 5-7V7.2l-5-2z"/>
+              </svg>
+              Mensaje para docentes
+            </h2>
+            <div class="quote">
+              <div class="quote-tag">Pedagogia de la liberacion</div>
+              <p class="quote-text">La docencia transforma cuando dialoga con la realidad, acompana a las y los estudiantes a leer el mundo y abre caminos para reescribirlo con justicia.</p>
+              <div class="quote-author">Inspirado en Paulo Freire y la pedagogia de la liberacion</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M10 6h8v8h-2V9.4l-9.3 9.3-1.4-1.4L14.6 8H10V6z"/>
+              </svg>
+              Accesos rapidos por modo
+            </h2>
+            <p class="hint">El acceso a la Web Docente se ajusta al modo activo. Dev usa Vite (5173) y prod usa serve (4173).</p>
+            <div class="links">
+              <div class="link-item" id="web-docente-item">
+                <a id="web-docente-link" href="http://localhost:5173" target="_blank">
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18v14H3V5zm2 2v10h14V7H5z"/></svg>
+                  <div class="link-copy">
+                    <div class="link-title">Web docente</div>
+                    <div class="link-meta" id="web-docente-meta">Dev local (Vite) - 5173</div>
+                  </div>
+                  <span class="link-chip dev" id="web-docente-chip">DEV</span>
+                </a>
+                <div class="link-note" id="web-docente-note">Ajustado al modo activo.</div>
+              </div>
+              <div class="link-item">
+                <a href="http://localhost:4000/api/salud" target="_blank">
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h4l2-4 4 8 2-4h4"/></svg>
+                  <div class="link-copy">
+                    <div class="link-title">API docente salud</div>
+                    <div class="link-meta">Backend local - 4000</div>
+                  </div>
+                  <span class="link-chip api">API</span>
+                </a>
+                <div class="link-note">Disponible cuando el backend docente esta activo.</div>
+              </div>
+              <div class="link-item">
+                <a href="http://localhost:8080/api/portal/salud" target="_blank">
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h4l2-4 4 8 2-4h4"/></svg>
+                  <div class="link-copy">
+                    <div class="link-title">API portal alumno salud</div>
+                    <div class="link-meta">Portal alumno - 8080</div>
+                  </div>
+                  <span class="link-chip api">API</span>
+                </a>
+                <div class="link-note">Disponible cuando el portal alumno esta activo.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 4a8 8 0 100 16 8 8 0 000-16zm1 4v4l3 2-1 1-4-2V8h2z"/>
+              </svg>
+              Diagnostico rapido
+            </h2>
+            <div class="stack">
+              <button class="ok" data-run="status">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16v2H4v-2zM6 4h4v11H6V4zm6 3h4v8h-4V7z"/></svg>
+                Estado de servicios
+              </button>
+              <button class="ok" data-run="docker-ps">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16v10H4zM7 10h4v4H7z"/></svg>
+                Docker ps
+              </button>
+              <button class="ok" id="clear-logs">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h12l-1 13H7L6 7zm3-3h6l1 2H8l1-2z"/></svg>
+                Limpiar salida
+              </button>
+            </div>
+          </div>
         </div>
-        <div class="log" id="log">Cargando...</div>
-      </section>
-    </div>
+      </div>
+    </section>
+
+    <section class="tab-panel" data-panel="status">
+      <div class="panel-grid">
+        <div>
+          <div class="card">
+            <h2>
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 4h16v16H4V4zm2 2v4h12V6H6zm0 6v6h12v-6H6z"/>
+              </svg>
+              Estado general
+            </h2>
+            <div class="metrics">
+              <div class="metric">
+                <div class="label">Node</div>
+                <div class="value" id="node">-</div>
+              </div>
+              <div class="metric">
+                <div class="label">npm</div>
+                <div class="value" id="npm">-</div>
+              </div>
+              <div class="metric">
+                <div class="label">Docker</div>
+                <div class="value" id="docker">-</div>
+              </div>
+              <div class="metric">
+                <div class="label">Ruido filtrado</div>
+                <div class="value" id="noise-total-status">0</div>
+              </div>
+            </div>
+            <div class="status-grid">
+              <div>Procesos: <span id="running-status">-</span></div>
+              <div>Modo: <span id="mode-status">-</span></div>
+              <div>Proyecto: <span id="root-status">-</span></div>
+            </div>
+            <div class="pills" id="noise-pills"></div>
+          </div>
+        </div>
+
+        <div>
+          <div class="card">
+            <h2>
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M5 5h14v14H5V5zm2 2v10h10V7H7z"/>
+              </svg>
+              Salida y consola
+            </h2>
+            <div class="toolbar">
+              <button class="ok" id="toggle-logs">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5l7 7-7 7-1.4-1.4L15.2 13H5v-2h10.2l-4.6-4.6L12 5z"/></svg>
+                Mostrar salida
+              </button>
+              <label class="toggle">
+                <input type="checkbox" id="full-logs" />
+                Logs detallados
+              </label>
+              <label class="toggle">
+                <input type="checkbox" id="auto-scroll" checked />
+                Auto-scroll
+              </label>
+              <label class="toggle">
+                <input type="checkbox" id="pause-updates" />
+                Pausar actualizaciones
+              </label>
+              <input class="search" id="log-filter" placeholder="Filtrar texto" />
+            </div>
+            <div class="pills">
+              <span class="pill" id="log-size">0 lineas</span>
+              <span class="pill" id="raw-size">0 en bruto</span>
+              <span class="pill" id="last-refresh-status">-</span>
+              <span class="pill"><span class="dot" id="running-dot"></span> activo</span>
+            </div>
+            <div class="log-shell collapsed" id="log-shell">
+              <div class="log-body" id="log">Cargando...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   </main>
+
   <script>
+    // Small helper to access DOM elements.
     const $ = (id) => document.getElementById(id);
+
+    const state = {
+      showFull: false,
+      autoScroll: true,
+      paused: false,
+      filter: '',
+      running: new Set(),
+      logsVisible: false,
+      activeTab: 'main'
+    };
+
+    const HOLD_DEFAULT = 1200;
 
     async function api(path, body) {
       const res = await fetch(path, {
@@ -191,44 +940,351 @@
       return res.json();
     }
 
+    function showToast(text, type = 'info') {
+      const wrap = $('toast-wrap');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.textContent = text;
+      wrap.appendChild(toast);
+      setTimeout(() => toast.remove(), 2600);
+    }
+
+    function setRunningDot(active) {
+      const dot = $('running-dot');
+      dot.classList.toggle('active', active);
+    }
+
+    function renderNoisePills(noise) {
+      const container = $('noise-pills');
+      container.innerHTML = '';
+      const entries = Object.entries(noise || {});
+      if (!entries.length) return;
+      entries.forEach(([name, count]) => {
+        const pill = document.createElement('span');
+        pill.className = 'pill';
+        pill.textContent = `${name}: ${count}`;
+        container.appendChild(pill);
+      });
+    }
+
+    function renderRunning(list) {
+      if (!list.length) return 'ninguno';
+      return list.join(', ');
+    }
+
+    function updateEnvButton(button, isRunning) {
+      const pending = button.dataset.pending;
+      const done = pending
+        ? (pending === 'start' && isRunning) || (pending === 'stop' && !isRunning)
+        : false;
+
+      if (done) {
+        delete button.dataset.pending;
+        button.classList.remove('pending');
+        showToast('Estado actualizado', 'ok');
+      }
+
+      const isPending = Boolean(button.dataset.pending);
+      button.classList.toggle('active', isRunning);
+      button.setAttribute('aria-pressed', isRunning ? 'true' : 'false');
+
+      const stateEl = button.querySelector('[data-state]');
+      const subEl = button.querySelector('[data-sub]');
+
+      if (stateEl) {
+        if (isPending) {
+          stateEl.textContent = pending === 'start' ? 'Iniciando...' : 'Deteniendo...';
+        } else {
+          stateEl.textContent = isRunning ? 'Activo' : 'Detenido';
+        }
+      }
+
+      if (subEl) {
+        subEl.textContent = isRunning
+          ? 'Mantener presionado para detener'
+          : 'Mantener presionado para iniciar';
+      }
+    }
+
+    function updateEnvButtons() {
+      document.querySelectorAll('[data-env]').forEach((button) => {
+        const env = button.dataset.env;
+        updateEnvButton(button, state.running.has(env));
+      });
+    }
+    function updateWebDocenteLink(mode) {
+      const item = $("web-docente-item");
+      const link = $("web-docente-link");
+      const meta = $("web-docente-meta");
+      const chip = $("web-docente-chip");
+      const note = $("web-docente-note");
+      if (!item || !link || !meta || !chip || !note) return;
+
+      const runningDev = state.running.has('dev');
+      const runningProd = state.running.has('prod');
+      const normalized = String(mode || '').toLowerCase();
+
+      let target = 'dev';
+      if (runningDev && !runningProd) target = 'dev';
+      else if (runningProd && !runningDev) target = 'prod';
+      else if (runningDev && runningProd) target = normalized === 'prod' ? 'prod' : 'dev';
+      else target = normalized === 'prod' ? 'prod' : 'dev';
+
+      const isProd = target === 'prod';
+      link.href = isProd ? 'http://localhost:4173' : 'http://localhost:5173';
+      meta.textContent = isProd
+        ? 'Prod local (Docker + serve) - 4173'
+        : 'Dev local (Vite) - 5173';
+      chip.textContent = isProd ? 'PROD' : 'DEV';
+      chip.className = `link-chip ${isProd ? 'prod' : 'dev'}`;
+
+      const any = runningDev || runningProd;
+      item.classList.toggle('inactive', !any);
+
+      if (!any) {
+        note.textContent = 'No hay UI web activa. Inicia dev (5173) o prod (4173).';
+      } else if (runningDev && runningProd) {
+        note.textContent = `Dev y prod activos. Mostrando ${isProd ? 'prod' : 'dev'} segun el modo actual.`;
+      } else {
+        note.textContent = `Detectado ${isProd ? 'prod' : 'dev'} activo. Acceso listo.`;
+      }
+    }
+
+    function setLogsVisible(visible) {
+      state.logsVisible = visible;
+      $('log-shell').classList.toggle('collapsed', !visible);
+      $('toggle-logs').innerHTML = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5l7 7-7 7-1.4-1.4L15.2 13H5v-2h10.2l-4.6-4.6L12 5z"/></svg> ' + (visible ? 'Ocultar salida' : 'Mostrar salida');
+      if (visible) refreshLogs();
+    }
+
+    function setTab(name) {
+      state.activeTab = name;
+      document.querySelectorAll('.tab-btn').forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.tab === name);
+      });
+      document.querySelectorAll('.tab-panel').forEach((panel) => {
+        panel.classList.toggle('active', panel.dataset.panel === name);
+      });
+      if (name === 'status' && state.logsVisible) refreshLogs();
+    }
+
+    function attachHold(button, onTrigger) {
+      let rafId = null;
+      let start = 0;
+      const holdMs = Number(button.dataset.holdMs || HOLD_DEFAULT);
+      let active = false;
+
+      const reset = () => {
+        button.style.setProperty('--hold', 0);
+        active = false;
+        if (rafId) cancelAnimationFrame(rafId);
+        rafId = null;
+      };
+
+      const step = (now) => {
+        const progress = Math.min(1, (now - start) / holdMs);
+        button.style.setProperty('--hold', (progress * 100).toFixed(2));
+        if (progress >= 1) {
+          reset();
+          onTrigger();
+          return;
+        }
+        rafId = requestAnimationFrame(step);
+      };
+
+      const startHold = (event) => {
+        event.preventDefault();
+        if (active) return;
+        active = true;
+        start = performance.now();
+        rafId = requestAnimationFrame(step);
+      };
+
+      const cancelHold = () => {
+        if (!active) return;
+        reset();
+      };
+
+      button.addEventListener('pointerdown', startHold);
+      button.addEventListener('pointerup', cancelHold);
+      button.addEventListener('pointerleave', cancelHold);
+      button.addEventListener('pointercancel', cancelHold);
+      button.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') startHold(event);
+      });
+      button.addEventListener('keyup', cancelHold);
+    }
+
     async function refreshStatus() {
       const res = await fetch('/api/status');
       const data = await res.json();
+
       $('root').textContent = data.root;
       $('mode').textContent = data.mode;
+      $('running').textContent = renderRunning(data.running);
+      $('noise-total').textContent = data.noiseTotal || 0;
+      $('last-refresh').textContent = `Actualizado ${new Date().toLocaleTimeString()}`;
+
+      $('root-status').textContent = data.root;
+      $('mode-status').textContent = data.mode;
+      $('running-status').textContent = renderRunning(data.running);
       $('node').textContent = data.node;
       $('npm').textContent = data.npm;
       $('docker').textContent = data.docker;
-      $('running').textContent = data.running.length ? data.running.join(', ') : 'ninguno';
+      $('noise-total-status').textContent = data.noiseTotal || 0;
+
+      $('mode-chip').textContent = `Modo: ${data.mode}`;
+      $('running-chip').textContent = `Procesos: ${data.running.length || 0}`;
       $('log-size').textContent = `${data.logSize} lineas`;
-      $('last-refresh').textContent = `Actualizado ${new Date().toLocaleTimeString()}`;
+      $('raw-size').textContent = `${data.rawSize} en bruto`;
+      $('last-refresh-status').textContent = `Actualizado ${new Date().toLocaleTimeString()}`;
+
+      setRunningDot(data.running.length > 0);
+      renderNoisePills(data.noise);
+
+      state.running = new Set(data.running);
+      updateEnvButtons();
+      updateWebDocenteLink(data.mode);
+    }
+
+    function renderLogs(entries) {
+      const filter = state.filter.trim().toLowerCase();
+      const log = $('log');
+      log.innerHTML = '';
+
+      const fragment = document.createDocumentFragment();
+      let visible = 0;
+
+      entries.forEach((entry) => {
+        const text = `${entry.time} ${entry.source} ${entry.text}`;
+        if (filter && !text.toLowerCase().includes(filter)) return;
+
+        const line = document.createElement('div');
+        line.className = `log-line ${entry.level}`.trim();
+
+        const meta = document.createElement('span');
+        meta.className = 'meta';
+        meta.textContent = `[${entry.time}] [${entry.source}]`;
+
+        const content = document.createElement('span');
+        content.textContent = ` ${entry.text}`;
+
+        line.appendChild(meta);
+        line.appendChild(content);
+        fragment.appendChild(line);
+        visible += 1;
+      });
+
+      if (visible === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'log-line';
+        empty.textContent = 'Sin salida para el filtro actual.';
+        fragment.appendChild(empty);
+      }
+
+      log.appendChild(fragment);
+
+      if (state.autoScroll) {
+        log.scrollTop = log.scrollHeight;
+      }
     }
 
     async function refreshLogs() {
-      const res = await fetch('/api/logs');
+      if (!state.logsVisible) return;
+      const query = state.showFull ? '/api/logs?full=1' : '/api/logs';
+      const res = await fetch(query);
       const data = await res.json();
-      $('log').textContent = data.lines.join('\n') || 'Sin salida';
-      $('log').scrollTop = $('log').scrollHeight;
+      renderLogs(data.entries || []);
     }
 
-    document.querySelectorAll('[data-start]').forEach((btn) => {
-      btn.addEventListener('click', () => api('/api/start', { task: btn.dataset.start }));
+    // Tab switching.
+    document.querySelectorAll('.tab-btn').forEach((button) => {
+      button.addEventListener('click', () => setTab(button.dataset.tab));
     });
-    document.querySelectorAll('[data-stop]').forEach((btn) => {
-      btn.addEventListener('click', () => api('/api/stop', { task: btn.dataset.stop }));
+
+    // Toggle buttons for environments (hold to start/stop).
+    document.querySelectorAll('[data-env]').forEach((button) => {
+      attachHold(button, () => {
+        const env = button.dataset.env;
+        const running = state.running.has(env);
+        button.dataset.pending = running ? 'stop' : 'start';
+        button.classList.add('pending');
+        showToast(running ? `Deteniendo ${env}...` : `Iniciando ${env}...`, 'info');
+        if (running) {
+          api('/api/stop', { task: env });
+        } else {
+          api('/api/start', { task: env });
+        }
+        updateEnvButton(button, running);
+      });
     });
-    document.querySelectorAll('[data-run]').forEach((btn) => {
-      btn.addEventListener('click', () => api('/api/run', { task: btn.dataset.run }));
+
+    // Hold-to-run for destructive actions.
+    document.querySelectorAll('[data-run][data-hold-ms]').forEach((button) => {
+      attachHold(button, () => {
+        showToast('Ejecutando accion segura...', 'warn');
+        api('/api/run', { task: button.dataset.run });
+      });
     });
+
+    // Immediate run for non-destructive actions.
+    document.querySelectorAll('[data-run]:not([data-hold-ms])').forEach((button) => {
+      button.addEventListener('click', () => {
+        showToast('Ejecutando...', 'info');
+        api('/api/run', { task: button.dataset.run });
+      });
+    });
+
     $('clear-logs').addEventListener('click', async () => {
       await api('/api/logs/clear');
+      showToast('Logs limpiados', 'ok');
+      refreshLogs();
+      refreshStatus();
+    });
+
+    $('toggle-logs').addEventListener('click', () => {
+      setLogsVisible(!state.logsVisible);
+    });
+
+    // UI toggles.
+    $('full-logs').addEventListener('change', (event) => {
+      state.showFull = event.target.checked;
+      refreshLogs();
+    });
+    $('auto-scroll').addEventListener('change', (event) => {
+      state.autoScroll = event.target.checked;
+    });
+    $('pause-updates').addEventListener('change', (event) => {
+      state.paused = event.target.checked;
+    });
+    $('log-filter').addEventListener('input', (event) => {
+      state.filter = event.target.value;
       refreshLogs();
     });
 
+    // Initial load and periodic refresh.
+    setLogsVisible(false);
     refreshStatus();
-    refreshLogs();
-    setInterval(refreshStatus, 3000);
-    setInterval(refreshLogs, 3000);
+
+    setInterval(() => {
+      if (state.paused) return;
+      refreshStatus();
+      refreshLogs();
+    }, 3000);
   </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+

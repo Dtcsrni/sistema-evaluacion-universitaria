@@ -1,4 +1,4 @@
-param(
+# Creates Windows shortcuts (.lnk) for the dashboard.\r\nparam(
   [string]$OutputDir = "accesos-directos"
 )
 
@@ -30,5 +30,6 @@ New-Shortcut "Sistema Evaluacion - Dev" "dev" $iconIndexDev
 New-Shortcut "Sistema Evaluacion - Prod" "prod" $iconIndexProd
 
 Write-Host "Accesos directos creados en: $outPath"
+
 
 

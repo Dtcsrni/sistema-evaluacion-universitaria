@@ -1,3 +1,5 @@
+# Wrapper that launches the Node dashboard with optional flags.
+# Keeps UI logic in JavaScript for portability.
 param(
   [ValidateSet('dev','prod','none')]
   [string]$Mode = 'none',
@@ -13,6 +15,7 @@ if (-not $node) {
   exit 1
 }
 
+# Compose arguments for the dashboard server.
 $args = @("$root\scripts\launcher-dashboard.mjs", '--mode', $Mode)
 if ($Port -gt 0) { $args += @('--port', $Port) }
 if ($NoOpen) { $args += '--no-open' }

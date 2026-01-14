@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+    <head>  
+     <meta charset="UTF-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <title>Práctica 01 : Eventos</title>   
+     <link rel="stylesheet" href="estilos.css">
+
+    </head>
+    <body>
+        <h1>Práctica 01 : Eventos</h1>
+        <p class="texto-chico">Input + submit > estado > render  </p>
+            <section class="panel">
+                <form id="formulario" novalidate>
+                    <label for="textoPregunta">Pregunta:</label>
+                    <textarea id="textoPregunta" rows="3" placeholder="Minimo 10 caracteres"></textarea>
+                    <label for="textoRespuesta">Respuesta correcta:</label>
+                    <input type="text" id="textoRespuesta" placeholder="Escribe la respuesta correcta" required>
+                    <div id="textoError" class="error" role="alert"></div>
+                    <div class="acciones">
+                        <button type="submit" id="btnAgregarRespuesta">Agregar respuesta</button>
+                        <button type="button" id="btnLimpiarFormulario" class="btnSecundario">Limpiar</button>
+                    </div>
+                </form>
+            </section>
+            <section class="panelSeparacion">
+                <h2>Lista de preguntas</h2>
+                <ul id="listaPreguntas">
+                    <!-- Lista de preguntas se renderiza aqui -->
+                </ul>
+                <p id="textoVacio" class="texto-chico">Aun no hay preguntas</p>
+            <script src="app.js" defer></script>
+    </body> 
+</html>

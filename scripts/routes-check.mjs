@@ -307,7 +307,15 @@ function checarPortal() {
     const calls = extraerLlamadasRouter(txt, metodos);
     for (const call of calls) {
       const m = call.match(/^router\.(post|put|patch)\(\s*(['"`])([^'"`]+)\2/);
-      const ruta = m?.[3] ?? '';
+      if (!m) {
+        violaciones.push({
+          archivo: normalizarRuta(path.relative(repoRoot, archivo)),
+          metodo: metodos.find((mm) => call.startsWith(`router.${mm}(`)) ?? '?',
+          razon: 'ruta no literal: el path debe ser string literal en router.post/put/patch'
+        });
+        continue;
+      }
+      const ruta = m[3];
 
       // Regla simple: cada POST/PUT/PATCH del portal debe validar keys del body
       // con tieneSoloClavesPermitidas (es el patrón del proyecto).

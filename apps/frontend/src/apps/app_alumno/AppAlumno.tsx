@@ -14,7 +14,7 @@ import { Boton } from '../../ui/ux/componentes/Boton';
 import { CampoTexto } from '../../ui/ux/componentes/CampoTexto';
 import { InlineMensaje } from '../../ui/ux/componentes/InlineMensaje';
 import { obtenerSessionId } from '../../ui/ux/sesion';
-import { mensajeUsuarioDeError } from '../../servicios_api/clienteComun';
+import { mensajeUsuarioDeErrorConSugerencia } from '../../servicios_api/clienteComun';
 
 const clientePortal = crearClientePortal();
 const basePortal = import.meta.env.VITE_PORTAL_BASE_URL || 'http://localhost:8080/api/portal';
@@ -37,7 +37,7 @@ export function AppAlumno() {
   const obtenerSesionId = () => obtenerSessionId('sesionAlumnoId');
 
   function mensajeDeError(error: unknown, fallback: string) {
-    return mensajeUsuarioDeError(error, fallback);
+    return mensajeUsuarioDeErrorConSugerencia(error, fallback);
   }
 
   async function ingresar() {

@@ -9,7 +9,7 @@ import {
   limpiarTokenDocente,
   obtenerTokenDocente
 } from '../../servicios_api/clienteApi';
-import { mensajeUsuarioDeError } from '../../servicios_api/clienteComun';
+import { mensajeUsuarioDeErrorConSugerencia } from '../../servicios_api/clienteComun';
 import { emitToast } from '../../ui/toast/toastBus';
 import { Icono, Spinner } from '../../ui/iconos';
 import { Boton } from '../../ui/ux/componentes/Boton';
@@ -62,7 +62,7 @@ function esMensajeError(texto: string) {
 }
 
 function mensajeDeError(error: unknown, fallback: string) {
-  return mensajeUsuarioDeError(error, fallback);
+  return mensajeUsuarioDeErrorConSugerencia(error, fallback);
 }
 
 export function AppDocente() {

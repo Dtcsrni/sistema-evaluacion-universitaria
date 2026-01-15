@@ -179,6 +179,32 @@ export function mensajeUsuarioDeError(error: unknown, fallback: string): string 
   return fallback;
 }
 
+export function sugerenciaUsuarioDeError(error: unknown): string | undefined {
+  if (error instanceof ErrorRemoto) {
+    const detalle = error.detalle;
+    const status = detalle?.status;
+    if (status === 401) return 'Tip: inicia sesion de nuevo.';
+    if (status === 403) return 'Tip: revisa tus permisos o el rol.';
+    if (status === 408) return 'Tip: revisa tu conexion e intenta de nuevo.';
+    if (status === 429) return 'Tip: espera unos segundos e intenta de nuevo.';
+    if (typeof status === 'number' && status >= 500) return 'Tip: intenta mas tarde.';
+
+    const codigo = detalle?.codigo?.toUpperCase();
+    if (codigo?.includes('TOKEN')) return 'Tip: inicia sesion de nuevo.';
+    if (codigo?.includes('NO_AUTORIZ')) return 'Tip: revisa tus permisos o el rol.';
+    if (codigo?.includes('DATOS_INVALID')) return 'Tip: revisa los campos e intenta de nuevo.';
+  }
+  return undefined;
+}
+
+export function mensajeUsuarioDeErrorConSugerencia(error: unknown, fallback: string): string {
+  const base = mensajeUsuarioDeError(error, fallback);
+  const tip = sugerenciaUsuarioDeError(error);
+  if (!tip) return base;
+  if (base.toLowerCase().includes(tip.toLowerCase())) return base;
+  return `${base} ${tip}`;
+}
+
 export async function fetchConManejoErrores<T>(opts: {
   fetcher: (signal: AbortSignal) => Promise<unknown>;
   mensajeServicio: string;

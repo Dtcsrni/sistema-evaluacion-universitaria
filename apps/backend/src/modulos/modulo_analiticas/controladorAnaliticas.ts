@@ -2,6 +2,7 @@
  * Controlador de analiticas y banderas.
  */
 import type { Response } from 'express';
+import { ErrorAplicacion } from '../../compartido/errores/errorAplicacion';
 import { BanderaRevision } from './modeloBanderaRevision';
 import { EventoUso } from './modeloEventoUso';
 import { generarCsv } from './servicioExportacionCsv';
@@ -11,9 +12,16 @@ import { obtenerDocenteId, type SolicitudDocente } from '../modulo_autenticacion
 
 export async function registrarEventosUso(req: SolicitudDocente, res: Response) {
   const docenteId = obtenerDocenteId(req);
-  const eventos = Array.isArray(req.body?.eventos) ? req.body.eventos : [];
+  const eventos = (req.body?.eventos ?? []) as Array<{
+    sessionId?: unknown;
+    pantalla?: unknown;
+    accion?: unknown;
+    exito?: unknown;
+    duracionMs?: unknown;
+    meta?: unknown;
+  }>;
 
-  const docs = eventos.map((evento: any) => ({
+  const docs = eventos.map((evento) => ({
     docenteId,
     sessionId: typeof evento.sessionId === 'string' ? evento.sessionId : undefined,
     pantalla: typeof evento.pantalla === 'string' ? evento.pantalla : undefined,
@@ -23,8 +31,13 @@ export async function registrarEventosUso(req: SolicitudDocente, res: Response) 
     meta: evento.meta
   }));
 
-  await EventoUso.insertMany(docs, { ordered: false });
-  res.status(201).json({ ok: true, recibidos: docs.length });
+  try {
+    await EventoUso.insertMany(docs, { ordered: false });
+    res.status(201).json({ ok: true, recibidos: docs.length });
+  } catch {
+    // Best-effort: la telemetria no debe romper la UX.
+    res.status(201).json({ ok: true, recibidos: docs.length, advertencia: 'Algunos eventos no se pudieron guardar' });
+  }
 }
 
 export async function listarBanderas(req: SolicitudDocente, res: Response) {
@@ -57,10 +70,9 @@ export function exportarCsv(req: SolicitudDocente, res: Response) {
 
 export async function exportarCsvCalificaciones(req: SolicitudDocente, res: Response) {
   const docenteId = obtenerDocenteId(req);
-  const periodoId = String(req.query.periodoId || '');
+  const periodoId = String(req.query.periodoId || '').trim();
   if (!periodoId) {
-    res.status(400).json({ mensaje: 'periodoId requerido' });
-    return;
+    throw new ErrorAplicacion('DATOS_INVALIDOS', 'periodoId requerido', 400);
   }
 
   const alumnos = await Alumno.find({ docenteId, periodoId }).lean();

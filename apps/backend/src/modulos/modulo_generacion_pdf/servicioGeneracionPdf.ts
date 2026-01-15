@@ -1,7 +1,7 @@
 /**
  * Generacion de PDFs en formato carta con marcas y QR por pagina.
  */
-import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import { PDFDocument, StandardFonts, rgb, type PDFPage } from 'pdf-lib';
 import QRCode from 'qrcode';
 import type { MapaVariante, PreguntaBase } from './servicioVariantes';
 
@@ -13,7 +13,7 @@ function mmAPuntos(mm: number) {
   return mm * MM_A_PUNTOS;
 }
 
-function agregarMarcasRegistro(page: any, margen: number) {
+function agregarMarcasRegistro(page: PDFPage, margen: number) {
   const largo = 12;
   const color = rgb(0, 0, 0);
 
@@ -30,7 +30,7 @@ function agregarMarcasRegistro(page: any, margen: number) {
   page.drawLine({ start: { x: ANCHO_CARTA - margen, y: margen }, end: { x: ANCHO_CARTA - margen, y: margen + largo }, color });
 }
 
-async function agregarQr(pdfDoc: PDFDocument, page: any, qrTexto: string, margen: number) {
+async function agregarQr(pdfDoc: PDFDocument, page: PDFPage, qrTexto: string, margen: number) {
   const qrDataUrl = await QRCode.toDataURL(qrTexto, { margin: 1, width: 140 });
   const base64 = qrDataUrl.replace(/^data:image\/png;base64,/, '');
   const qrBytes = Uint8Array.from(Buffer.from(base64, 'base64'));

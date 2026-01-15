@@ -18,7 +18,7 @@ export async function analizarImagen(req: SolicitudDocente, res: Response) {
   }
 
   const pagina = Number(numeroPagina || 1);
-  const mapaOmr = examen.mapaOmr?.paginas?.find((item: any) => item.numeroPagina === pagina);
+  const mapaOmr = examen.mapaOmr?.paginas?.find((item) => item.numeroPagina === pagina);
   if (!mapaOmr) {
     throw new ErrorAplicacion('PAGINA_NO_VALIDA', 'No hay mapa OMR para la pagina', 400);
   }

@@ -54,7 +54,7 @@ export async function generarExamen(req: SolicitudDocente, res: Response) {
   }
 
   const preguntasBase = preguntasDb.map((pregunta) => {
-    const version = pregunta.versiones.find((item: any) => item.numeroVersion === pregunta.versionActual) ?? pregunta.versiones[0];
+    const version = pregunta.versiones.find((item) => item.numeroVersion === pregunta.versionActual) ?? pregunta.versiones[0];
     return {
       id: String(pregunta._id),
       enunciado: version.enunciado,

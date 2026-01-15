@@ -156,29 +156,6 @@ export function AppDocente() {
       <nav
         className="tabs"
         aria-label="Secciones del portal docente"
-        onKeyDown={(event) => {
-          if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight' && event.key !== 'Home' && event.key !== 'End') {
-            return;
-          }
-          event.preventDefault();
-
-          const idxActual = Math.max(
-            0,
-            itemsVista.findIndex((item) => item.id === vista)
-          );
-          const ultimo = itemsVista.length - 1;
-          let idxNuevo = idxActual;
-
-          if (event.key === 'ArrowLeft') idxNuevo = Math.max(0, idxActual - 1);
-          if (event.key === 'ArrowRight') idxNuevo = Math.min(ultimo, idxActual + 1);
-          if (event.key === 'Home') idxNuevo = 0;
-          if (event.key === 'End') idxNuevo = ultimo;
-
-          const nuevoId = itemsVista[idxNuevo]?.id;
-          if (!nuevoId) return;
-          setVista(nuevoId);
-          requestAnimationFrame(() => tabsRef.current[idxNuevo]?.focus());
-        }}
       >
         {itemsVista.map((item, idx) => (
           <button
@@ -189,6 +166,25 @@ export function AppDocente() {
             type="button"
             className={vista === item.id ? 'tab activa' : 'tab'}
             aria-current={vista === item.id ? 'page' : undefined}
+            onKeyDown={(event) => {
+              if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight' && event.key !== 'Home' && event.key !== 'End') {
+                return;
+              }
+              event.preventDefault();
+
+              const ultimo = itemsVista.length - 1;
+              let idxNuevo = idx;
+
+              if (event.key === 'ArrowLeft') idxNuevo = Math.max(0, idx - 1);
+              if (event.key === 'ArrowRight') idxNuevo = Math.min(ultimo, idx + 1);
+              if (event.key === 'Home') idxNuevo = 0;
+              if (event.key === 'End') idxNuevo = ultimo;
+
+              const nuevoId = itemsVista[idxNuevo]?.id;
+              if (!nuevoId) return;
+              setVista(nuevoId);
+              requestAnimationFrame(() => tabsRef.current[idxNuevo]?.focus());
+            }}
             onClick={() => setVista(item.id)}
           >
             <Icono nombre={item.icono} />

@@ -4,7 +4,6 @@ export function CampoTexto({
   etiqueta,
   ayuda,
   error,
-  children,
   ...props
 }: InputHTMLAttributes<HTMLInputElement> & {
   etiqueta: ReactNode;

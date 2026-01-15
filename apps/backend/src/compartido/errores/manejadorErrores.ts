@@ -10,6 +10,8 @@ export function manejadorErrores(
   res: Response,
   _next: NextFunction
 ) {
+  void _next;
+
   if (error instanceof ErrorAplicacion) {
     res.status(error.estadoHttp).json({
       error: {

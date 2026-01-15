@@ -64,7 +64,7 @@ export function exportarCsv(req: SolicitudDocente, res: Response) {
   const { columnas, filas } = req.body;
   const csv = generarCsv(columnas, filas);
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-  res.setHeader('Content-Disposition', 'attachment; filename=\"exportacion.csv\"');
+  res.setHeader('Content-Disposition', 'attachment; filename="exportacion.csv"');
   res.send(csv);
 }
 
@@ -107,6 +107,6 @@ export async function exportarCsvCalificaciones(req: SolicitudDocente, res: Resp
 
   const csv = generarCsv(columnas, filas);
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-  res.setHeader('Content-Disposition', 'attachment; filename=\"calificaciones.csv\"');
+  res.setHeader('Content-Disposition', 'attachment; filename="calificaciones.csv"');
   res.send(csv);
 }

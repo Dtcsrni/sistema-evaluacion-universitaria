@@ -29,6 +29,7 @@ export function crearApp() {
   app.use('/api/portal', rutasPortal);
 
   app.use((error: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    void _next;
     const mensaje = error instanceof Error ? error.message : 'Error interno';
     res.status(500).json({ error: { codigo: 'ERROR_INTERNO', mensaje } });
   });

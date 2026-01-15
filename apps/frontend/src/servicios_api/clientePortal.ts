@@ -1,49 +1,13 @@
 /**
  * Cliente API del portal alumno (Cloud Run).
  */
-import { emitToast } from '../ui/toast/toastBus';
+import { crearGestorEventosUso, DetalleErrorRemoto, ErrorRemoto, fetchConManejoErrores } from './clienteComun';
 
 const basePortal = import.meta.env.VITE_PORTAL_BASE_URL || 'http://localhost:8080/api/portal';
 const claveTokenAlumno = 'tokenAlumno';
 
-export type DetalleErrorRemoto = {
-  status?: number;
-  codigo?: string;
-  mensaje?: string;
-  detalles?: unknown;
-};
-
-export class ErrorRemoto extends Error {
-  detalle: DetalleErrorRemoto;
-
-  constructor(mensaje: string, detalle: DetalleErrorRemoto = {}) {
-    super(mensaje);
-    this.detalle = detalle;
-  }
-}
-
-function esObjeto(valor: unknown): valor is Record<string, unknown> {
-  return typeof valor === 'object' && valor !== null;
-}
-
-async function leerErrorRemoto(respuesta: Response): Promise<DetalleErrorRemoto> {
-  const base: DetalleErrorRemoto = { status: respuesta.status };
-  try {
-    const data: unknown = await respuesta.json().catch(() => null);
-    const err = esObjeto(data) ? data['error'] : undefined;
-    if (esObjeto(err)) {
-      return {
-        ...base,
-        codigo: typeof err['codigo'] === 'string' ? err['codigo'] : undefined,
-        mensaje: typeof err['mensaje'] === 'string' ? err['mensaje'] : undefined,
-        detalles: err['detalles']
-      };
-    }
-    return base;
-  } catch {
-    return base;
-  }
-}
+export type { DetalleErrorRemoto };
+export { ErrorRemoto };
 
 export function guardarTokenAlumno(token: string) {
   localStorage.setItem(claveTokenAlumno, token);
@@ -67,131 +31,59 @@ export function crearClientePortal() {
     meta?: unknown;
   };
 
-  const colaEventos: EventoUso[] = [];
-  let flushEnCurso = false;
-  let flushTimer: number | null = null;
-
-  async function flushEventosUso() {
-    const token = obtenerTokenAlumno();
-    if (!token) {
-      colaEventos.length = 0;
-      return;
+  const { registrarEventosUso } = crearGestorEventosUso<EventoUso>({
+    obtenerToken: obtenerTokenAlumno,
+    publicarLote: async (lote, token) => {
+      await fetch(`${basePortal}/eventos-uso`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ eventos: lote }),
+        keepalive: true
+      });
     }
-    if (flushEnCurso) return;
-    if (!colaEventos.length) return;
-    flushEnCurso = true;
-
-    try {
-      while (colaEventos.length) {
-        const lote = colaEventos.splice(0, 100);
-        await fetch(`${basePortal}/eventos-uso`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ eventos: lote }),
-          keepalive: true
-        });
-      }
-    } catch {
-      colaEventos.length = 0;
-    } finally {
-      flushEnCurso = false;
-    }
-  }
-
-  function programarFlush() {
-    if (flushTimer) return;
-    flushTimer = window.setTimeout(() => {
-      flushTimer = null;
-      void flushEventosUso();
-    }, 1200);
-  }
-
-  if (typeof window !== 'undefined') {
-    window.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'hidden') void flushEventosUso();
-    });
-    window.addEventListener('pagehide', () => {
-      void flushEventosUso();
-    });
-  }
-
-  async function registrarEventosUso(payload: {
-    eventos: EventoUso[];
-  }) {
-    if (!payload?.eventos?.length) return;
-    colaEventos.push(...payload.eventos);
-    if (colaEventos.length >= 20) {
-      void flushEventosUso();
-      return;
-    }
-    programarFlush();
-  }
+  });
 
   async function enviar<T>(ruta: string, payload: unknown): Promise<T> {
-    let respuesta: Response;
-    try {
-      respuesta = await fetch(`${basePortal}${ruta}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-    } catch (error) {
-      emitToast({
+    return fetchConManejoErrores<T>({
+      fetcher: () =>
+        fetch(`${basePortal}${ruta}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        }),
+      mensajeServicio: 'Portal no disponible',
+      toastUnreachable: {
         id: 'portal-unreachable',
-        level: 'error',
         title: 'Sin conexion',
-        message: 'No se pudo contactar el portal alumno.',
-        durationMs: 5200
-      });
-      throw new ErrorRemoto('Portal no disponible', { mensaje: 'Sin conexion', detalles: String(error) });
-    }
-    if (!respuesta.ok) {
-      const detalle = await leerErrorRemoto(respuesta);
-      if (respuesta.status >= 500) {
-        emitToast({
-          id: 'portal-server-error',
-          level: 'error',
-          title: 'Portal con error',
-          message: `El portal respondio con HTTP ${respuesta.status}.`,
-          durationMs: 5200
-        });
+        message: 'No se pudo contactar el portal alumno.'
+      },
+      toastServerError: {
+        id: 'portal-server-error',
+        title: 'Portal con error',
+        message: (status) => `El portal respondio con HTTP ${status}.`
       }
-      throw new ErrorRemoto('Portal no disponible', detalle);
-    }
-    return respuesta.json() as Promise<T>;
+    });
   }
 
   async function obtener<T>(ruta: string): Promise<T> {
     const token = obtenerTokenAlumno();
-    let respuesta: Response;
-    try {
-      respuesta = await fetch(`${basePortal}${ruta}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined
-      });
-    } catch (error) {
-      emitToast({
+    return fetchConManejoErrores<T>({
+      fetcher: () =>
+        fetch(`${basePortal}${ruta}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined
+        }),
+      mensajeServicio: 'Portal no disponible',
+      toastUnreachable: {
         id: 'portal-unreachable',
-        level: 'error',
         title: 'Sin conexion',
-        message: 'No se pudo contactar el portal alumno.',
-        durationMs: 5200
-      });
-      throw new ErrorRemoto('Portal no disponible', { mensaje: 'Sin conexion', detalles: String(error) });
-    }
-    if (!respuesta.ok) {
-      const detalle = await leerErrorRemoto(respuesta);
-      if (respuesta.status >= 500) {
-        emitToast({
-          id: 'portal-server-error',
-          level: 'error',
-          title: 'Portal con error',
-          message: `El portal respondio con HTTP ${respuesta.status}.`,
-          durationMs: 5200
-        });
+        message: 'No se pudo contactar el portal alumno.'
+      },
+      toastServerError: {
+        id: 'portal-server-error',
+        title: 'Portal con error',
+        message: (status) => `El portal respondio con HTTP ${status}.`
       }
-      throw new ErrorRemoto('Portal no disponible', detalle);
-    }
-    return respuesta.json() as Promise<T>;
+    });
   }
 
   return { basePortal, enviar, obtener, registrarEventosUso };

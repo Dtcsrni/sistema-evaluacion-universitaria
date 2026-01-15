@@ -111,7 +111,7 @@ export function AppAlumno() {
   const token = obtenerTokenAlumno();
   const puedeIngresar = Boolean(codigo.trim() && matricula.trim());
   const codigoValido = !codigo.trim() || /^[a-zA-Z0-9]{4,12}$/.test(codigo.trim());
-  const matriculaValida = !matricula.trim() || /^[A-Za-z0-9\-]{3,20}$/.test(matricula.trim());
+  const matriculaValida = !matricula.trim() || /^[A-Za-z0-9-]{3,20}$/.test(matricula.trim());
 
   return (
     <section className="card anim-entrada">

@@ -25,7 +25,7 @@ Dim splashExec
 Set splashExec = Nothing
 If port <> "0" And port <> "" Then
   On Error Resume Next
-  Set splashExec = shell.Exec("mshta.exe \"" & rootDir & "\scripts\dashboard-splash.hta\"")
+  Set splashExec = shell.Exec("mshta.exe \"" & rootDir & "\scripts\dashboard-splash.hta?port=" & port & "&mode=" & mode & "\"")
   On Error GoTo 0
 End If
 
@@ -61,11 +61,14 @@ If port <> "0" And port <> "" Then
     shell.Run "cmd.exe /c start \"\" \"http://127.0.0.1:" & port & "/\"", 0, False
   End If
 
-  On Error Resume Next
-  If Not (splashExec Is Nothing) Then
-    splashExec.Terminate
+  ' Close splash only if the dashboard is reachable; otherwise let the HTA show a helpful error.
+  If ok = True Then
+    On Error Resume Next
+    If Not (splashExec Is Nothing) Then
+      splashExec.Terminate
+    End If
+    On Error GoTo 0
   End If
-  On Error GoTo 0
 End If
 
 Function HttpOk(ByVal u)

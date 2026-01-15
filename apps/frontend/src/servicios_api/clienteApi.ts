@@ -54,28 +54,74 @@ export function limpiarTokenDocente() {
 }
 
 export function crearClienteApi() {
-  async function registrarEventosUso(payload: {
-    eventos: Array<{
-      sessionId?: string;
-      pantalla?: string;
-      accion: string;
-      exito?: boolean;
-      duracionMs?: number;
-      meta?: unknown;
-    }>;
-  }) {
+  type EventoUso = {
+    sessionId?: string;
+    pantalla?: string;
+    accion: string;
+    exito?: boolean;
+    duracionMs?: number;
+    meta?: unknown;
+  };
+
+  const colaEventos: EventoUso[] = [];
+  let flushEnCurso = false;
+  let flushTimer: number | null = null;
+
+  async function flushEventosUso() {
     const token = obtenerTokenDocente();
-    if (!token) return;
-    try {
-      await fetch(`${baseApi}/analiticas/eventos-uso`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(payload),
-        keepalive: true
-      });
-    } catch {
-      // Telemetria best-effort.
+    if (!token) {
+      colaEventos.length = 0;
+      return;
     }
+    if (flushEnCurso) return;
+    if (!colaEventos.length) return;
+    flushEnCurso = true;
+
+    try {
+      while (colaEventos.length) {
+        const lote = colaEventos.splice(0, 100);
+        await fetch(`${baseApi}/analiticas/eventos-uso`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ eventos: lote }),
+          keepalive: true
+        });
+      }
+    } catch {
+      // best-effort: si falla, descartamos el lote para no crecer sin límite.
+      colaEventos.length = 0;
+    } finally {
+      flushEnCurso = false;
+    }
+  }
+
+  function programarFlush() {
+    if (flushTimer) return;
+    flushTimer = window.setTimeout(() => {
+      flushTimer = null;
+      void flushEventosUso();
+    }, 1200);
+  }
+
+  if (typeof window !== 'undefined') {
+    window.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') void flushEventosUso();
+    });
+    window.addEventListener('pagehide', () => {
+      void flushEventosUso();
+    });
+  }
+
+  async function registrarEventosUso(payload: {
+    eventos: EventoUso[];
+  }) {
+    if (!payload?.eventos?.length) return;
+    colaEventos.push(...payload.eventos);
+    if (colaEventos.length >= 20) {
+      void flushEventosUso();
+      return;
+    }
+    programarFlush();
   }
 
   async function obtener<T>(ruta: string): Promise<T> {

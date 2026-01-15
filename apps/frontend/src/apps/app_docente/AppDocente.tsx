@@ -14,6 +14,7 @@ import { emitToast } from '../../ui/toast/toastBus';
 import { Icono, Spinner } from '../../ui/iconos';
 import { Boton } from '../../ui/ux/componentes/Boton';
 import { InlineMensaje } from '../../ui/ux/componentes/InlineMensaje';
+import { obtenerSessionId } from '../../ui/ux/sesion';
 
 const clienteApi = crearClienteApi();
 
@@ -111,9 +112,7 @@ export function AppDocente() {
   // Sesion de UI (no sensible) para analiticas best-effort.
   useEffect(() => {
     if (!obtenerTokenDocente()) return;
-    if (!sessionStorage.getItem('sesionDocenteId')) {
-      sessionStorage.setItem('sesionDocenteId', `${Date.now()}-${Math.random().toString(16).slice(2)}`);
-    }
+    obtenerSessionId('sesionDocenteId');
   }, []);
 
   useEffect(() => {
@@ -348,14 +347,7 @@ function SeccionAutenticacion({ onIngresar }: { onIngresar: (token: string) => v
   const [modo, setModo] = useState<'ingresar' | 'registrar'>('ingresar');
   const [enviando, setEnviando] = useState(false);
 
-  function obtenerSesionId() {
-    const clave = 'sesionDocenteId';
-    const existente = sessionStorage.getItem(clave);
-    if (existente) return existente;
-    const nuevo = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-    sessionStorage.setItem(clave, nuevo);
-    return nuevo;
-  }
+  const obtenerSesionId = () => obtenerSessionId('sesionDocenteId');
 
   async function ingresar() {
     try {

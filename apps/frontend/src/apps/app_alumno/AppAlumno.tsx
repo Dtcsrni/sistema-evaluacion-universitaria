@@ -14,6 +14,7 @@ import { Icono, IlustracionSinResultados, Spinner } from '../../ui/iconos';
 import { Boton } from '../../ui/ux/componentes/Boton';
 import { CampoTexto } from '../../ui/ux/componentes/CampoTexto';
 import { InlineMensaje } from '../../ui/ux/componentes/InlineMensaje';
+import { obtenerSessionId } from '../../ui/ux/sesion';
 
 const clientePortal = crearClientePortal();
 const basePortal = import.meta.env.VITE_PORTAL_BASE_URL || 'http://localhost:8080/api/portal';
@@ -33,14 +34,7 @@ export function AppAlumno() {
   const [resultados, setResultados] = useState<Resultado[]>([]);
   const [cargando, setCargando] = useState(false);
 
-  function obtenerSesionId() {
-    const clave = 'sesionAlumnoId';
-    const existente = sessionStorage.getItem(clave);
-    if (existente) return existente;
-    const nuevo = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-    sessionStorage.setItem(clave, nuevo);
-    return nuevo;
-  }
+  const obtenerSesionId = () => obtenerSessionId('sesionAlumnoId');
 
   function mensajeDeError(error: unknown, fallback: string) {
     if (error instanceof ErrorRemoto) {

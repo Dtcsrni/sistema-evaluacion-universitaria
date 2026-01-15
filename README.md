@@ -58,6 +58,8 @@ Incluye generacion de PDFs, vinculacion por QR, escaneo OMR (pipeline base) para
 - Guardarrail de rutas (anti-regresion validacion/auth): `npm run routes:check`
 - Docs auto (generar): `npm run docs:generate`
 - Docs auto (validar en CI): `npm run docs:check`
+- Diagramas (actualizar fuentes Mermaid): `npm run diagramas:generate`
+- Diagramas (validar en CI): `npm run diagramas:check`
 - Lint: `npm run lint`
 - Build: `npm run build`
 - Produccion API (Docker): `npm start`
@@ -101,6 +103,7 @@ Estos flags son utiles si necesitas una excepcion temporal (idealmente, mantener
 - Mapa de archivos: `docs/FILES.md`
 - Indice auto: `docs/AUTO_DOCS_INDEX.md`
 - Variables de entorno auto: `docs/AUTO_ENV.md`
+- Catalogo de diagramas: `docs/DIAGRAMAS.md`
 - Versionado: `docs/VERSIONADO.md`
 
 

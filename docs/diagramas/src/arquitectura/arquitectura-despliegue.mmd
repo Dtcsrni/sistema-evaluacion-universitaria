@@ -1,4 +1,15 @@
 %%{init: {"theme":"base","fontFamily":"Segoe UI, Arial, sans-serif","fontSize":22,"themeVariables":{"fontFamily":"Segoe UI, Arial, sans-serif","fontSize":22,"primaryColor":"#e8f1ff","primaryBorderColor":"#3b82f6","primaryTextColor":"#0b1f3a","secondaryColor":"#f0f9ff","tertiaryColor":"#f8fafc","lineColor":"#334155","textColor":"#0f172a","noteBkgColor":"#fff7cc","noteTextColor":"#713f12","noteBorderColor":"#eab308","actorBkg":"#1e3a8a","actorBorder":"#1e40af","actorTextColor":"#ffffff","labelBoxBkgColor":"#e8f1ff","labelBoxBorderColor":"#3b82f6","labelTextColor":"#0b1f3a"},"flowchart":{"curve":"linear","nodeSpacing":110,"rankSpacing":150},"sequence":{"actorMargin":70,"messageMargin":45}}}%%
+%% AUTO:START system_model
+%% Generado por scripts/diagramas.mjs (no editar este bloque)
+%% Backend:
+%% - prefijo: /api
+%% - montajes publicos: /autenticacion, /salud
+%% - montajes protegidos: /alumnos, /analiticas, /banco-preguntas, /calificaciones, /entregas, /examenes, /omr, /periodos, /sincronizaciones
+%% Portal alumno cloud:
+%% - prefijo: /api/portal
+%% - GET: /examen/:folio, /resultados, /resultados/:folio, /salud
+%% - POST: /eventos-uso, /ingresar, /limpiar, /sincronizar
+%% AUTO:END system_model
 flowchart TB
     classDef user fill:#1e3a8a,stroke:#1e40af,color:#ffffff;
     classDef svc fill:#e8f1ff,stroke:#3b82f6,color:#0b1f3a;

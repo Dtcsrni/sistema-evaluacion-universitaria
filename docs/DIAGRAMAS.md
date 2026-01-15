@@ -5,6 +5,18 @@ Este catalogo incluye los diagramas necesarios para entender el sistema end-to-e
 Fuentes Mermaid: `docs/diagramas/src/`.
 SVG renderizados: `docs/diagramas/rendered/`.
 
+## Actualizacion automatica (fuentes)
+
+Los `.mmd` incluyen un bloque comentado `%% AUTO:START system_model ... %% AUTO:END system_model`.
+Ese bloque se genera desde el codigo (prefijos y superficies de rutas) para ayudar a mantener
+los diagramas sincronizados con el estado real del sistema.
+
+- Generar/actualizar: `npm run diagramas:generate`
+- Verificar en CI: `npm run diagramas:check`
+
+Nota: este subsistema actualiza el **codigo** de las fuentes Mermaid. El render a SVG depende del flujo
+de trabajo local (si necesitas automatizar el render, lo podemos agregar despues).
+
 ## Arquitectura general
 
 ![Arquitectura logica](diagramas/rendered/arquitectura/arquitectura-logica.svg)

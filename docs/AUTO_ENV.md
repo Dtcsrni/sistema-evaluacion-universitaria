@@ -9,6 +9,7 @@ este documento se actualiza automáticamente al regenerar.
 ## Backend
 - `CODIGO_ACCESO_HORAS` (usado en: apps/backend/src/configuracion.ts)
 - `CORS_ORIGENES` (usado en: apps/backend/src/configuracion.ts)
+- `GOOGLE_OAUTH_CLIENT_ID` (usado en: apps/backend/src/configuracion.ts)
 - `JWT_EXPIRA_HORAS` (usado en: apps/backend/src/configuracion.ts)
 - `JWT_SECRETO` (usado en: apps/backend/src/configuracion.ts)
 - `LIMITE_JSON` (usado en: apps/backend/src/configuracion.ts, apps/backend/tests/contrato/limitesPayload.test.ts)
@@ -22,6 +23,7 @@ este documento se actualiza automáticamente al regenerar.
 - `PUERTO_API` (usado en: apps/backend/src/configuracion.ts)
 - `RATE_LIMIT_LIMIT` (usado en: apps/backend/src/configuracion.ts, apps/backend/tests/rateLimit.test.ts)
 - `RATE_LIMIT_WINDOW_MS` (usado en: apps/backend/src/configuracion.ts, apps/backend/tests/rateLimit.test.ts)
+- `REFRESH_TOKEN_DIAS` (usado en: apps/backend/src/configuracion.ts)
 
 ## Portal alumno cloud
 - `CODIGO_ACCESO_HORAS` (usado en: apps/portal_alumno_cloud/src/configuracion.ts)
@@ -37,6 +39,7 @@ este documento se actualiza automáticamente al regenerar.
 ## Frontend
 - `VITE_API_BASE_URL` (usado en: apps/frontend/src/servicios_api/clienteApi.ts)
 - `VITE_APP_DESTINO` (usado en: apps/frontend/src/App.tsx)
+- `VITE_GOOGLE_CLIENT_ID` (usado en: apps/frontend/src/App.tsx, apps/frontend/src/apps/app_docente/AppDocente.tsx)
 - `VITE_PORTAL_BASE_URL` (usado en: apps/frontend/src/apps/app_alumno/AppAlumno.tsx, apps/frontend/src/servicios_api/clientePortal.ts)
 
 ## Scripts

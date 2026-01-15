@@ -38,8 +38,11 @@ Incluye generacion de PDFs, vinculacion por QR, escaneo OMR (pipeline base) para
 - `VITE_API_BASE_URL`: base URL de la API para el frontend.
 - `VITE_APP_DESTINO`: `docente` o `alumno` para seleccionar app.
 - `VITE_PORTAL_BASE_URL`: base URL del portal alumno (Cloud Run).
+- `VITE_GOOGLE_CLIENT_ID`: client id para habilitar el boton "Continuar con Google" en la app docente.
 - `JWT_SECRETO`: secreto para JWT de docentes.
 - `JWT_EXPIRA_HORAS`: expiracion de tokens docentes.
+- `REFRESH_TOKEN_DIAS`: dias de vigencia del refresh token (cookie httpOnly, rotatorio) para no re-loguear tan seguido.
+- `GOOGLE_OAUTH_CLIENT_ID`: client id de Google para validar ID tokens (login opcional en backend).
 - `CODIGO_ACCESO_HORAS`: vigencia del codigo de acceso alumno (default 12).
 - `PORTAL_ALUMNO_URL`: URL del portal cloud para sincronizacion.
 - `PORTAL_ALUMNO_API_KEY`: API key para publicar resultados (backend local).
@@ -95,6 +98,12 @@ Opcional (flags para diagramas):
 - `DIAGRAMAS_RENDER_CHECK=0`: desactiva temporalmente `npm run diagramas:render:check` (si el entorno no puede ejecutar Chromium/Puppeteer).
 
 Estos flags son utiles si necesitas una excepcion temporal (idealmente, mantenerlos encendidos en CI).
+
+## Login opcional con Google (docente)
+
+Si configuras `GOOGLE_OAUTH_CLIENT_ID` (backend) y `VITE_GOOGLE_CLIENT_ID` (frontend), la app docente muestra un boton
+de acceso con Google. El backend emite un JWT de acceso y un refresh token rotatorio en cookie httpOnly para mantener
+sesion sin pedir login tan seguido (sin exponer el refresh token a JavaScript).
 
 ## API base
 - GET `/api/salud` devuelve `{ estado, tiempoActivo, db }`.

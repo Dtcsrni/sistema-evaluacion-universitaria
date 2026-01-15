@@ -2,6 +2,7 @@
  * Selector de app docente o alumno segun variable de entorno.
  */
 import { useEffect } from 'react';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AppAlumno } from './apps/app_alumno/AppAlumno';
 import { AppDocente } from './apps/app_docente/AppDocente';
 
@@ -20,6 +21,7 @@ function establecerFavicon(href: string) {
 
 function App() {
   const destino = import.meta.env.VITE_APP_DESTINO || 'docente';
+  const googleClientId = String(import.meta.env.VITE_GOOGLE_CLIENT_ID || '').trim();
 
   useEffect(() => {
     const esAlumno = destino === 'alumno';
@@ -27,11 +29,9 @@ function App() {
     establecerFavicon(esAlumno ? '/favicon-alumno.svg' : '/favicon-docente.svg');
   }, [destino]);
 
-  return (
-    <main className="page">
-      {destino === 'alumno' ? <AppAlumno /> : <AppDocente />}
-    </main>
-  );
+  const contenido = destino === 'alumno' ? <AppAlumno /> : <AppDocente />;
+
+  return <main className="page">{googleClientId && destino !== 'alumno' ? <GoogleOAuthProvider clientId={googleClientId}>{contenido}</GoogleOAuthProvider> : contenido}</main>;
 }
 
 export default App;

@@ -3,6 +3,7 @@
  */
 import type { ChangeEvent } from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { GoogleLogin } from '@react-oauth/google';
 import {
   crearClienteApi,
   guardarTokenDocente,
@@ -82,6 +83,8 @@ export function AppDocente() {
   const [cargandoDatos, setCargandoDatos] = useState(false);
 
   function cerrarSesion() {
+    // Best-effort: limpia refresh token server-side.
+    void clienteApi.enviar('/autenticacion/salir', {});
     limpiarTokenDocente();
     setDocente(null);
     emitToast({ level: 'info', title: 'Sesion', message: 'Sesion cerrada', durationMs: 2200 });
@@ -127,11 +130,31 @@ export function AppDocente() {
   }, []);
 
   useEffect(() => {
-    if (!obtenerTokenDocente()) return;
-    clienteApi
-      .obtener<{ docente: Docente }>('/autenticacion/perfil')
-      .then((payload) => setDocente(payload.docente))
-      .catch(() => setDocente(null));
+    let activo = true;
+
+    (async () => {
+      // Si no hay token local, intenta restaurar sesion via refresh token (cookie httpOnly).
+      if (!obtenerTokenDocente()) {
+        await clienteApi.intentarRefrescarToken();
+      }
+      if (!activo) return;
+      if (!obtenerTokenDocente()) return;
+
+      clienteApi
+        .obtener<{ docente: Docente }>('/autenticacion/perfil')
+        .then((payload) => {
+          if (!activo) return;
+          setDocente(payload.docente);
+        })
+        .catch(() => {
+          if (!activo) return;
+          setDocente(null);
+        });
+    })();
+
+    return () => {
+      activo = false;
+    };
   }, []);
 
   // Sesion de UI (no sensible) para analiticas best-effort.
@@ -392,6 +415,31 @@ function SeccionAutenticacion({ onIngresar }: { onIngresar: (token: string) => v
     }
   }
 
+  async function ingresarConGoogle(credential: string) {
+    try {
+      const inicio = Date.now();
+      setEnviando(true);
+      setMensaje('');
+      const respuesta = await clienteApi.enviar<{ token: string }>('/autenticacion/google', { credential });
+      onIngresar(respuesta.token);
+      emitToast({ level: 'ok', title: 'Sesion', message: 'Bienvenido/a', durationMs: 2200 });
+      registrarAccionDocente('login_google', true, Date.now() - inicio);
+    } catch (error) {
+      const msg = mensajeDeError(error, 'No se pudo ingresar con Google');
+      setMensaje(msg);
+      emitToast({
+        level: 'error',
+        title: 'No se pudo ingresar',
+        message: msg,
+        durationMs: 5200,
+        action: accionToastSesionParaError(error, 'docente')
+      });
+      registrarAccionDocente('login_google', false);
+    } finally {
+      setEnviando(false);
+    }
+  }
+
   async function registrar() {
     try {
       const inicio = Date.now();
@@ -429,6 +477,25 @@ function SeccionAutenticacion({ onIngresar }: { onIngresar: (token: string) => v
       <h2>
         <Icono nombre="docente" /> Acceso docente
       </h2>
+      {String(import.meta.env.VITE_GOOGLE_CLIENT_ID || '').trim() && (
+        <div style={{ marginBottom: 12 }}>
+          <GoogleLogin
+            onSuccess={(cred) => {
+              const token = cred.credential;
+              if (!token) {
+                setMensaje('No se recibio credencial de Google.');
+                return;
+              }
+              void ingresarConGoogle(token);
+            }}
+            onError={() => setMensaje('No se pudo iniciar sesion con Google.')}
+            useOneTap
+          />
+          <p className="nota" style={{ marginTop: 8 }}>
+            Opcional: acceso rapido con Google (mantiene seguridad con refresh token httpOnly).
+          </p>
+        </div>
+      )}
       <div className="acciones">
         <button
           className={modo === 'ingresar' ? 'boton' : 'boton secundario'}

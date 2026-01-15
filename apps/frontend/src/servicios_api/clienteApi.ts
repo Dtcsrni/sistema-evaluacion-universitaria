@@ -45,6 +45,7 @@ export function crearClienteApi() {
       try {
         await fetch(`${baseApi}/analiticas/eventos-uso`, {
           method: 'POST',
+          credentials: 'include',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
           body: JSON.stringify({ eventos: lote }),
           keepalive: true,
@@ -58,14 +59,72 @@ export function crearClienteApi() {
 
   type RequestOptions = { timeoutMs?: number };
 
+  let refreshEnCurso: Promise<string | null> | null = null;
+
+  async function intentarRefrescarToken(): Promise<string | null> {
+    if (refreshEnCurso) return refreshEnCurso;
+    refreshEnCurso = (async () => {
+      try {
+        const resp = await fetchConManejoErrores<{ token: string }>({
+          fetcher: (signal) =>
+            fetch(`${baseApi}/autenticacion/refrescar`, {
+              method: 'POST',
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: '{}',
+              signal
+            }),
+          mensajeServicio: 'API no disponible',
+          timeoutMs: 10_000,
+          toastUnreachable: {
+            id: 'api-unreachable',
+            title: 'Sin conexion',
+            message: 'No se pudo contactar la API docente.'
+          },
+          toastTimeout: {
+            id: 'api-timeout',
+            title: 'Tiempo de espera',
+            message: 'La API tardo demasiado en responder.'
+          },
+          toastServerError: {
+            id: 'api-server-error',
+            title: 'API con error',
+            message: (status) => `La API respondio con HTTP ${status}.`
+          }
+        });
+
+        if (resp?.token) {
+          guardarTokenDocente(resp.token);
+          return resp.token;
+        }
+        return null;
+      } catch {
+        return null;
+      } finally {
+        refreshEnCurso = null;
+      }
+    })();
+    return refreshEnCurso;
+  }
+
   async function obtener<T>(ruta: string, opciones?: RequestOptions): Promise<T> {
     const token = obtenerTokenDocente();
     return fetchConManejoErrores<T>({
-      fetcher: (signal) =>
-        fetch(`${baseApi}${ruta}`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-          signal
-        }),
+      fetcher: async (signal) => {
+        const hacer = (t: string | null) =>
+          fetch(`${baseApi}${ruta}`, {
+            credentials: 'include',
+            headers: t ? { Authorization: `Bearer ${t}` } : undefined,
+            signal
+          });
+
+        let respuesta = await hacer(token);
+        if (respuesta && (respuesta as Response).status === 401) {
+          const nuevo = await intentarRefrescarToken();
+          if (nuevo) respuesta = await hacer(nuevo);
+        }
+        return respuesta;
+      },
       mensajeServicio: 'API no disponible',
       timeoutMs: opciones?.timeoutMs ?? 12_000,
       toastUnreachable: {
@@ -89,13 +148,23 @@ export function crearClienteApi() {
   async function enviar<T>(ruta: string, payload: unknown, opciones?: RequestOptions): Promise<T> {
     const token = obtenerTokenDocente();
     return fetchConManejoErrores<T>({
-      fetcher: (signal) =>
-        fetch(`${baseApi}${ruta}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-          body: JSON.stringify(payload),
-          signal
-        }),
+      fetcher: async (signal) => {
+        const hacer = (t: string | null) =>
+          fetch(`${baseApi}${ruta}`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json', ...(t ? { Authorization: `Bearer ${t}` } : {}) },
+            body: JSON.stringify(payload),
+            signal
+          });
+
+        let respuesta = await hacer(token);
+        if (respuesta && (respuesta as Response).status === 401) {
+          const nuevo = await intentarRefrescarToken();
+          if (nuevo) respuesta = await hacer(nuevo);
+        }
+        return respuesta;
+      },
       mensajeServicio: 'API no disponible',
       timeoutMs: opciones?.timeoutMs ?? 15_000,
       toastUnreachable: {
@@ -116,5 +185,5 @@ export function crearClienteApi() {
     });
   }
 
-  return { baseApi, obtener, enviar, registrarEventosUso, mensajeUsuarioDeError };
+  return { baseApi, obtener, enviar, registrarEventosUso, mensajeUsuarioDeError, intentarRefrescarToken };
 }

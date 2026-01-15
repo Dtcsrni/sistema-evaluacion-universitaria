@@ -31,6 +31,8 @@ if (entorno === 'production' && !jwtSecreto) {
 }
 const jwtSecretoEfectivo = jwtSecreto || 'cambia-este-secreto';
 const jwtExpiraHoras = Number(process.env.JWT_EXPIRA_HORAS ?? 8);
+const refreshTokenDias = Number(process.env.REFRESH_TOKEN_DIAS ?? 30);
+const googleOauthClientId = process.env.GOOGLE_OAUTH_CLIENT_ID ?? '';
 const codigoAccesoHoras = Number(process.env.CODIGO_ACCESO_HORAS ?? 12);
 const portalAlumnoUrl = process.env.PORTAL_ALUMNO_URL ?? '';
 const portalApiKey = process.env.PORTAL_ALUMNO_API_KEY ?? '';
@@ -58,6 +60,8 @@ export const configuracion = {
   corsOrigenes,
   jwtSecreto: jwtSecretoEfectivo,
   jwtExpiraHoras,
+  refreshTokenDias,
+  googleOauthClientId,
   codigoAccesoHoras,
   portalAlumnoUrl,
   portalApiKey,

@@ -14,6 +14,8 @@ los diagramas sincronizados con el estado real del sistema.
 - Generar/actualizar: `npm run diagramas:generate`
 - Verificar en CI: `npm run diagramas:check`
 
+Tip: para poner todo en sync de una vez (fuentes + SVG + docs auto): `npm run docs:sync`
+
 ## Render a SVG (automatizado)
 
 Para mantener `docs/diagramas/rendered/**` en sync con las fuentes Mermaid:

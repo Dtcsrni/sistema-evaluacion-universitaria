@@ -62,6 +62,7 @@ Incluye generacion de PDFs, vinculacion por QR, escaneo OMR (pipeline base) para
 - Diagramas (validar en CI): `npm run diagramas:check`
 - Diagramas (render SVG): `npm run diagramas:render`
 - Diagramas (validar SVG en CI): `npm run diagramas:render:check`
+- Sync docs+diagramas (recomendado antes de push): `npm run docs:sync`
 - Lint: `npm run lint`
 - Build: `npm run build`
 - Produccion API (Docker): `npm start`

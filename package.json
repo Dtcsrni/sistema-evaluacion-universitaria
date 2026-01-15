@@ -24,6 +24,7 @@
     "diagramas:check": "node scripts/diagramas.mjs --check",
     "diagramas:render": "node scripts/diagramas-render.mjs --write",
     "diagramas:render:check": "node scripts/diagramas-render.mjs --check",
+    "docs:sync": "npm run diagramas:generate && npm run diagramas:render && npm run docs:generate",
     "routes:check": "node scripts/routes-check.mjs",
     "test:ci": "npm run lint && npm run docs:check && npm run diagramas:check && npm run diagramas:render:check && npm run routes:check && npm run test:backend:ci && npm run test:portal:ci && npm run test:frontend:ci",
     "build": "npm run --workspaces --if-present build",

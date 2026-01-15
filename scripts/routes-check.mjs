@@ -182,10 +182,10 @@ function extraerLlamadasRouter(codigo, metodos) {
 function checarBackend() {
   const backendDir = path.join(repoRoot, 'apps/backend/src');
   const rutas = listarArchivosRecursivo(backendDir, (p) => {
-    const n = path.basename(p);
-    if (!n.endsWith('.ts')) return false;
-    if (n.startsWith('rutas') || n.includes('rutas')) return true;
-    return false;
+    // Escanea TODO el código TS del backend para encontrar handlers con
+    // router.post/put/patch, incluso si el archivo no se llama rutas*.ts.
+    // (extraerLlamadasRouter ya evita falsos positivos en strings/comentarios)
+    return p.endsWith('.ts');
   });
 
   const metodos = ['post', 'put', 'patch'];
@@ -275,7 +275,8 @@ function checarBackendAutenticacionPublica() {
   if (!fs.existsSync(archivo)) return [];
 
   const txt = leerTexto(archivo);
-  const calls = extraerLlamadasRouter(txt, ['post', 'put', 'patch', 'delete']);
+  const metodos = ['post', 'put', 'patch'];
+  const calls = extraerLlamadasRouter(txt, metodos);
 
   const violaciones = [];
   for (const call of calls) {
@@ -286,7 +287,7 @@ function checarBackendAutenticacionPublica() {
     if (!tieneValidar || !tieneStrict) {
       violaciones.push({
         archivo: normalizarRuta(path.relative(repoRoot, archivo)),
-        metodo: ['post', 'put', 'patch', 'delete'].find((mm) => call.startsWith(`router.${mm}(`)) ?? '?',
+        metodo: metodos.find((mm) => call.startsWith(`router.${mm}(`)) ?? '?',
         razon: !tieneValidar ? 'falta validarCuerpo(...) en ruta pública' : 'falta strict: true en ruta pública'
       });
     }

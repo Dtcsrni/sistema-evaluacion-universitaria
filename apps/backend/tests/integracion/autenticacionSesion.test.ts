@@ -81,8 +81,7 @@ describe('autenticacion (sesiones)', () => {
       .post('/api/autenticacion/registrar-google')
       .send({
         credential: 'fake-id-token',
-        nombreCompleto: 'Docente Registro Google',
-        contrasena: 'Secreto123!'
+        nombreCompleto: 'Docente Registro Google'
       })
       .expect(201);
 
@@ -97,5 +96,42 @@ describe('autenticacion (sesiones)', () => {
       .expect(200);
 
     expect(login.body.token).toBeTruthy();
+  });
+
+  it('permite definir contrasena despues de registrar con Google', async () => {
+    const registro = await request(app)
+      .post('/api/autenticacion/registrar-google')
+      .send({
+        credential: 'fake-id-token',
+        nombreCompleto: 'Docente Registro Google'
+      })
+      .expect(201);
+
+    expect(registro.body.token).toBeTruthy();
+
+    // Sin password, el login por correo+contrasena debe fallar.
+    await request(app)
+      .post('/api/autenticacion/ingresar')
+      .send({
+        correo: 'docente@prueba.test',
+        contrasena: 'Secreto123!'
+      })
+      .expect(401);
+
+    await request(app)
+      .post('/api/autenticacion/definir-contrasena')
+      .set('Authorization', `Bearer ${registro.body.token}`)
+      .send({ contrasenaNueva: 'Secreto123!' })
+      .expect(204);
+
+    const loginPwd = await request(app)
+      .post('/api/autenticacion/ingresar')
+      .send({
+        correo: 'docente@prueba.test',
+        contrasena: 'Secreto123!'
+      })
+      .expect(200);
+
+    expect(loginPwd.body.token).toBeTruthy();
   });
 });

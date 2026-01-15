@@ -109,7 +109,8 @@ export function AppDocente() {
         { id: 'recepcion', label: 'Recepcion', icono: 'recepcion' as const },
         { id: 'escaneo', label: 'Escaneo', icono: 'escaneo' as const },
         { id: 'calificar', label: 'Calificar', icono: 'calificar' as const },
-        { id: 'publicar', label: 'Publicar', icono: 'publicar' as const }
+        { id: 'publicar', label: 'Publicar', icono: 'publicar' as const },
+        { id: 'cuenta', label: 'Cuenta', icono: 'info' as const }
       ],
     []
   );
@@ -340,6 +341,8 @@ export function AppDocente() {
           }
         />
       )}
+
+      {vista === 'cuenta' && <SeccionCuenta />}
     </div>
   ) : (
     <SeccionAutenticacion
@@ -390,6 +393,7 @@ function SeccionAutenticacion({ onIngresar }: { onIngresar: (token: string) => v
   const [modo, setModo] = useState<'ingresar' | 'registrar'>('ingresar');
   const [enviando, setEnviando] = useState(false);
   const [credentialRegistroGoogle, setCredentialRegistroGoogle] = useState<string | null>(null);
+  const [crearContrasenaAhora, setCrearContrasenaAhora] = useState(true);
 
   function hayGoogleConfigurado() {
     return Boolean(String(import.meta.env.VITE_GOOGLE_CLIENT_ID || '').trim());
@@ -468,11 +472,15 @@ function SeccionAutenticacion({ onIngresar }: { onIngresar: (token: string) => v
       const nombre = nombreCompleto.trim();
       const correoFinal = correo.trim();
 
+      const debeEnviarContrasena = Boolean(
+        contrasena.trim() && (!credentialRegistroGoogle || crearContrasenaAhora)
+      );
+
       const respuesta = credentialRegistroGoogle
         ? await clienteApi.enviar<{ token: string }>('/autenticacion/registrar-google', {
             credential: credentialRegistroGoogle,
             nombreCompleto: nombre,
-            contrasena
+            ...(debeEnviarContrasena ? { contrasena } : {})
           })
         : await clienteApi.enviar<{ token: string }>('/autenticacion/registrar', {
             nombreCompleto: nombre,
@@ -499,7 +507,9 @@ function SeccionAutenticacion({ onIngresar }: { onIngresar: (token: string) => v
   }
 
   const puedeIngresar = Boolean(correo.trim() && contrasena.trim());
-  const puedeRegistrar = Boolean(nombreCompleto.trim() && correo.trim() && contrasena.trim());
+  const puedeRegistrar = credentialRegistroGoogle
+    ? Boolean(nombreCompleto.trim() && correo.trim() && (crearContrasenaAhora ? contrasena.trim() : true))
+    : Boolean(nombreCompleto.trim() && correo.trim() && contrasena.trim());
 
   return (
     <div className="auth-grid">
@@ -554,6 +564,7 @@ function SeccionAutenticacion({ onIngresar }: { onIngresar: (token: string) => v
             onClick={() => {
               setModo('ingresar');
               setCredentialRegistroGoogle(null);
+              setCrearContrasenaAhora(true);
               setMensaje('');
             }}
           >
@@ -564,6 +575,7 @@ function SeccionAutenticacion({ onIngresar }: { onIngresar: (token: string) => v
             type="button"
             onClick={() => {
               setModo('registrar');
+              setCrearContrasenaAhora(true);
               setMensaje('');
             }}
           >
@@ -588,6 +600,8 @@ function SeccionAutenticacion({ onIngresar }: { onIngresar: (token: string) => v
                 if (email) setCorreo(email);
                 if (name && !nombreCompleto.trim()) setNombreCompleto(name);
                 setCredentialRegistroGoogle(token);
+                setCrearContrasenaAhora(false);
+                setContrasena('');
                 setMensaje('Correo tomado de Google. Completa tus datos para crear la cuenta.');
               }}
               onError={() => setMensaje('No se pudo obtener datos de Google.')}
@@ -599,6 +613,7 @@ function SeccionAutenticacion({ onIngresar }: { onIngresar: (token: string) => v
                 onClick={() => {
                   setCredentialRegistroGoogle(null);
                   setCorreo('');
+                  setCrearContrasenaAhora(true);
                   setMensaje('');
                 }}
                 disabled={!credentialRegistroGoogle}
@@ -631,24 +646,44 @@ function SeccionAutenticacion({ onIngresar }: { onIngresar: (token: string) => v
           {modo === 'registrar' && credentialRegistroGoogle && <span className="ayuda">Correo bloqueado por Google.</span>}
         </label>
 
-        <label className="campo">
-          Contrasena
-          {modo === 'ingresar' ? (
+        {modo === 'registrar' && credentialRegistroGoogle && (
+          <label className="campo">
+            Crear contrasena ahora (opcional)
+            <span className="ayuda">Si no, podras definirla luego desde Cuenta.</span>
             <input
-              type="password"
-              value={contrasena}
-              onChange={(event) => setContrasena(event.target.value)}
-              autoComplete="current-password"
+              type="checkbox"
+              checked={crearContrasenaAhora}
+              onChange={(event) => {
+                setCrearContrasenaAhora(event.target.checked);
+                if (!event.target.checked) setContrasena('');
+              }}
             />
-          ) : (
-            <input
-              type="password"
-              value={contrasena}
-              onChange={(event) => setContrasena(event.target.value)}
-              autoComplete="new-password"
-            />
-          )}
-        </label>
+          </label>
+        )}
+
+        {(modo === 'ingresar' || !credentialRegistroGoogle || crearContrasenaAhora) && (
+          <label className="campo">
+            Contrasena
+            {modo === 'ingresar' ? (
+              <input
+                type="password"
+                value={contrasena}
+                onChange={(event) => setContrasena(event.target.value)}
+                autoComplete="current-password"
+              />
+            ) : (
+              <input
+                type="password"
+                value={contrasena}
+                onChange={(event) => setContrasena(event.target.value)}
+                autoComplete="new-password"
+              />
+            )}
+            {modo === 'registrar' && credentialRegistroGoogle && (
+              <span className="ayuda">Minimo 8 caracteres.</span>
+            )}
+          </label>
+        )}
 
         <div className="acciones">
           <Boton
@@ -664,6 +699,92 @@ function SeccionAutenticacion({ onIngresar }: { onIngresar: (token: string) => v
 
         {mensaje && <InlineMensaje tipo={esMensajeError(mensaje) ? 'error' : 'ok'}>{mensaje}</InlineMensaje>}
       </div>
+    </div>
+  );
+}
+
+function SeccionCuenta() {
+  const [contrasenaNueva, setContrasenaNueva] = useState('');
+  const [contrasenaNueva2, setContrasenaNueva2] = useState('');
+  const [mensaje, setMensaje] = useState('');
+  const [guardando, setGuardando] = useState(false);
+
+  const coincide = contrasenaNueva && contrasenaNueva === contrasenaNueva2;
+  const puedeGuardar = Boolean(contrasenaNueva.trim().length >= 8 && coincide);
+
+  async function guardar() {
+    try {
+      const inicio = Date.now();
+      setGuardando(true);
+      setMensaje('');
+      await clienteApi.enviar('/autenticacion/definir-contrasena', { contrasenaNueva });
+      setMensaje('Contrasena actualizada');
+      emitToast({ level: 'ok', title: 'Cuenta', message: 'Contrasena actualizada', durationMs: 2400 });
+      registrarAccionDocente('definir_contrasena', true, Date.now() - inicio);
+      setContrasenaNueva('');
+      setContrasenaNueva2('');
+    } catch (error) {
+      const msg = mensajeDeError(error, 'No se pudo actualizar la contrasena');
+      setMensaje(msg);
+      emitToast({
+        level: 'error',
+        title: 'Cuenta',
+        message: msg,
+        durationMs: 5200,
+        action: accionToastSesionParaError(error, 'docente')
+      });
+      registrarAccionDocente('definir_contrasena', false);
+    } finally {
+      setGuardando(false);
+    }
+  }
+
+  return (
+    <div className="panel">
+      <h2>
+        <Icono nombre="info" /> Cuenta
+      </h2>
+      <p className="nota">Define una contrasena para poder ingresar sin Google (o cambiarla).</p>
+
+      <label className="campo">
+        Nueva contrasena
+        <input
+          type="password"
+          value={contrasenaNueva}
+          onChange={(event) => setContrasenaNueva(event.target.value)}
+          autoComplete="new-password"
+        />
+        <span className="ayuda">Minimo 8 caracteres.</span>
+      </label>
+
+      <label className="campo">
+        Confirmar contrasena
+        {contrasenaNueva2 && !coincide ? (
+          <input
+            type="password"
+            value={contrasenaNueva2}
+            onChange={(event) => setContrasenaNueva2(event.target.value)}
+            autoComplete="new-password"
+            aria-invalid="true"
+          />
+        ) : (
+          <input
+            type="password"
+            value={contrasenaNueva2}
+            onChange={(event) => setContrasenaNueva2(event.target.value)}
+            autoComplete="new-password"
+          />
+        )}
+        {contrasenaNueva2 && !coincide && <span className="ayuda error">Las contrasenas no coinciden.</span>}
+      </label>
+
+      <div className="acciones">
+        <Boton type="button" icono={<Icono nombre="ok" />} cargando={guardando} disabled={!puedeGuardar} onClick={guardar}>
+          {guardando ? 'Guardando…' : 'Guardar contrasena'}
+        </Boton>
+      </div>
+
+      {mensaje && <InlineMensaje tipo={esMensajeError(mensaje) ? 'error' : 'ok'}>{mensaje}</InlineMensaje>}
     </div>
   );
 }

@@ -105,6 +105,9 @@ Si configuras `GOOGLE_OAUTH_CLIENT_ID` (backend) y `VITE_GOOGLE_CLIENT_ID` (fron
 de acceso con Google. El backend emite un JWT de acceso y un refresh token rotatorio en cookie httpOnly para mantener
 sesion sin pedir login tan seguido (sin exponer el refresh token a JavaScript).
 
+Tambien hay registro con Google: el correo se toma desde Google (verificado). La contrasena es opcional en ese flujo;
+si no la defines al registrarte, puedes definirla despues desde la seccion "Cuenta" dentro del portal docente.
+
 ## API base
 - GET `/api/salud` devuelve `{ estado, tiempoActivo, db }`.
 - GET `/api/analiticas/calificaciones-csv?periodoId=...` exporta CSV.

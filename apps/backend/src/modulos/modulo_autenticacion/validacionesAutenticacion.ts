@@ -23,7 +23,12 @@ export const esquemaRegistrarDocenteGoogle = z.object({
   // ID token (credential) emitido por Google Identity Services.
   credential: z.string().min(10),
   nombreCompleto: z.string().min(1),
-  contrasena: z.string().min(8)
+  // Opcional: permite crear password para ingresar sin Google.
+  contrasena: z.string().min(8).optional()
+});
+
+export const esquemaDefinirContrasenaDocente = z.object({
+  contrasenaNueva: z.string().min(8)
 });
 
 export const esquemaBodyVacioOpcional = z.object({}).strict().optional();

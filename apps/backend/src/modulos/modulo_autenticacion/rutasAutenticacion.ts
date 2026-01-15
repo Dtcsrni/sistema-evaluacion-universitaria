@@ -4,6 +4,7 @@
 import { Router } from 'express';
 import { validarCuerpo } from '../../compartido/validaciones/validar';
 import {
+	definirContrasenaDocente,
 	ingresarDocente,
 	ingresarDocenteGoogle,
 	perfilDocente,
@@ -15,6 +16,7 @@ import {
 import { requerirDocente } from './middlewareAutenticacion';
 import {
 	esquemaBodyVacioOpcional,
+	esquemaDefinirContrasenaDocente,
 	esquemaIngresarDocente,
 	esquemaIngresarDocenteGoogle,
 	esquemaRegistrarDocente,
@@ -29,6 +31,12 @@ router.post('/ingresar', validarCuerpo(esquemaIngresarDocente, { strict: true })
 router.post('/google', validarCuerpo(esquemaIngresarDocenteGoogle, { strict: true }), ingresarDocenteGoogle);
 router.post('/refrescar', validarCuerpo(esquemaBodyVacioOpcional, { strict: true }), refrescarDocente);
 router.post('/salir', validarCuerpo(esquemaBodyVacioOpcional, { strict: true }), salirDocente);
+router.post(
+	'/definir-contrasena',
+	requerirDocente,
+	validarCuerpo(esquemaDefinirContrasenaDocente, { strict: true }),
+	definirContrasenaDocente
+);
 router.get('/perfil', requerirDocente, perfilDocente);
 
 export default router;

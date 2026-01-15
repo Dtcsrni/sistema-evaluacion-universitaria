@@ -46,11 +46,12 @@ export async function registrarDocenteGoogle(req: Request, res: Response) {
     throw new ErrorAplicacion('DOCENTE_EXISTE', 'El correo ya esta registrado', 409);
   }
 
-  const hashContrasena = await crearHash(String(contrasena ?? ''));
+  const contrasenaStr = typeof contrasena === 'string' ? contrasena : '';
+  const hashContrasena = contrasenaStr.trim() ? await crearHash(contrasenaStr) : undefined;
   const docente = await Docente.create({
     nombreCompleto: String(nombreCompleto ?? perfil.nombreCompleto ?? '').trim(),
     correo,
-    hashContrasena,
+    ...(hashContrasena ? { hashContrasena } : {}),
     googleSub: perfil.sub,
     activo: true,
     ultimoAcceso: new Date()
@@ -64,8 +65,15 @@ export async function registrarDocenteGoogle(req: Request, res: Response) {
 export async function ingresarDocente(req: Request, res: Response) {
   const { correo, contrasena } = req.body;
   const docente = await Docente.findOne({ correo: correo.toLowerCase() });
-  if (!docente || !docente.hashContrasena) {
+  if (!docente) {
     throw new ErrorAplicacion('CREDENCIALES_INVALIDAS', 'Credenciales invalidas', 401);
+  }
+  if (!docente.hashContrasena) {
+    throw new ErrorAplicacion(
+      'DOCENTE_SIN_CONTRASENA',
+      'Esta cuenta no tiene contrasena. Ingresa con Google o define una contrasena.',
+      401
+    );
   }
   if (!docente.activo) {
     throw new ErrorAplicacion('DOCENTE_INACTIVO', 'Docente inactivo', 403);
@@ -129,6 +137,24 @@ export async function refrescarDocente(req: Request, res: Response) {
 
 export async function salirDocente(req: Request, res: Response) {
   await cerrarSesionDocente(req, res);
+  res.status(204).end();
+}
+
+export async function definirContrasenaDocente(req: SolicitudDocente, res: Response) {
+  const docenteId = obtenerDocenteId(req);
+  const { contrasenaNueva } = req.body as { contrasenaNueva?: unknown };
+
+  const docente = await Docente.findById(docenteId);
+  if (!docente) {
+    throw new ErrorAplicacion('DOCENTE_NO_ENCONTRADO', 'Docente no encontrado', 404);
+  }
+  if (!docente.activo) {
+    throw new ErrorAplicacion('DOCENTE_INACTIVO', 'Docente inactivo', 403);
+  }
+
+  docente.hashContrasena = await crearHash(String(contrasenaNueva ?? ''));
+  await docente.save();
+
   res.status(204).end();
 }
 

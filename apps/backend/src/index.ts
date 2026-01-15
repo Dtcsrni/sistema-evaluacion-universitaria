@@ -5,17 +5,18 @@
 import { crearApp } from './app';
 import { configuracion } from './configuracion';
 import { conectarBaseDatos } from './infraestructura/baseDatos/mongoose';
+import { logError, log } from './infraestructura/logging/logger';
 
 async function iniciar() {
   await conectarBaseDatos();
 
   const app = crearApp();
   app.listen(configuracion.puerto, () => {
-    console.log(`API docente escuchando en puerto ${configuracion.puerto}`);
+    log('ok', 'API docente escuchando', { puerto: configuracion.puerto });
   });
 }
 
 iniciar().catch((error) => {
-  console.error('Error al iniciar el servidor', error);
+  logError('Error al iniciar el servidor', error);
   process.exit(1);
 });

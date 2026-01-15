@@ -32,18 +32,29 @@ const logFile = path.join(logDir, 'dashboard.log');
 const lockPath = path.join(logDir, 'dashboard.lock.json');
 ensureDir(logDir);
 
-// Reset the log file at startup for a clean session.
-try {
-  fs.writeFileSync(logFile, '');
-} catch {
-  // ignore
-}
+// Logging persistence mode:
+// - off: no disk writes
+// - important: only system/warn/error (+ any entry explicitly marked)
+// - all: persist everything
+const persistArg = getArgValue('--persist', 'important');
+const persistMode = ['off', 'important', 'all'].includes(String(persistArg)) ? String(persistArg) : 'important';
+
+const diskWriter = createDiskWriter(logFile, {
+  enabled: persistMode !== 'off',
+  flushMs: Number(process.env.DASHBOARD_LOG_FLUSH_MS || 1400),
+  maxBytes: Number(process.env.DASHBOARD_LOG_MAX_BYTES || 2_000_000),
+  keepFiles: Number(process.env.DASHBOARD_LOG_KEEP || 3)
+});
 
 // In-memory log buffers for the UI.
 const maxFiltered = 600;
 const maxRaw = 2000;
 const logLines = [];
 const rawLines = [];
+
+// In-memory event buffer for structured activity (small + diagnostic).
+const maxEvents = 450;
+const events = [];
 
 // Track suppressed noisy lines per task.
 const noiseStats = new Map();
@@ -79,24 +90,49 @@ function timestamp() {
 }
 
 function makeEntry(source, level, text) {
-  return { time: timestamp(), source, level, text };
+  return { ts: Date.now(), time: timestamp(), source, level, text };
 }
 
 function formatEntry(entry) {
-  return `[${entry.time}] [${entry.source}] ${entry.text}`;
+  const base = `[${entry.time}] [${entry.source}] [${entry.level}] ${entry.text}`;
+  if (entry && entry.meta && typeof entry.meta === 'object') {
+    try {
+      return `${base} | ${JSON.stringify(entry.meta)}`;
+    } catch {
+      return base;
+    }
+  }
+  return base;
 }
 
 function persistEntry(entry) {
-  try {
-    fs.appendFileSync(logFile, formatEntry(entry) + '\n');
-  } catch {
-    // ignore file write errors
+  if (!diskWriter.enabled) return;
+  if (persistMode === 'important') {
+    const important = entry.level === 'error' || entry.level === 'warn' || entry.level === 'system';
+    const forced = Boolean(entry && entry.meta && entry.meta.persist === true);
+    if (!important && !forced) return;
   }
+  diskWriter.append(formatEntry(entry) + '\n');
 }
 
 function pushEntry(buffer, entry, max) {
   buffer.push(entry);
   if (buffer.length > max) buffer.shift();
+}
+
+function pushEvent(type, source, level, text, meta = undefined) {
+  const evt = {
+    id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    ts: Date.now(),
+    time: timestamp(),
+    type,
+    source,
+    level,
+    text,
+    meta
+  };
+  events.unshift(evt);
+  if (events.length > maxEvents) events.splice(maxEvents);
 }
 
 function shouldConsole(entry, options) {
@@ -110,10 +146,118 @@ function shouldConsole(entry, options) {
 // Central logger for system-level messages.
 function logSystem(text, level = 'system', options = {}) {
   const entry = makeEntry('dashboard', level, text);
+  if (options && typeof options.meta === 'object') entry.meta = options.meta;
   pushEntry(rawLines, entry, maxRaw);
   pushEntry(logLines, entry, maxFiltered);
   if (shouldConsole(entry, options)) writeConsole(formatEntry(entry));
   persistEntry(entry);
+
+  // Emit an event for key system-level messages.
+  if (level === 'error' || level === 'warn' || level === 'system') {
+    pushEvent('system', 'dashboard', level, text);
+  }
+}
+
+function createDiskWriter(filePath, options) {
+  const enabled = Boolean(options && options.enabled);
+  const flushMs = Math.max(300, Number(options && options.flushMs) || 1400);
+  const maxBytes = Math.max(200_000, Number(options && options.maxBytes) || 2_000_000);
+  const keepFiles = Math.max(1, Math.min(10, Number(options && options.keepFiles) || 3));
+
+  let buffer = '';
+  let stream = null;
+  let timer = null;
+  let approxSize = 0;
+
+  function openStream() {
+    if (!enabled) return;
+    if (stream) return;
+    try {
+      if (fs.existsSync(filePath)) {
+        try {
+          approxSize = fs.statSync(filePath).size || 0;
+        } catch {
+          approxSize = 0;
+        }
+      }
+      stream = fs.createWriteStream(filePath, { flags: 'a' });
+      stream.on('error', () => {
+        try { stream?.destroy(); } catch {}
+        stream = null;
+      });
+    } catch {
+      stream = null;
+    }
+  }
+
+  function closeStream() {
+    try { stream?.end(); } catch {}
+    stream = null;
+  }
+
+  function rotateIfNeeded() {
+    if (!enabled) return;
+    if (approxSize < maxBytes) return;
+
+    closeStream();
+    try {
+      for (let i = keepFiles - 1; i >= 1; i -= 1) {
+        const from = `${filePath}.${i}`;
+        const to = `${filePath}.${i + 1}`;
+        if (fs.existsSync(from)) {
+          try { fs.renameSync(from, to); } catch {}
+        }
+      }
+      if (fs.existsSync(filePath)) {
+        try { fs.renameSync(filePath, `${filePath}.1`); } catch {}
+      }
+    } catch {
+      // ignore
+    }
+    approxSize = 0;
+    openStream();
+  }
+
+  function flush() {
+    if (!enabled) return;
+    if (!buffer) return;
+
+    openStream();
+    if (!stream) {
+      buffer = '';
+      return;
+    }
+
+    rotateIfNeeded();
+
+    const chunk = buffer;
+    buffer = '';
+    approxSize += Buffer.byteLength(chunk, 'utf8');
+    try {
+      stream.write(chunk);
+    } catch {
+      // ignore
+    }
+  }
+
+  function append(text) {
+    if (!enabled) return;
+    buffer += text;
+    if (buffer.length >= 64_000) flush();
+  }
+
+  if (enabled) {
+    openStream();
+    timer = setInterval(flush, flushMs);
+    timer.unref?.();
+  }
+
+  process.on('exit', () => {
+    try { flush(); } catch {}
+    try { closeStream(); } catch {}
+  });
+
+  return { enabled, append, flush };
 }
 
 function ensureDir(dirPath) {
@@ -249,6 +393,7 @@ function logTaskOutput(source, data) {
     const info = classifyLine(line);
     if (!info) continue;
     const entry = makeEntry(source, info.level, info.text);
+    if (info.level === 'error') entry.meta = { task: source };
     pushEntry(rawLines, entry, maxRaw);
     if (info.noisy && !fullLogs) {
       recordNoise(source);
@@ -256,6 +401,10 @@ function logTaskOutput(source, data) {
     }
     pushEntry(logLines, entry, maxFiltered);
     persistEntry(entry);
+
+    if (info.level === 'error' || info.level === 'warn') {
+      pushEvent('task_log', source, info.level, info.text);
+    }
   }
 }
 
@@ -268,6 +417,7 @@ function startTask(name, command) {
   }
 
   logSystem(`[${name}] iniciar: ${command}`, 'system');
+  pushEvent('task_start', name, 'system', 'Inicio solicitado', { command });
   const proc = spawn('cmd.exe', ['/c', command], {
     cwd: root,
     windowsHide: true
@@ -275,15 +425,18 @@ function startTask(name, command) {
 
   processes.set(name, { name, command, proc, startedAt: Date.now() });
   logSystem(`[${name}] PID ${proc.pid}`, 'system');
+  pushEvent('task_pid', name, 'system', 'Proceso creado', { pid: proc.pid });
 
   proc.stdout.on('data', (data) => logTaskOutput(name, data));
   proc.stderr.on('data', (data) => logTaskOutput(name, data));
   proc.on('exit', (code) => {
     logSystem(`[${name}] finalizo con codigo ${code}`, 'system');
+    pushEvent('task_exit', name, code === 0 ? 'ok' : 'warn', 'Proceso finalizado', { code });
     processes.delete(name);
   });
   proc.on('error', (err) => {
     logSystem(`[${name}] error: ${err.message}`, 'error', { console: true });
+    pushEvent('task_error', name, 'error', 'Error del proceso', { message: err.message });
     processes.delete(name);
   });
 }
@@ -296,6 +449,7 @@ function stopTask(name) {
     return;
   }
   logSystem(`[${name}] deteniendo`, 'system');
+  pushEvent('task_stop', name, 'warn', 'Detencion solicitada');
   spawn('taskkill', ['/T', '/F', '/PID', String(entry.proc.pid)], { windowsHide: true });
 }
 
@@ -347,6 +501,7 @@ function restartTask(name, delayMs = 700) {
 
   const wasRunning = isRunning(name);
   if (wasRunning) stopTask(name);
+  pushEvent('task_restart', name, 'warn', 'Reinicio solicitado', { delayMs });
   setTimeout(() => startTask(name, command), wasRunning ? delayMs : 0);
 }
 
@@ -578,6 +733,11 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (req.method === 'GET' && pathName === '/api/events') {
+    sendJson(res, 200, { entries: events });
+    return;
+  }
+
   if (req.method === 'GET' && pathName === '/api/logfile') {
     let content = '';
     try {
@@ -607,6 +767,7 @@ const server = http.createServer(async (req, res) => {
     const task = String(body.task || '').trim();
     const command = commands[task];
     if (!command) return sendJson(res, 400, { error: 'Tarea desconocida' });
+    pushEvent('api', 'dashboard', 'info', 'POST /api/start', { task });
     startTask(task, command);
     return sendJson(res, 200, { ok: true });
   }
@@ -615,6 +776,7 @@ const server = http.createServer(async (req, res) => {
     const body = await readBody(req);
     const task = String(body.task || '').trim();
     if (!task) return sendJson(res, 400, { error: 'Tarea requerida' });
+    pushEvent('api', 'dashboard', 'info', 'POST /api/stop', { task });
     stopTask(task);
     return sendJson(res, 200, { ok: true });
   }
@@ -624,6 +786,8 @@ const server = http.createServer(async (req, res) => {
     const task = String(body.task || '').trim();
 
     if (!task) return sendJson(res, 400, { error: 'Tarea requerida' });
+
+    pushEvent('api', 'dashboard', 'info', 'POST /api/restart', { task });
 
     if (task === 'all') {
       const running = runningTasks();
@@ -649,6 +813,7 @@ const server = http.createServer(async (req, res) => {
     const task = String(body.task || '').trim();
     const command = commands[task];
     if (!command) return sendJson(res, 400, { error: 'Comando desconocido' });
+    pushEvent('api', 'dashboard', 'info', 'POST /api/run', { task });
     startTask(task, command);
     return sendJson(res, 200, { ok: true });
   }

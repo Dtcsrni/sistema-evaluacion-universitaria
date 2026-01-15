@@ -1075,13 +1075,134 @@
       font-size: 12px;
     }
 
+    .status-events {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: #ffffff;
+      padding: 12px;
+      margin: 10px 0 12px;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+    }
+
+    .status-events-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .status-events-title {
+      font-weight: 900;
+      color: var(--ink);
+      font-size: 13px;
+    }
+
+    .status-events-sub {
+      font-size: 12px;
+      color: var(--ink-soft);
+      margin-bottom: 10px;
+    }
+
+    .status-events-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .status-event {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 10px 12px;
+      background: #f8fbff;
+      display: grid;
+      gap: 4px;
+    }
+
+    .status-event .top {
+      display: flex;
+      gap: 10px;
+      align-items: baseline;
+      flex-wrap: wrap;
+    }
+
+    .status-event .time {
+      font-weight: 900;
+      color: var(--ink);
+      font-size: 12px;
+    }
+
+    .status-event .tag {
+      font-size: 11px;
+      font-weight: 900;
+      padding: 3px 9px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #ffffff;
+      color: var(--ink-soft);
+    }
+
+    .status-event.error { border-color: rgba(239, 68, 68, 0.28); background: rgba(254, 226, 226, 0.40); }
+    .status-event.warn { border-color: rgba(245, 158, 11, 0.28); background: rgba(255, 237, 213, 0.45); }
+    .status-event.ok { border-color: rgba(34, 197, 94, 0.26); background: rgba(220, 252, 231, 0.45); }
+
+    .status-event .msg {
+      font-size: 12px;
+      color: var(--ink);
+      font-weight: 700;
+    }
+
+    .status-event .meta {
+      font-size: 11px;
+      color: var(--ink-soft);
+      white-space: pre-wrap;
+      word-break: break-word;
+      display: none;
+    }
+
+    .status-event.has-meta { cursor: pointer; }
+    .status-event.has-meta:hover { box-shadow: 0 10px 18px rgba(15, 23, 42, 0.08); }
+    .status-event.open .meta { display: block; }
+
     .log-line {
       padding: 4px 0;
       border-bottom: 1px dashed rgba(226, 232, 240, 0.12);
       animation: fadeIn 0.2s ease both;
     }
 
+    .log-line.has-meta { cursor: pointer; }
+    .log-line.has-meta:hover { background: rgba(255, 255, 255, 0.04); }
+    .log-line.open { background: rgba(255, 255, 255, 0.03); }
+
     .log-line .meta { color: #94a3b8; margin-right: 6px; }
+    .log-line .meta-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-right: 6px;
+      opacity: 0.9;
+    }
+
+    .log-line .pill {
+      border: 1px solid rgba(226, 232, 240, 0.22);
+      background: rgba(15, 23, 42, 0.16);
+      color: #e2e8f0;
+      border-radius: 999px;
+      padding: 2px 7px;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.02em;
+    }
+
+    .log-line .meta-json {
+      margin-top: 6px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      color: #cbd5e1;
+      opacity: 0.95;
+      display: none;
+    }
+
+    .log-line.open .meta-json { display: block; }
     .log-line.error { color: #fecaca; }
     .log-line.warn { color: #fde68a; }
     .log-line.ok { color: #bbf7d0; }
@@ -1828,6 +1949,17 @@
               <span class="pill" id="last-refresh-status">-</span>
               <span class="pill"><span class="dot" id="running-dot"></span> activo</span>
             </div>
+
+            <div class="status-events" aria-label="Eventos recientes del sistema">
+              <div class="status-events-head">
+                <div class="status-events-title">Eventos recientes</div>
+                <button class="ghost-btn" id="refresh-events" type="button">Actualizar</button>
+              </div>
+              <div class="status-events-sub">Acciones y alertas detectadas por el dashboard (inicio/detencion/reinicio/errores). Click para ver detalles.</div>
+              <div class="status-events-list" id="status-events">
+                <div class="status-event"><div class="msg">Cargando eventos...</div></div>
+              </div>
+            </div>
             <div class="log-shell collapsed" id="log-shell">
               <div class="log-body" id="log" role="log" aria-label="Salida de consola" aria-live="off">Cargando...</div>
             </div>
@@ -1873,6 +2005,8 @@
       lastConnectionAt: 0,
       lastConnectionError: '',
       lastErrorToastAt: 0,
+      lastEventsOk: true,
+      lastEventsError: '',
       lastLogsOk: true,
       lastLogsError: '',
       autoRestart: false
@@ -2058,6 +2192,7 @@
       if (forceHealth) refreshHealth(true);
       if (state.logsVisible) refreshLogs();
       refreshSignals();
+      if (state.activeTab === 'status') refreshEvents();
     }
 
     function scheduleRefreshPulse() {
@@ -2551,7 +2686,91 @@
         panel.classList.toggle('active', isActive);
         panel.hidden = !isActive;
       });
-      if (name === 'status' && state.logsVisible) refreshLogs();
+      if (name === 'status') {
+        refreshEvents();
+        if (state.logsVisible) refreshLogs();
+      }
+    }
+
+    function renderStatusEvents(entries) {
+      const wrap = $('status-events');
+      if (!wrap) return;
+      wrap.innerHTML = '';
+
+      if (!state.lastEventsOk) {
+        const item = document.createElement('div');
+        item.className = 'status-event error';
+        item.innerHTML = `<div class="msg">Sin conexion: no se pudieron obtener eventos.</div>`;
+        wrap.appendChild(item);
+        return;
+      }
+
+      const safe = Array.isArray(entries) ? entries : [];
+      const max = 10;
+      const sliced = safe.slice(0, max);
+      if (sliced.length === 0) {
+        const item = document.createElement('div');
+        item.className = 'status-event';
+        item.innerHTML = `<div class="msg">Aun no hay eventos.</div>`;
+        wrap.appendChild(item);
+        return;
+      }
+
+      const fragment = document.createDocumentFragment();
+      sliced.forEach((evt) => {
+        const level = evt.level || 'info';
+        const el = document.createElement('div');
+        const hasMeta = evt.meta && typeof evt.meta === 'object';
+        el.className = `status-event ${level} ${hasMeta ? 'has-meta' : ''}`.trim();
+
+        const type = typeof evt.type === 'string' ? evt.type : 'evento';
+        const source = typeof evt.source === 'string' ? evt.source : '-';
+        const time = typeof evt.time === 'string' ? evt.time : '-';
+        const text = typeof evt.text === 'string' ? evt.text : '';
+
+        el.innerHTML = `
+          <div class="top">
+            <span class="time">${time}</span>
+            <span class="tag">${type}</span>
+            <span class="tag">${source}</span>
+          </div>
+          <div class="msg"></div>
+          <div class="meta"></div>
+        `.trim();
+
+        const msg = el.querySelector('.msg');
+        if (msg) msg.textContent = text;
+
+        const meta = el.querySelector('.meta');
+        if (meta && hasMeta) {
+          try { meta.textContent = JSON.stringify(evt.meta, null, 2); } catch { meta.textContent = ''; }
+        }
+
+        if (hasMeta) {
+          el.addEventListener('click', () => {
+            el.classList.toggle('open');
+          });
+        }
+
+        fragment.appendChild(el);
+      });
+
+      wrap.appendChild(fragment);
+    }
+
+    async function refreshEvents() {
+      if (state.activeTab !== 'status') return;
+      try {
+        const res = await fetch('/api/events');
+        const data = await res.json();
+        state.lastEventsOk = true;
+        state.lastEventsError = '';
+        renderStatusEvents(data.entries || []);
+      } catch (error) {
+        state.lastEventsOk = false;
+        state.lastEventsError = normalizeErrorMessage(error);
+        renderStatusEvents([]);
+      }
     }
 
     function attachHold(button, onTrigger) {
@@ -2735,21 +2954,44 @@
       let visible = 0;
 
       safeEntries.forEach((entry) => {
-        const text = `${entry.time} ${entry.source} ${entry.text}`;
+        const metaText = entry && entry.meta && typeof entry.meta === 'object'
+          ? (() => { try { return JSON.stringify(entry.meta); } catch { return ''; } })()
+          : '';
+        const text = `${entry.time} ${entry.source} ${entry.level} ${entry.text} ${metaText}`;
         if (filter && !text.toLowerCase().includes(filter)) return;
 
         const line = document.createElement('div');
-        line.className = `log-line ${entry.level}`.trim();
+        const hasMeta = entry && entry.meta && typeof entry.meta === 'object';
+        line.className = `log-line ${entry.level} ${hasMeta ? 'has-meta' : ''}`.trim();
 
         const meta = document.createElement('span');
         meta.className = 'meta';
         meta.textContent = `[${entry.time}] [${entry.source}]`;
 
+        const tags = document.createElement('span');
+        tags.className = 'meta-tag';
+        const pill = document.createElement('span');
+        pill.className = 'pill';
+        pill.textContent = String(entry.level || 'info').toUpperCase();
+        tags.appendChild(pill);
+
         const content = document.createElement('span');
         content.textContent = ` ${entry.text}`;
 
         line.appendChild(meta);
+        line.appendChild(tags);
         line.appendChild(content);
+
+        if (hasMeta) {
+          const details = document.createElement('div');
+          details.className = 'meta-json';
+          try { details.textContent = JSON.stringify(entry.meta, null, 2); } catch { details.textContent = ''; }
+          line.appendChild(details);
+          line.addEventListener('click', () => {
+            line.classList.toggle('open');
+          });
+        }
+
         fragment.appendChild(line);
         visible += 1;
       });
@@ -3031,6 +3273,11 @@
       });
     }
 
+    const refreshEventsBtn = $('refresh-events');
+    if (refreshEventsBtn) {
+      refreshEventsBtn.addEventListener('click', () => refreshEvents());
+    }
+
     // Initial load and periodic refresh.
     setTab(state.activeTab);
     setPausedChip(false);
@@ -3046,6 +3293,7 @@
       refreshStatus();
       if (state.logsVisible) refreshLogs();
       else refreshSignals();
+      if (state.activeTab === 'status') refreshEvents();
     }, 3000);
   </script>
 </body>

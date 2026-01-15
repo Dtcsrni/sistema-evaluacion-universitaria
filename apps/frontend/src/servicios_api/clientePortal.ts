@@ -1,6 +1,8 @@
 /**
  * Cliente API del portal alumno (Cloud Run).
  */
+import { emitToast } from '../ui/toast/toastBus';
+
 const basePortal = import.meta.env.VITE_PORTAL_BASE_URL || 'http://localhost:8080/api/portal';
 const claveTokenAlumno = 'tokenAlumno';
 
@@ -53,13 +55,34 @@ export function limpiarTokenAlumno() {
 
 export function crearClientePortal() {
   async function enviar<T>(ruta: string, payload: unknown): Promise<T> {
-    const respuesta = await fetch(`${basePortal}${ruta}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
+    let respuesta: Response;
+    try {
+      respuesta = await fetch(`${basePortal}${ruta}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+    } catch (error) {
+      emitToast({
+        id: 'portal-unreachable',
+        level: 'error',
+        title: 'Sin conexion',
+        message: 'No se pudo contactar el portal alumno.',
+        durationMs: 5200
+      });
+      throw new ErrorRemoto('Portal no disponible', { mensaje: 'Sin conexion', detalles: String(error) });
+    }
     if (!respuesta.ok) {
       const detalle = await leerErrorRemoto(respuesta);
+      if (respuesta.status >= 500) {
+        emitToast({
+          id: 'portal-server-error',
+          level: 'error',
+          title: 'Portal con error',
+          message: `El portal respondio con HTTP ${respuesta.status}.`,
+          durationMs: 5200
+        });
+      }
       throw new ErrorRemoto('Portal no disponible', detalle);
     }
     return respuesta.json() as Promise<T>;
@@ -67,11 +90,32 @@ export function crearClientePortal() {
 
   async function obtener<T>(ruta: string): Promise<T> {
     const token = obtenerTokenAlumno();
-    const respuesta = await fetch(`${basePortal}${ruta}`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : undefined
-    });
+    let respuesta: Response;
+    try {
+      respuesta = await fetch(`${basePortal}${ruta}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined
+      });
+    } catch (error) {
+      emitToast({
+        id: 'portal-unreachable',
+        level: 'error',
+        title: 'Sin conexion',
+        message: 'No se pudo contactar el portal alumno.',
+        durationMs: 5200
+      });
+      throw new ErrorRemoto('Portal no disponible', { mensaje: 'Sin conexion', detalles: String(error) });
+    }
     if (!respuesta.ok) {
       const detalle = await leerErrorRemoto(respuesta);
+      if (respuesta.status >= 500) {
+        emitToast({
+          id: 'portal-server-error',
+          level: 'error',
+          title: 'Portal con error',
+          message: `El portal respondio con HTTP ${respuesta.status}.`,
+          durationMs: 5200
+        });
+      }
       throw new ErrorRemoto('Portal no disponible', detalle);
     }
     return respuesta.json() as Promise<T>;

@@ -3,10 +3,11 @@
  */
 import mongoose from 'mongoose';
 import { configuracion } from '../../configuracion';
+import { log, logError } from '../logging/logger';
 
 export async function conectarBaseDatos() {
   if (!configuracion.mongoUri) {
-    console.warn('MONGODB_URI no esta definido; se omite la conexion a MongoDB');
+    log('warn', 'MONGODB_URI no esta definido; se omite la conexion a MongoDB');
     return;
   }
 
@@ -14,9 +15,9 @@ export async function conectarBaseDatos() {
 
   try {
     await mongoose.connect(configuracion.mongoUri);
-    console.log('Conexion a MongoDB exitosa');
+    log('ok', 'Conexion a MongoDB exitosa');
   } catch (error) {
-    console.error('Fallo la conexion a MongoDB', error);
+    logError('Fallo la conexion a MongoDB', error);
     throw error;
   }
 }

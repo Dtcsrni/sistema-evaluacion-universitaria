@@ -315,6 +315,7 @@ function checarPortal() {
         });
         continue;
       }
+      const metodo = m[1];
       const ruta = m[3];
 
       // Regla simple: cada POST/PUT/PATCH del portal debe validar keys del body
@@ -329,6 +330,15 @@ function checarPortal() {
 
       // Reglas de auth específicas (anti-regresión)
       if (ruta === '/sincronizar' || ruta === '/limpiar') {
+        // Estos endpoints internos deben existir solo como POST.
+        if (metodo !== 'post') {
+          violaciones.push({
+            archivo: normalizarRuta(path.relative(repoRoot, archivo)),
+            metodo,
+            razon: `no permitido: ${ruta} solo debe existir como POST`
+          });
+        }
+
         // Debe validar api key al inicio del handler.
         const tieneApiKey = /requerirApiKey\s*\(\s*req\s*,\s*res\s*\)/.test(call);
         if (!tieneApiKey) {

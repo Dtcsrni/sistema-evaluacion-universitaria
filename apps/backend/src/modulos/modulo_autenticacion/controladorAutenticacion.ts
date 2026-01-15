@@ -3,6 +3,8 @@
  */
 import type { Request, Response } from 'express';
 import { ErrorAplicacion } from '../../compartido/errores/errorAplicacion';
+import { esCorreoDeDominioPermitido } from '../../compartido/utilidades/correo';
+import { configuracion } from '../../configuracion';
 import { Docente } from './modeloDocente';
 import { crearHash, compararContrasena } from './servicioHash';
 import { crearTokenDocente } from './servicioTokens';
@@ -12,7 +14,21 @@ import { verificarCredencialGoogle } from './servicioGoogle';
 
 export async function registrarDocente(req: Request, res: Response) {
   const { nombreCompleto, correo, contrasena } = req.body;
-  const existente = await Docente.findOne({ correo: correo.toLowerCase() }).lean();
+  const correoFinal = String(correo || '').toLowerCase();
+
+  if (
+    Array.isArray(configuracion.dominiosCorreoPermitidos) &&
+    configuracion.dominiosCorreoPermitidos.length > 0 &&
+    !esCorreoDeDominioPermitido(correoFinal, configuracion.dominiosCorreoPermitidos)
+  ) {
+    throw new ErrorAplicacion(
+      'DOMINIO_CORREO_NO_PERMITIDO',
+      'Correo no permitido por politicas. Usa tu correo institucional.',
+      403
+    );
+  }
+
+  const existente = await Docente.findOne({ correo: correoFinal }).lean();
   if (existente) {
     throw new ErrorAplicacion('DOCENTE_EXISTE', 'El correo ya esta registrado', 409);
   }
@@ -20,7 +36,7 @@ export async function registrarDocente(req: Request, res: Response) {
   const hashContrasena = await crearHash(contrasena);
   const docente = await Docente.create({
     nombreCompleto,
-    correo: correo.toLowerCase(),
+    correo: correoFinal,
     hashContrasena,
     activo: true,
     ultimoAcceso: new Date()
@@ -64,7 +80,21 @@ export async function registrarDocenteGoogle(req: Request, res: Response) {
 
 export async function ingresarDocente(req: Request, res: Response) {
   const { correo, contrasena } = req.body;
-  const docente = await Docente.findOne({ correo: correo.toLowerCase() });
+  const correoFinal = String(correo || '').toLowerCase();
+
+  if (
+    Array.isArray(configuracion.dominiosCorreoPermitidos) &&
+    configuracion.dominiosCorreoPermitidos.length > 0 &&
+    !esCorreoDeDominioPermitido(correoFinal, configuracion.dominiosCorreoPermitidos)
+  ) {
+    throw new ErrorAplicacion(
+      'DOMINIO_CORREO_NO_PERMITIDO',
+      'Correo no permitido por politicas. Usa tu correo institucional.',
+      403
+    );
+  }
+
+  const docente = await Docente.findOne({ correo: correoFinal });
   if (!docente) {
     throw new ErrorAplicacion('CREDENCIALES_INVALIDAS', 'Credenciales invalidas', 401);
   }

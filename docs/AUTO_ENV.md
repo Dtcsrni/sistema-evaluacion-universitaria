@@ -9,6 +9,7 @@ este documento se actualiza automáticamente al regenerar.
 ## Backend
 - `CODIGO_ACCESO_HORAS` (usado en: apps/backend/src/configuracion.ts)
 - `CORS_ORIGENES` (usado en: apps/backend/src/configuracion.ts)
+- `DOMINIOS_CORREO_PERMITIDOS` (usado en: apps/backend/src/configuracion.ts)
 - `GOOGLE_OAUTH_CLIENT_ID` (usado en: apps/backend/src/configuracion.ts)
 - `JWT_EXPIRA_HORAS` (usado en: apps/backend/src/configuracion.ts)
 - `JWT_SECRETO` (usado en: apps/backend/src/configuracion.ts)

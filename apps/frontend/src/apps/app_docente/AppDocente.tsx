@@ -397,10 +397,17 @@ function SeccionAutenticacion({ onIngresar }: { onIngresar: (token: string) => v
   const [mostrarRecuperar, setMostrarRecuperar] = useState(false);
   const [credentialRecuperarGoogle, setCredentialRecuperarGoogle] = useState<string | null>(null);
   const [contrasenaRecuperar, setContrasenaRecuperar] = useState('');
+  const [mostrarFormularioIngresar, setMostrarFormularioIngresar] = useState(false);
+  const [mostrarFormularioRegistrar, setMostrarFormularioRegistrar] = useState(false);
 
   function hayGoogleConfigurado() {
     return Boolean(String(import.meta.env.VITE_GOOGLE_CLIENT_ID || '').trim());
   }
+
+  const googleDisponible = hayGoogleConfigurado();
+  const mostrarFormulario = modo === 'ingresar'
+    ? (!googleDisponible || mostrarFormularioIngresar)
+    : (!googleDisponible || mostrarFormularioRegistrar || Boolean(credentialRegistroGoogle));
 
   function decodificarPayloadJwt(jwt: string): Record<string, unknown> | null {
     const partes = String(jwt || '').split('.');
@@ -572,7 +579,7 @@ function SeccionAutenticacion({ onIngresar }: { onIngresar: (token: string) => v
       </div>
 
       <div className="auth-form">
-        {hayGoogleConfigurado() && modo === 'ingresar' && (
+        {googleDisponible && modo === 'ingresar' && (
           <div className="auth-google auth-google--mb">
             <GoogleLogin
               onSuccess={(cred) => {
@@ -587,10 +594,20 @@ function SeccionAutenticacion({ onIngresar }: { onIngresar: (token: string) => v
               useOneTap
             />
             <p className="nota nota--mt">
-              Opcional: acceso rapido con Google.
+              Acceso principal: Google (correo institucional).
             </p>
 
             <div className="acciones acciones--mt">
+              <button
+                type="button"
+                className="chip"
+                onClick={() => {
+                  setMostrarFormularioIngresar((v) => !v);
+                  setMensaje('');
+                }}
+              >
+                {mostrarFormularioIngresar ? 'Ocultar formulario' : 'Ingresar con correo y contrasena'}
+              </button>
               <button
                 type="button"
                 className="chip"
@@ -652,6 +669,7 @@ function SeccionAutenticacion({ onIngresar }: { onIngresar: (token: string) => v
               setModo('ingresar');
               setCredentialRegistroGoogle(null);
               setCrearContrasenaAhora(true);
+              setMostrarFormularioIngresar(false);
               setMensaje('');
             }}
           >
@@ -663,6 +681,7 @@ function SeccionAutenticacion({ onIngresar }: { onIngresar: (token: string) => v
             onClick={() => {
               setModo('registrar');
               setCrearContrasenaAhora(true);
+              setMostrarFormularioRegistrar(false);
               setMensaje('');
             }}
           >
@@ -670,7 +689,7 @@ function SeccionAutenticacion({ onIngresar }: { onIngresar: (token: string) => v
           </button>
         </div>
 
-        {hayGoogleConfigurado() && modo === 'registrar' && (
+        {googleDisponible && modo === 'registrar' && !mostrarFormularioRegistrar && (
           <div className="auth-google auth-google--mb">
             <GoogleLogin
               onSuccess={(cred) => {
@@ -707,33 +726,70 @@ function SeccionAutenticacion({ onIngresar }: { onIngresar: (token: string) => v
               >
                 Cambiar correo
               </button>
+              <button
+                className="chip"
+                type="button"
+                onClick={() => {
+                  setMostrarFormularioRegistrar(true);
+                  setCredentialRegistroGoogle(null);
+                  setCorreo('');
+                  setNombreCompleto('');
+                  setContrasena('');
+                  setCrearContrasenaAhora(true);
+                  setMensaje('');
+                }}
+              >
+                Registrar con correo y contrasena
+              </button>
             </div>
             <p className="nota nota--mt">
-              Registro con Google: el correo se obtiene automaticamente.
+              Registro principal: Google (correo institucional).
             </p>
           </div>
         )}
 
-        {modo === 'registrar' && (
+        {googleDisponible && modo === 'registrar' && mostrarFormularioRegistrar && (
+          <div className="panel">
+            <p className="nota">
+              Registro por formulario (fallback). Recomendado: usa Google para correo institucional.
+            </p>
+            <div className="acciones acciones--mt">
+              <button
+                className="chip"
+                type="button"
+                onClick={() => {
+                  setMostrarFormularioRegistrar(false);
+                  setMensaje('');
+                }}
+              >
+                Volver a Google
+              </button>
+            </div>
+          </div>
+        )}
+
+        {modo === 'registrar' && mostrarFormulario && (
           <label className="campo">
             Nombre completo
             <input value={nombreCompleto} onChange={(event) => setNombreCompleto(event.target.value)} autoComplete="name" />
           </label>
         )}
 
-        <label className="campo">
-          Correo
-          <input
-            type="email"
-            value={correo}
-            onChange={(event) => setCorreo(event.target.value)}
-            autoComplete="email"
-            readOnly={modo === 'registrar' && Boolean(credentialRegistroGoogle)}
-          />
-          {modo === 'registrar' && credentialRegistroGoogle && <span className="ayuda">Correo bloqueado por Google.</span>}
-        </label>
+        {mostrarFormulario && (
+          <label className="campo">
+            Correo
+            <input
+              type="email"
+              value={correo}
+              onChange={(event) => setCorreo(event.target.value)}
+              autoComplete="email"
+              readOnly={modo === 'registrar' && Boolean(credentialRegistroGoogle)}
+            />
+            {modo === 'registrar' && credentialRegistroGoogle && <span className="ayuda">Correo bloqueado por Google.</span>}
+          </label>
+        )}
 
-        {modo === 'registrar' && credentialRegistroGoogle && (
+        {modo === 'registrar' && credentialRegistroGoogle && mostrarFormulario && (
           <label className="campo">
             Crear contrasena ahora (opcional)
             <span className="ayuda">Si no, podras definirla luego desde Cuenta.</span>
@@ -748,7 +804,7 @@ function SeccionAutenticacion({ onIngresar }: { onIngresar: (token: string) => v
           </label>
         )}
 
-        {(modo === 'ingresar' || !credentialRegistroGoogle || crearContrasenaAhora) && (
+        {mostrarFormulario && (modo === 'ingresar' || !credentialRegistroGoogle || crearContrasenaAhora) && (
           <label className="campo">
             Contrasena
             {modo === 'ingresar' ? (
@@ -772,17 +828,19 @@ function SeccionAutenticacion({ onIngresar }: { onIngresar: (token: string) => v
           </label>
         )}
 
-        <div className="acciones">
-          <Boton
-            type="button"
-            icono={<Icono nombre={modo === 'ingresar' ? 'entrar' : 'nuevo'} />}
-            cargando={enviando}
-            disabled={modo === 'ingresar' ? !puedeIngresar : !puedeRegistrar}
-            onClick={modo === 'ingresar' ? ingresar : registrar}
-          >
-            {modo === 'ingresar' ? (enviando ? 'Ingresando…' : 'Ingresar') : enviando ? 'Creando…' : 'Crear cuenta'}
-          </Boton>
-        </div>
+        {mostrarFormulario && (
+          <div className="acciones">
+            <Boton
+              type="button"
+              icono={<Icono nombre={modo === 'ingresar' ? 'entrar' : 'nuevo'} />}
+              cargando={enviando}
+              disabled={modo === 'ingresar' ? !puedeIngresar : !puedeRegistrar}
+              onClick={modo === 'ingresar' ? ingresar : registrar}
+            >
+              {modo === 'ingresar' ? (enviando ? 'Ingresando…' : 'Ingresar') : enviando ? 'Creando…' : 'Crear cuenta'}
+            </Boton>
+          </div>
+        )}
 
         {mensaje && <InlineMensaje tipo={esMensajeError(mensaje) ? 'error' : 'ok'}>{mensaje}</InlineMensaje>}
       </div>

@@ -16,6 +16,11 @@ const corsOrigenes = (process.env.CORS_ORIGENES ?? 'http://localhost:5173')
   .map((origen) => origen.trim())
   .filter(Boolean);
 
+const dominiosCorreoPermitidos = (process.env.DOMINIOS_CORREO_PERMITIDOS ?? '')
+  .split(',')
+  .map((dominio) => dominio.trim().toLowerCase().replace(/^@/, ''))
+  .filter(Boolean);
+
 function parsearNumeroSeguro(valor: unknown, porDefecto: number, { min, max }: { min?: number; max?: number } = {}) {
   const n = typeof valor === 'number' ? valor : Number(valor);
   if (!Number.isFinite(n)) return porDefecto;
@@ -58,6 +63,7 @@ export const configuracion = {
   entorno,
   limiteJson,
   corsOrigenes,
+  dominiosCorreoPermitidos,
   jwtSecreto: jwtSecretoEfectivo,
   jwtExpiraHoras,
   refreshTokenDias,

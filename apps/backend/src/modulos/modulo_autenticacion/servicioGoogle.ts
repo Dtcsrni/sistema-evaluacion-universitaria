@@ -1,5 +1,6 @@
 import { OAuth2Client } from 'google-auth-library';
 import { ErrorAplicacion } from '../../compartido/errores/errorAplicacion';
+import { esCorreoDeDominioPermitido } from '../../compartido/utilidades/correo';
 import { configuracion } from '../../configuracion';
 
 export type PerfilGoogle = {
@@ -43,8 +44,21 @@ export async function verificarCredencialGoogle(credential: string): Promise<Per
     throw new ErrorAplicacion('GOOGLE_EMAIL_NO_VERIFICADO', 'El correo de Google no esta verificado', 401);
   }
 
+  const correoFinal = String(correo).toLowerCase();
+  if (
+    Array.isArray(configuracion.dominiosCorreoPermitidos) &&
+    configuracion.dominiosCorreoPermitidos.length > 0 &&
+    !esCorreoDeDominioPermitido(correoFinal, configuracion.dominiosCorreoPermitidos)
+  ) {
+    throw new ErrorAplicacion(
+      'DOMINIO_CORREO_NO_PERMITIDO',
+      'Correo no permitido por politicas. Usa tu correo institucional.',
+      403
+    );
+  }
+
   return {
-    correo: String(correo).toLowerCase(),
+    correo: correoFinal,
     sub: String(sub),
     nombreCompleto: typeof payload?.name === 'string' ? payload.name : undefined
   };

@@ -8,6 +8,8 @@ const AlumnoSchema = new Schema(
     docenteId: { type: Schema.Types.ObjectId, ref: 'Docente', required: true },
     periodoId: { type: Schema.Types.ObjectId, ref: 'Periodo', required: true },
     matricula: { type: String, required: true },
+    nombres: { type: String },
+    apellidos: { type: String },
     nombreCompleto: { type: String, required: true },
     correo: { type: String },
     grupo: { type: String },

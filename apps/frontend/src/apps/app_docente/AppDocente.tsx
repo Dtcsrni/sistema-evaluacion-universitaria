@@ -21,7 +21,7 @@ const clienteApi = crearClienteApi();
 
 type Docente = { id: string; nombreCompleto: string; correo: string; tieneContrasena?: boolean; tieneGoogle?: boolean };
 
-type Alumno = { _id: string; matricula: string; nombreCompleto: string; grupo?: string };
+type Alumno = { _id: string; matricula: string; nombreCompleto: string; nombres?: string; apellidos?: string; grupo?: string };
 
 type Periodo = { _id: string; nombre: string };
 
@@ -415,7 +415,8 @@ export function AppDocente() {
 function SeccionAutenticacion({ onIngresar }: { onIngresar: (token: string) => void }) {
   const [correo, setCorreo] = useState('');
   const [contrasena, setContrasena] = useState('');
-  const [nombreCompleto, setNombreCompleto] = useState('');
+  const [nombres, setNombres] = useState('');
+  const [apellidos, setApellidos] = useState('');
   const [mensaje, setMensaje] = useState('');
   const [modo, setModo] = useState<'ingresar' | 'registrar'>('ingresar');
   const [enviando, setEnviando] = useState(false);
@@ -439,6 +440,10 @@ function SeccionAutenticacion({ onIngresar }: { onIngresar: (token: string) => v
 
   const dominiosPermitidos = obtenerDominiosCorreoPermitidosFrontend();
   const politicaDominiosTexto = dominiosPermitidos.length > 0 ? textoDominiosPermitidos(dominiosPermitidos) : '';
+
+  function nombreCompletoParaEnviar() {
+    return [nombres.trim(), apellidos.trim()].filter(Boolean).join(' ').trim();
+  }
 
   function correoPermitido(correoAValidar: string) {
     return esCorreoDeDominioPermitidoFrontend(correoAValidar, dominiosPermitidos);
@@ -578,9 +583,17 @@ function SeccionAutenticacion({ onIngresar }: { onIngresar: (token: string) => v
         registrarAccionDocente(credentialRegistroGoogle ? 'registrar_google' : 'registrar', false);
         return;
       }
+
+      if (!nombres.trim() || !apellidos.trim()) {
+        const msg = 'Completa tus nombres y apellidos.';
+        setMensaje(msg);
+        emitToast({ level: 'error', title: 'Datos incompletos', message: msg, durationMs: 4200 });
+        registrarAccionDocente(credentialRegistroGoogle ? 'registrar_google' : 'registrar', false);
+        return;
+      }
       setEnviando(true);
       setMensaje('');
-      const nombre = nombreCompleto.trim();
+      const nombre = nombreCompletoParaEnviar();
       const correoFinal = correo.trim();
 
       const debeEnviarContrasena = Boolean(
@@ -619,8 +632,8 @@ function SeccionAutenticacion({ onIngresar }: { onIngresar: (token: string) => v
 
   const puedeIngresar = Boolean(correo.trim() && contrasena.trim());
   const puedeRegistrar = credentialRegistroGoogle
-    ? Boolean(nombreCompleto.trim() && correo.trim() && (crearContrasenaAhora ? contrasena.trim() : true))
-    : Boolean(nombreCompleto.trim() && correo.trim() && contrasena.trim());
+    ? Boolean(nombres.trim() && apellidos.trim() && correo.trim() && (crearContrasenaAhora ? contrasena.trim() : true))
+    : Boolean(nombres.trim() && apellidos.trim() && correo.trim() && contrasena.trim());
 
   return (
     <div className="auth-grid">
@@ -757,6 +770,8 @@ function SeccionAutenticacion({ onIngresar }: { onIngresar: (token: string) => v
               setCredentialRegistroGoogle(null);
               setCrearContrasenaAhora(true);
               setMostrarFormularioIngresar(false);
+              setNombres('');
+              setApellidos('');
               setMensaje('');
             }}
           >
@@ -769,6 +784,8 @@ function SeccionAutenticacion({ onIngresar }: { onIngresar: (token: string) => v
               setModo('registrar');
               setCrearContrasenaAhora(true);
               setMostrarFormularioRegistrar(false);
+              setNombres('');
+              setApellidos('');
               setMensaje('');
             }}
           >
@@ -789,6 +806,8 @@ function SeccionAutenticacion({ onIngresar }: { onIngresar: (token: string) => v
                 const payload = decodificarPayloadJwt(token);
                 const email = typeof payload?.email === 'string' ? payload.email : undefined;
                 const name = typeof payload?.name === 'string' ? payload.name : undefined;
+                const givenName = typeof payload?.given_name === 'string' ? payload.given_name : undefined;
+                const familyName = typeof payload?.family_name === 'string' ? payload.family_name : undefined;
 
                 if (email && dominiosPermitidos.length > 0 && !correoPermitido(email)) {
                   const msg = `Solo se permiten correos institucionales: ${politicaDominiosTexto}`;
@@ -798,7 +817,24 @@ function SeccionAutenticacion({ onIngresar }: { onIngresar: (token: string) => v
                 }
 
                 if (email) setCorreo(email);
-                if (name && !nombreCompleto.trim()) setNombreCompleto(name);
+
+                const nombresActual = nombres.trim();
+                const apellidosActual = apellidos.trim();
+
+                if (givenName && !nombresActual) setNombres(givenName);
+                if (familyName && !apellidosActual) setApellidos(familyName);
+                if (name && (!nombresActual || !apellidosActual)) {
+                  const partes = name
+                    .split(' ')
+                    .map((p) => p.trim())
+                    .filter(Boolean);
+                  if (partes.length >= 2) {
+                    if (!nombresActual) setNombres(partes.slice(0, -1).join(' '));
+                    if (!apellidosActual) setApellidos(partes.slice(-1).join(' '));
+                  } else if (partes.length === 1 && !nombresActual) {
+                    setNombres(partes[0]);
+                  }
+                }
                 setCredentialRegistroGoogle(token);
                 setCrearContrasenaAhora(false);
                 setContrasena('');
@@ -827,7 +863,8 @@ function SeccionAutenticacion({ onIngresar }: { onIngresar: (token: string) => v
                   setMostrarFormularioRegistrar(true);
                   setCredentialRegistroGoogle(null);
                   setCorreo('');
-                  setNombreCompleto('');
+                  setNombres('');
+                  setApellidos('');
                   setContrasena('');
                   setCrearContrasenaAhora(true);
                   setMensaje('');
@@ -866,10 +903,26 @@ function SeccionAutenticacion({ onIngresar }: { onIngresar: (token: string) => v
         )}
 
         {modo === 'registrar' && mostrarFormulario && (
-          <label className="campo">
-            Nombre completo
-            <input value={nombreCompleto} onChange={(event) => setNombreCompleto(event.target.value)} autoComplete="name" />
-          </label>
+          <>
+            <label className="campo">
+              Nombres
+              <input
+                value={nombres}
+                onChange={(event) => setNombres(event.target.value)}
+                autoComplete="given-name"
+                placeholder="Ej. Juan Carlos"
+              />
+            </label>
+            <label className="campo">
+              Apellidos
+              <input
+                value={apellidos}
+                onChange={(event) => setApellidos(event.target.value)}
+                autoComplete="family-name"
+                placeholder="Ej. Perez Lopez"
+              />
+            </label>
+          </>
         )}
 
         {mostrarFormulario && (
@@ -1307,7 +1360,8 @@ function SeccionAlumnos({
   onRefrescar: () => void;
 }) {
   const [matricula, setMatricula] = useState('');
-  const [nombreCompleto, setNombreCompleto] = useState('');
+  const [nombres, setNombres] = useState('');
+  const [apellidos, setApellidos] = useState('');
   const [correo, setCorreo] = useState('');
   const [grupo, setGrupo] = useState('');
   const [periodoId, setPeriodoId] = useState('');
@@ -1318,7 +1372,7 @@ function SeccionAlumnos({
   const politicaDominiosTexto = dominiosPermitidos.length > 0 ? textoDominiosPermitidos(dominiosPermitidos) : '';
   const correoValido = !correo.trim() || esCorreoDeDominioPermitidoFrontend(correo, dominiosPermitidos);
 
-  const puedeCrear = Boolean(matricula.trim() && nombreCompleto.trim() && periodoId && correoValido);
+  const puedeCrear = Boolean(matricula.trim() && nombres.trim() && apellidos.trim() && periodoId && correoValido);
 
   async function crearAlumno() {
     try {
@@ -1334,7 +1388,8 @@ function SeccionAlumnos({
       setMensaje('');
       await clienteApi.enviar('/alumnos', {
         matricula: matricula.trim(),
-        nombreCompleto: nombreCompleto.trim(),
+        nombres: nombres.trim(),
+        apellidos: apellidos.trim(),
         ...(correo.trim() ? { correo: correo.trim() } : {}),
         ...(grupo.trim() ? { grupo: grupo.trim() } : {}),
         periodoId
@@ -1369,8 +1424,12 @@ function SeccionAlumnos({
         <input value={matricula} onChange={(event) => setMatricula(event.target.value)} />
       </label>
       <label className="campo">
-        Nombre completo
-        <input value={nombreCompleto} onChange={(event) => setNombreCompleto(event.target.value)} />
+        Nombres
+        <input value={nombres} onChange={(event) => setNombres(event.target.value)} />
+      </label>
+      <label className="campo">
+        Apellidos
+        <input value={apellidos} onChange={(event) => setApellidos(event.target.value)} />
       </label>
       <label className="campo">
         Correo

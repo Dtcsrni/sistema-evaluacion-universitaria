@@ -4,10 +4,12 @@
 import { z } from 'zod';
 import { esquemaObjectId } from '../../compartido/validaciones/esquemas';
 
-const esquemaOpcion = z.object({
-  texto: z.string().min(1),
-  esCorrecta: z.boolean()
-});
+const esquemaOpcion = z
+  .object({
+    texto: z.string().min(1),
+    esCorrecta: z.boolean()
+  })
+  .strict();
 
 export const esquemaCrearPregunta = z
   .object({

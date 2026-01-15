@@ -69,6 +69,12 @@ router.get('/salud', (_req, res) => {
 router.post('/sincronizar', async (req, res) => {
   if (!requerirApiKey(req, res)) return;
 
+  const clavesSyncPermitidas = ['docenteId', 'periodo', 'alumnos', 'calificaciones', 'examenes', 'banderas', 'codigoAcceso'];
+  if (!tieneSoloClavesPermitidas(req.body ?? {}, clavesSyncPermitidas)) {
+    responderError(res, 400, 'PAYLOAD_INVALIDO', 'Payload invalido');
+    return;
+  }
+
   const { periodo, alumnos, calificaciones, examenes, banderas, codigoAcceso } = req.body ?? {};
 
   if (!periodo || !Array.isArray(alumnos) || !Array.isArray(calificaciones)) {
@@ -188,10 +194,24 @@ router.post('/ingresar', async (req, res) => {
 });
 
 router.post('/eventos-uso', requerirSesionAlumno, async (req: SolicitudAlumno, res) => {
+  if (!tieneSoloClavesPermitidas(req.body ?? {}, ['eventos'])) {
+    responderError(res, 400, 'DATOS_INVALIDOS', 'Payload invalido');
+    return;
+  }
+
   const eventos = Array.isArray(req.body?.eventos) ? req.body.eventos : [];
   if (!eventos.length) {
     responderError(res, 400, 'DATOS_INVALIDOS', 'eventos requerido');
     return;
+  }
+
+  const eventosLimitados = eventos.slice(0, 100);
+  const clavesEventoPermitidas = ['sessionId', 'pantalla', 'accion', 'exito', 'duracionMs', 'meta'];
+  for (const evento of eventosLimitados) {
+    if (!tieneSoloClavesPermitidas(evento, clavesEventoPermitidas)) {
+      responderError(res, 400, 'DATOS_INVALIDOS', 'Payload invalido');
+      return;
+    }
   }
 
   type EventoUsoSync = {
@@ -203,8 +223,7 @@ router.post('/eventos-uso', requerirSesionAlumno, async (req: SolicitudAlumno, r
     meta?: unknown;
   };
 
-  const docs = (eventos as EventoUsoSync[])
-    .slice(0, 100)
+  const docs = (eventosLimitados as EventoUsoSync[])
     .map((evento) => {
       const accion = normalizarString(evento.accion);
       return {
@@ -267,6 +286,11 @@ router.get('/examen/:folio', requerirSesionAlumno, async (req: SolicitudAlumno, 
 
 router.post('/limpiar', async (req, res) => {
   if (!requerirApiKey(req, res)) return;
+
+  if (!tieneSoloClavesPermitidas(req.body ?? {}, ['dias'])) {
+    responderError(res, 400, 'PAYLOAD_INVALIDO', 'Payload invalido');
+    return;
+  }
 
   const { dias } = req.body ?? {};
   const diasRetencion = parsearDiasRetencion(dias, 60);

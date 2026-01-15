@@ -16,6 +16,7 @@ export const esquemaCrearPlantilla = z.object({
       margenMm: z.number().positive().optional(),
       layout: z.string().optional()
     })
+    .strict()
     .optional()
 });
 

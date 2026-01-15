@@ -1,6 +1,6 @@
 import { afterAll, afterEach, beforeAll, vi } from 'vitest';
 
-type StrictHarnessOptions = {
+export type StrictHarnessOptions = {
   /**
    * Si es true, permite console.warn/error sin fallar tests.
    * Útil para depurar, pero por defecto se desaconseja.
@@ -25,11 +25,11 @@ type StrictHarnessOptions = {
 };
 
 function matchesAny(text: string, patterns: Array<string | RegExp>): boolean {
-  for (const p of patterns) {
-    if (typeof p === 'string') {
-      if (text.includes(p)) return true;
+  for (const pattern of patterns) {
+    if (typeof pattern === 'string') {
+      if (text.includes(pattern)) return true;
     } else {
-      if (p.test(text)) return true;
+      if (pattern.test(text)) return true;
     }
   }
   return false;
@@ -51,7 +51,7 @@ function stringifyArgs(args: unknown[]): string {
 
 /**
  * Endurece la suite de tests:
- * - Falla si hay `console.warn`/`console.error` (salvo allowlist) => detecta warnings graves.
+ * - Falla si hay `console.warn`/`console.error` (salvo allowlist).
  * - Captura `unhandledRejection`, `uncaughtException` y `process.warning`.
  *
  * Se puede relajar con:
@@ -59,6 +59,11 @@ function stringifyArgs(args: unknown[]): string {
  * - `ALLOW_NODE_WARNINGS=1`
  */
 export function instalarTestHardening(opts: StrictHarnessOptions = {}) {
+  const globalKey = Symbol.for('sistema-evaluacion:vitestStrict:installed');
+  const globalState = globalThis as unknown as Record<symbol, true | undefined>;
+  if (globalState[globalKey]) return;
+  globalState[globalKey] = true;
+
   const allowConsole = Boolean(opts.allowConsole) || process.env.ALLOW_TEST_CONSOLE === '1';
   const allowNodeWarnings = Boolean(opts.allowNodeWarnings) || process.env.ALLOW_NODE_WARNINGS === '1';
   const allowConsolePatterns = opts.allowConsolePatterns ?? [];
@@ -86,10 +91,12 @@ export function instalarTestHardening(opts: StrictHarnessOptions = {}) {
   };
 
   const onWindowError = (event: unknown) => {
-    // JSDOM: event suele ser ErrorEvent. Evitamos depender de tipos DOM aquí.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const anyEvt = event as any;
-    const msg = anyEvt?.error instanceof Error ? `${anyEvt.error.name}: ${anyEvt.error.message}` : String(anyEvt?.message ?? event);
+    const msg =
+      anyEvt?.error instanceof Error
+        ? `${anyEvt.error.name}: ${anyEvt.error.message}`
+        : String(anyEvt?.message ?? event);
     unhandled.push(`window.error: ${msg}`);
   };
 
@@ -115,7 +122,6 @@ export function instalarTestHardening(opts: StrictHarnessOptions = {}) {
       warnSpy.mockImplementation((...args: unknown[]) => {
         const msg = stringifyArgs(args);
         if (!matchesAny(msg, allowConsolePatterns)) consoleWarnCalls.push(msg);
-        // Mantener salida ayuda a diagnosticar flakes en CI.
         originalWarn(...args);
       });
 
@@ -133,7 +139,6 @@ export function instalarTestHardening(opts: StrictHarnessOptions = {}) {
     process.on('uncaughtException', onUncaughtException);
     process.on('warning', onNodeWarning);
 
-    // Browser-like (jsdom)
     if (typeof window !== 'undefined' && window && typeof window.addEventListener === 'function') {
       window.addEventListener('error', onWindowError);
       window.addEventListener('unhandledrejection', onWindowUnhandledRejection);
@@ -143,24 +148,25 @@ export function instalarTestHardening(opts: StrictHarnessOptions = {}) {
   afterEach(() => {
     const issues: string[] = [];
 
-    if (!allowConsole) {
-      if (consoleWarnCalls.length > 0) issues.push(`console.warn: ${consoleWarnCalls.slice(0, 3).join(' | ')}`);
-      if (consoleErrorCalls.length > 0) issues.push(`console.error: ${consoleErrorCalls.slice(0, 3).join(' | ')}`);
-    }
+    try {
+      if (!allowConsole) {
+        if (consoleWarnCalls.length > 0) issues.push(`console.warn: ${consoleWarnCalls.slice(0, 3).join(' | ')}`);
+        if (consoleErrorCalls.length > 0) issues.push(`console.error: ${consoleErrorCalls.slice(0, 3).join(' | ')}`);
+      }
 
-    if (!allowNodeWarnings && nodeWarnings.length > 0) {
-      issues.push(`process.warning: ${nodeWarnings.slice(0, 3).join(' | ')}`);
-    }
+      if (!allowNodeWarnings && nodeWarnings.length > 0) {
+        issues.push(`process.warning: ${nodeWarnings.slice(0, 3).join(' | ')}`);
+      }
 
-    if (unhandled.length > 0) {
-      issues.push(`unhandled: ${unhandled.slice(0, 3).join(' | ')}`);
+      if (unhandled.length > 0) {
+        issues.push(`unhandled: ${unhandled.slice(0, 3).join(' | ')}`);
+      }
+    } finally {
+      consoleWarnCalls.length = 0;
+      consoleErrorCalls.length = 0;
+      nodeWarnings.length = 0;
+      unhandled.length = 0;
     }
-
-    // Limpia para el siguiente test.
-    consoleWarnCalls.length = 0;
-    consoleErrorCalls.length = 0;
-    nodeWarnings.length = 0;
-    unhandled.length = 0;
 
     if (issues.length > 0) {
       throw new Error(`Fallo por warnings/errores en entorno de test: ${issues.join(' ; ')}`);

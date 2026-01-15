@@ -42,6 +42,26 @@ describe('validaciones de payload', () => {
     expect(respuesta.body.error.codigo).toBe('VALIDACION');
   });
 
+  it('rechaza banco de preguntas con campos extra en opcion', async () => {
+    const token = tokenDocentePrueba();
+    const respuesta = await request(app)
+      .post('/api/banco-preguntas')
+      .set({ Authorization: `Bearer ${token}` })
+      .send({
+        enunciado: 'Pregunta valida',
+        opciones: [
+          { texto: 'A', esCorrecta: true },
+          { texto: 'B', esCorrecta: false, extra: 'NO' },
+          { texto: 'C', esCorrecta: false },
+          { texto: 'D', esCorrecta: false },
+          { texto: 'E', esCorrecta: false }
+        ]
+      })
+      .expect(400);
+
+    expect(respuesta.body.error.codigo).toBe('VALIDACION');
+  });
+
   it('rechaza crear alumno con campos extra', async () => {
     const token = tokenDocentePrueba();
     const respuesta = await request(app)
@@ -120,6 +140,20 @@ describe('validaciones de payload', () => {
         aciertos: 1,
         totalReactivos: 10,
         extra: 'NO'
+      })
+      .expect(400);
+
+    expect(respuesta.body.error.codigo).toBe('VALIDACION');
+  });
+
+  it('rechaza calificar examen con campos extra en respuestasDetectadas', async () => {
+    const token = tokenDocentePrueba();
+    const respuesta = await request(app)
+      .post('/api/calificaciones/calificar')
+      .set({ Authorization: `Bearer ${token}` })
+      .send({
+        examenGeneradoId: '507f1f77bcf86cd799439011',
+        respuestasDetectadas: [{ numeroPregunta: 1, opcion: 'A', extra: 'NO' }]
       })
       .expect(400);
 
@@ -208,6 +242,22 @@ describe('validaciones de payload', () => {
     expect(respuesta.body.error.codigo).toBe('VALIDACION');
   });
 
+  it('rechaza crear plantilla con campos extra en configuracionPdf', async () => {
+    const token = tokenDocentePrueba();
+    const respuesta = await request(app)
+      .post('/api/examenes/plantillas')
+      .set({ Authorization: `Bearer ${token}` })
+      .send({
+        tipo: 'parcial',
+        titulo: 'Plantilla',
+        totalReactivos: 5,
+        configuracionPdf: { margenMm: 10, extra: 'NO' }
+      })
+      .expect(400);
+
+    expect(respuesta.body.error.codigo).toBe('VALIDACION');
+  });
+
   it('rechaza generar examen con plantillaId invalido', async () => {
     const token = tokenDocentePrueba();
     const respuesta = await request(app)
@@ -236,6 +286,17 @@ describe('validaciones de payload', () => {
       .post('/api/analiticas/exportar-csv')
       .set({ Authorization: `Bearer ${token}` })
       .send({ columnas: [''], filas: [{ a: 1 }] })
+      .expect(400);
+
+    expect(respuesta.body.error.codigo).toBe('VALIDACION');
+  });
+
+  it('rechaza eventos-uso con campos extra en evento', async () => {
+    const token = tokenDocentePrueba();
+    const respuesta = await request(app)
+      .post('/api/analiticas/eventos-uso')
+      .set({ Authorization: `Bearer ${token}` })
+      .send({ eventos: [{ accion: 'click', extra: 'NO' }] })
       .expect(400);
 
     expect(respuesta.body.error.codigo).toBe('VALIDACION');

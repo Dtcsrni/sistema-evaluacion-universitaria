@@ -246,6 +246,30 @@ function checarBackendRutasPublicas() {
   return violaciones;
 }
 
+function checarBackendSinEscrituraAntesAuth() {
+  const archivo = path.join(repoRoot, 'apps/backend/src/rutas.ts');
+  const txt = leerTexto(archivo);
+
+  const violaciones = [];
+
+  const idxAuth = txt.indexOf('router.use(requerirDocente');
+  if (idxAuth < 0) return violaciones;
+
+  const antes = txt.slice(0, idxAuth);
+  const reWrite = /router\.(post|put|patch|delete)\s*\(/g;
+  let m;
+  // eslint-disable-next-line no-cond-assign
+  while ((m = reWrite.exec(antes))) {
+    violaciones.push({
+      archivo: normalizarRuta(path.relative(repoRoot, archivo)),
+      metodo: m[1],
+      razon: `endpoint de escritura antes de requerirDocente (debe ser publico solo via /autenticacion): router.${m[1]}(...)`
+    });
+  }
+
+  return violaciones;
+}
+
 function checarPortal() {
   const portalFile = path.join(repoRoot, 'apps/portal_alumno_cloud/src/rutas.ts');
   const txt = leerTexto(portalFile);
@@ -295,7 +319,12 @@ function checarPortal() {
 }
 
 function main() {
-  const violaciones = [...checarBackend(), ...checarBackendRutasPublicas(), ...checarPortal()];
+  const violaciones = [
+    ...checarBackend(),
+    ...checarBackendRutasPublicas(),
+    ...checarBackendSinEscrituraAntesAuth(),
+    ...checarPortal()
+  ];
 
   if (violaciones.length === 0) {
     console.log('[routes-check] ok');

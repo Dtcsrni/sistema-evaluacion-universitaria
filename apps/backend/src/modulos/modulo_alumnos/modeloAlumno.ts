@@ -1,7 +1,7 @@
 /**
  * Modelo Alumno.
  */
-import { Schema, model } from 'mongoose';
+import { Schema, model, models } from 'mongoose';
 
 const AlumnoSchema = new Schema(
   {
@@ -18,4 +18,4 @@ const AlumnoSchema = new Schema(
 
 AlumnoSchema.index({ docenteId: 1, periodoId: 1, matricula: 1 }, { unique: true });
 
-export const Alumno = model('Alumno', AlumnoSchema);
+export const Alumno = models.Alumno ?? model('Alumno', AlumnoSchema);

@@ -1,7 +1,7 @@
 /**
  * Modelo Docente para autenticacion y ownership de datos.
  */
-import { Schema, model } from 'mongoose';
+import { Schema, model, models } from 'mongoose';
 
 const DocenteSchema = new Schema(
   {
@@ -14,4 +14,4 @@ const DocenteSchema = new Schema(
   { timestamps: true, collection: 'docentes' }
 );
 
-export const Docente = model('Docente', DocenteSchema);
+export const Docente = models.Docente ?? model('Docente', DocenteSchema);

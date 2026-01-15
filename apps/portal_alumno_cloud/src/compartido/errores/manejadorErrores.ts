@@ -21,5 +21,17 @@ export function manejadorErroresPortal(error: unknown, _req: Request, res: Respo
   const exponerMensaje = entorno !== 'production';
   const mensaje = exponerMensaje && error instanceof Error ? error.message : 'Error interno';
 
+  // body-parser: payload demasiado grande (413).
+  const status =
+    typeof error === 'object' && error
+      ? ((error as { status?: unknown; statusCode?: unknown }).status ??
+          (error as { statusCode?: unknown }).statusCode)
+      : undefined;
+  const type = typeof error === 'object' && error ? (error as { type?: unknown }).type : undefined;
+  if (status === 413 || type === 'entity.too.large') {
+    res.status(413).json({ error: { codigo: 'PAYLOAD_DEMASIADO_GRANDE', mensaje: 'Payload demasiado grande' } });
+    return;
+  }
+
   res.status(500).json({ error: { codigo: 'ERROR_INTERNO', mensaje } });
 }

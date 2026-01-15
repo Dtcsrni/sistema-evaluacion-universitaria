@@ -1,7 +1,7 @@
 /**
  * Modelo de examenes plantilla (parcial/global).
  */
-import { Schema, model } from 'mongoose';
+import { Schema, model, models } from 'mongoose';
 
 const ExamenPlantillaSchema = new Schema(
   {
@@ -20,4 +20,4 @@ const ExamenPlantillaSchema = new Schema(
   { timestamps: true, collection: 'examenesPlantilla' }
 );
 
-export const ExamenPlantilla = model('ExamenPlantilla', ExamenPlantillaSchema);
+export const ExamenPlantilla = models.ExamenPlantilla ?? model('ExamenPlantilla', ExamenPlantillaSchema);

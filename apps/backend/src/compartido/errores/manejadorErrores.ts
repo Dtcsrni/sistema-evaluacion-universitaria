@@ -36,6 +36,23 @@ export function manejadorErrores(
     return;
   }
 
+  // body-parser: payload demasiado grande (413).
+  const status =
+    typeof error === 'object' && error
+      ? ((error as { status?: unknown; statusCode?: unknown }).status ??
+          (error as { statusCode?: unknown }).statusCode)
+      : undefined;
+  const type = typeof error === 'object' && error ? (error as { type?: unknown }).type : undefined;
+  if (status === 413 || type === 'entity.too.large') {
+    res.status(413).json({
+      error: {
+        codigo: 'PAYLOAD_DEMASIADO_GRANDE',
+        mensaje: 'Payload demasiado grande'
+      }
+    });
+    return;
+  }
+
   if (error instanceof ErrorAplicacion) {
     res.status(error.estadoHttp).json({
       error: {

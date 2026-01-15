@@ -1,7 +1,7 @@
 /**
  * Modelo de entregas (vinculacion examen-alumno).
  */
-import { Schema, model } from 'mongoose';
+import { Schema, model, models } from 'mongoose';
 
 const EntregaSchema = new Schema(
   {
@@ -14,4 +14,4 @@ const EntregaSchema = new Schema(
   { timestamps: true, collection: 'entregas' }
 );
 
-export const Entrega = model('Entrega', EntregaSchema);
+export const Entrega = models.Entrega ?? model('Entrega', EntregaSchema);

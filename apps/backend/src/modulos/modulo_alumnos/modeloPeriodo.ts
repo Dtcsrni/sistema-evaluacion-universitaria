@@ -1,7 +1,7 @@
 /**
  * Modelo Periodo academico.
  */
-import { Schema, model } from 'mongoose';
+import { Schema, model, models } from 'mongoose';
 
 const PeriodoSchema = new Schema(
   {
@@ -15,4 +15,4 @@ const PeriodoSchema = new Schema(
   { timestamps: true, collection: 'periodos' }
 );
 
-export const Periodo = model('Periodo', PeriodoSchema);
+export const Periodo = models.Periodo ?? model('Periodo', PeriodoSchema);

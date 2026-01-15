@@ -33,4 +33,13 @@ describe('validarCuerpo', () => {
 
     expect(respuesta.body.datos).toEqual({ nombre: 'Ana', edad: 20 });
   });
+
+  it('elimina campos extra por defecto', async () => {
+    const respuesta = await request(app)
+      .post('/validar')
+      .send({ nombre: 'Ana', edad: 20, extra: 'NO_DEBE_PASAR' })
+      .expect(200);
+
+    expect(respuesta.body.datos).toEqual({ nombre: 'Ana', edad: 20 });
+  });
 });

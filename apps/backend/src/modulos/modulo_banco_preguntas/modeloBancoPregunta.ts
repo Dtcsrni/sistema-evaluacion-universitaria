@@ -1,7 +1,7 @@
 /**
  * Modelo de banco de preguntas con versionado.
  */
-import { Schema, model } from 'mongoose';
+import { Schema, model, models } from 'mongoose';
 
 const OpcionSchema = new Schema(
   {
@@ -43,4 +43,4 @@ const BancoPreguntaSchema = new Schema(
   { timestamps: true, collection: 'bancoPreguntas' }
 );
 
-export const BancoPregunta = model('BancoPregunta', BancoPreguntaSchema);
+export const BancoPregunta = models.BancoPregunta ?? model('BancoPregunta', BancoPreguntaSchema);

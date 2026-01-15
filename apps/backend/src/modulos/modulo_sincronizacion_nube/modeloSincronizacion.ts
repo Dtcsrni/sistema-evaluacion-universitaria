@@ -7,7 +7,7 @@
  * - resultado (estado)
  * - cuando (ejecutadoEn + timestamps)
  */
-import { Schema, model } from 'mongoose';
+import { Schema, model, models } from 'mongoose';
 
 const SincronizacionSchema = new Schema(
   {
@@ -20,4 +20,4 @@ const SincronizacionSchema = new Schema(
   { timestamps: true, collection: 'sincronizaciones' }
 );
 
-export const Sincronizacion = model('Sincronizacion', SincronizacionSchema);
+export const Sincronizacion = models.Sincronizacion ?? model('Sincronizacion', SincronizacionSchema);

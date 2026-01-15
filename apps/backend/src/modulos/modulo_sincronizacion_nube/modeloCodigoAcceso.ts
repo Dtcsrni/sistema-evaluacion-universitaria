@@ -6,7 +6,7 @@
  * - El alumno usa el codigo + matricula en el portal cloud para crear sesion.
  * - El codigo es de un solo uso y expira.
  */
-import { Schema, model } from 'mongoose';
+import { Schema, model, models } from 'mongoose';
 
 const CodigoAccesoSchema = new Schema(
   {
@@ -21,4 +21,4 @@ const CodigoAccesoSchema = new Schema(
 
 CodigoAccesoSchema.index({ codigo: 1 }, { unique: true });
 
-export const CodigoAcceso = model('CodigoAcceso', CodigoAccesoSchema);
+export const CodigoAcceso = models.CodigoAcceso ?? model('CodigoAcceso', CodigoAccesoSchema);

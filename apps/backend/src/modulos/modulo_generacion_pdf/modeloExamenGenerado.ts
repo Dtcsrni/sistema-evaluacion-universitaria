@@ -1,7 +1,7 @@
 /**
  * Modelo de examenes generados con variante y PDF asociado.
  */
-import { Schema, model } from 'mongoose';
+import { Schema, model, models } from 'mongoose';
 
 const ExamenGeneradoSchema = new Schema(
   {
@@ -20,4 +20,4 @@ const ExamenGeneradoSchema = new Schema(
   { timestamps: true, collection: 'examenesGenerados' }
 );
 
-export const ExamenGenerado = model('ExamenGenerado', ExamenGeneradoSchema);
+export const ExamenGenerado = models.ExamenGenerado ?? model('ExamenGenerado', ExamenGeneradoSchema);

@@ -1,7 +1,7 @@
 /**
  * Modelo de banderas de revision (anti-trampa sugerida).
  */
-import { Schema, model } from 'mongoose';
+import { Schema, model, models } from 'mongoose';
 
 const BanderaRevisionSchema = new Schema(
   {
@@ -16,4 +16,4 @@ const BanderaRevisionSchema = new Schema(
   { timestamps: true, collection: 'banderasRevision' }
 );
 
-export const BanderaRevision = model('BanderaRevision', BanderaRevisionSchema);
+export const BanderaRevision = models.BanderaRevision ?? model('BanderaRevision', BanderaRevisionSchema);

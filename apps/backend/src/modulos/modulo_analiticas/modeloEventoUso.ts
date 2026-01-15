@@ -1,7 +1,7 @@
 /**
  * Modelo de eventos de uso (telemetria ligera) para mejorar UX.
  */
-import { Schema, model } from 'mongoose';
+import { Schema, model, models } from 'mongoose';
 
 const EventoUsoSchema = new Schema(
   {
@@ -19,4 +19,4 @@ const EventoUsoSchema = new Schema(
 EventoUsoSchema.index({ docenteId: 1, createdAt: -1 });
 EventoUsoSchema.index({ accion: 1, createdAt: -1 });
 
-export const EventoUso = model('EventoUso', EventoUsoSchema);
+export const EventoUso = models.EventoUso ?? model('EventoUso', EventoUsoSchema);

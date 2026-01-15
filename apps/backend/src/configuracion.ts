@@ -43,6 +43,13 @@ const rateLimitWindowMs = parsearNumeroSeguro(process.env.RATE_LIMIT_WINDOW_MS, 
 });
 const rateLimitLimit = parsearNumeroSeguro(process.env.RATE_LIMIT_LIMIT, 300, { min: 1, max: 10_000 });
 
+// OMR: limite del tamaño de la imagen en base64 (en caracteres) para evitar payloads abusivos.
+// Nota: base64 suele inflar ~33%, por eso se controla por longitud de string.
+const omrImagenBase64MaxChars = parsearNumeroSeguro(process.env.OMR_IMAGEN_BASE64_MAX_CHARS, 2_000_000, {
+  min: 1_000,
+  max: 50_000_000
+});
+
 export const configuracion = {
   puerto,
   mongoUri,
@@ -55,5 +62,6 @@ export const configuracion = {
   portalAlumnoUrl,
   portalApiKey,
   rateLimitWindowMs,
-  rateLimitLimit
+  rateLimitLimit,
+  omrImagenBase64MaxChars
 };

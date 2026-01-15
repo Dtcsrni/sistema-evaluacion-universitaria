@@ -1,7 +1,7 @@
 /**
  * Modelo de calificaciones con fraccion exacta.
  */
-import { Schema, model } from 'mongoose';
+import { Schema, model, models } from 'mongoose';
 
 const CalificacionSchema = new Schema(
   {
@@ -29,4 +29,4 @@ const CalificacionSchema = new Schema(
   { timestamps: true, collection: 'calificaciones' }
 );
 
-export const Calificacion = model('Calificacion', CalificacionSchema);
+export const Calificacion = models.Calificacion ?? model('Calificacion', CalificacionSchema);

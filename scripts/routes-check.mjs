@@ -270,6 +270,31 @@ function checarBackendSinEscrituraAntesAuth() {
   return violaciones;
 }
 
+function checarBackendAutenticacionPublica() {
+  const archivo = path.join(repoRoot, 'apps/backend/src/modulos/modulo_autenticacion/rutasAutenticacion.ts');
+  if (!fs.existsSync(archivo)) return [];
+
+  const txt = leerTexto(archivo);
+  const calls = extraerLlamadasRouter(txt, ['post', 'put', 'patch', 'delete']);
+
+  const violaciones = [];
+  for (const call of calls) {
+    // En el módulo de autenticación asumimos que todas las rutas son públicas,
+    // por lo que deben validar estrictamente el body.
+    const tieneValidar = call.includes('validarCuerpo(');
+    const tieneStrict = call.includes('strict: true');
+    if (!tieneValidar || !tieneStrict) {
+      violaciones.push({
+        archivo: normalizarRuta(path.relative(repoRoot, archivo)),
+        metodo: ['post', 'put', 'patch', 'delete'].find((mm) => call.startsWith(`router.${mm}(`)) ?? '?',
+        razon: !tieneValidar ? 'falta validarCuerpo(...) en ruta pública' : 'falta strict: true en ruta pública'
+      });
+    }
+  }
+
+  return violaciones;
+}
+
 function checarPortal() {
   const portalFile = path.join(repoRoot, 'apps/portal_alumno_cloud/src/rutas.ts');
   const txt = leerTexto(portalFile);
@@ -323,6 +348,7 @@ function main() {
     ...checarBackend(),
     ...checarBackendRutasPublicas(),
     ...checarBackendSinEscrituraAntesAuth(),
+    ...checarBackendAutenticacionPublica(),
     ...checarPortal()
   ];
 

@@ -1,4 +1,6 @@
 // Opciones Vitest compartidas por las apps.
 export const baseVitestConfig = {
-  clearMocks: true
+  clearMocks: true,
+  restoreMocks: true,
+  mockReset: true
 };

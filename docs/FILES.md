@@ -7,6 +7,7 @@ generados o lockfiles no deben editarse manualmente.
 - `.gitignore`: artefactos y archivos ignorados.
 - `.github/copilot-instructions.md`: guias de estilo para el repo.
 - `apps/`: aplicaciones del monorepo (backend, frontend, portal).
+- `CHANGELOG.md`: historial de cambios (SemVer).
 - `docker-compose.yml`: stack local con perfiles dev/prod.
 - `package.json`: scripts y workspaces.
 - `package-lock.json`: lockfile de npm (generado).
@@ -19,12 +20,16 @@ generados o lockfiles no deben editarse manualmente.
 - `docs/SEGURIDAD.md`: checklist OWASP API 2023.
 - `docs/FORMATO_PDF.md`: reglas de PDF carta y OMR.
 - `docs/PRUEBAS.md`: alcance y ejecucion de pruebas.
+- `docs/VERSIONADO.md`: convenciones alpha/beta/estable y releases.
+- `docs/AUTO_ENV.md`: variables de entorno detectadas (auto-generado).
+- `docs/AUTO_DOCS_INDEX.md`: indice de docs (auto-generado).
 - `docs/FILES.md`: este mapa de archivos.
 - `docs/diagramas/src/`: fuentes Mermaid (codigo).
 - `docs/diagramas/rendered/`: SVG renderizados.
 
 ## scripts/
 - `scripts/dashboard.mjs`: verificacion rapida de API y web.
+- `scripts/docs.mjs`: genera/verifica docs autoactualizables (`docs:generate`, `docs:check`).
 
 ## apps/backend/
 - `apps/backend/.eslintrc.cjs`: reglas ESLint backend.

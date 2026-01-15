@@ -32,4 +32,17 @@ describe('manejadorErrores', () => {
     expect(respuesta.body.error.codigo).toBe('ERROR_INTERNO');
     expect(respuesta.body.error.mensaje).toBe('Falla inesperada');
   });
+
+  it('no filtra mensajes internos en produccion', async () => {
+    const anterior = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+
+    try {
+      const respuesta = await request(app).get('/inesperado').expect(500);
+      expect(respuesta.body.error.codigo).toBe('ERROR_INTERNO');
+      expect(respuesta.body.error.mensaje).toBe('Error interno');
+    } finally {
+      process.env.NODE_ENV = anterior;
+    }
+  });
 });

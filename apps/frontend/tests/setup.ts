@@ -1,6 +1,9 @@
 // Setup comun de pruebas React.
 import '@testing-library/jest-dom/vitest';
 import { beforeEach, vi } from 'vitest';
+import { instalarTestHardening } from '../../../test-utils/vitestStrict';
+
+instalarTestHardening();
 
 const respuestaVacia = { ok: true, json: async () => ({}), blob: async () => new Blob() };
 

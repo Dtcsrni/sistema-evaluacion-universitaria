@@ -55,6 +55,8 @@ Incluye generacion de PDFs, vinculacion por QR, escaneo OMR (pipeline base) para
 - Pruebas portal alumno: `npm run test:portal`
 - Pruebas frontend: `npm run test:frontend`
 - Pruebas CI (con reintentos + lint): `npm run test:ci`
+- Docs auto (generar): `npm run docs:generate`
+- Docs auto (validar en CI): `npm run docs:check`
 - Lint: `npm run lint`
 - Build: `npm run build`
 - Produccion API (Docker): `npm start`
@@ -90,6 +92,9 @@ Nota CI:
 - Formato PDF y OMR: `docs/FORMATO_PDF.md`
 - Pruebas automatizadas: `docs/PRUEBAS.md`
 - Mapa de archivos: `docs/FILES.md`
+- Indice auto: `docs/AUTO_DOCS_INDEX.md`
+- Variables de entorno auto: `docs/AUTO_ENV.md`
+- Versionado: `docs/VERSIONADO.md`
 
 
 

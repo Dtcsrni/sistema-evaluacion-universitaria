@@ -37,7 +37,8 @@ export function manejadorErrores(
     logError('Error no controlado en request', error);
   }
 
-  const mensaje = error instanceof Error ? error.message : 'Error interno';
+  const exponerMensaje = entorno !== 'production';
+  const mensaje = exponerMensaje && error instanceof Error ? error.message : 'Error interno';
   res.status(500).json({
     error: {
       codigo: 'ERROR_INTERNO',

@@ -27,8 +27,8 @@ export function crearApp() {
   app.use(sanitizarMongo());
   app.use(
     rateLimit({
-      windowMs: 15 * 60 * 1000,
-      limit: 300,
+      windowMs: configuracion.rateLimitWindowMs,
+      limit: configuracion.rateLimitLimit,
       standardHeaders: true,
       legacyHeaders: false
     })

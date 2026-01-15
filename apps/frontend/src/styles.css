@@ -4,6 +4,95 @@
   font-family: 'Segoe UI', 'SF Pro Display', system-ui, -apple-system, sans-serif;
   background: radial-gradient(circle at 20% 20%, #eef2ff 0, #f8fafc 40%, #ffffff 70%);
   color: #0f172a;
+
+  --texto: #0f172a;
+  --textoSuave: #334155;
+  --muted: #475569;
+  --borde: #e2e8f0;
+  --bordeSuave: #cbd5f5;
+  --superficie: #ffffffcc;
+  --superficieSolida: #ffffff;
+  --primario: #1f3a8a;
+  --primarioHover: #1e40af;
+  --chipBg: #eef2ff;
+  --chipBorde: #c7d2fe;
+  --chipTexto: #312e81;
+  --peligroBg: #fee2e2;
+  --peligroTexto: #7f1d1d;
+  --exitoBg: #dcfce7;
+  --exitoTexto: #14532d;
+}
+
+.icono {
+  display: inline-block;
+  vertical-align: -0.125em;
+  color: currentColor;
+}
+
+.icono--muted {
+  opacity: 0.75;
+}
+
+.btn .icono,
+.tabs button .icono,
+.chip .icono {
+  margin-right: 0.45rem;
+}
+
+.btn--icono {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn--icono .icono {
+  margin-right: 0;
+}
+
+.spinner {
+  display: inline-block;
+  vertical-align: -0.125em;
+  animation: spin 900ms linear infinite;
+}
+
+.ilustracion {
+  width: min(520px, 100%);
+  height: auto;
+  display: block;
+  margin: 0.75rem auto;
+  filter: drop-shadow(0 18px 35px rgba(15, 23, 42, 0.10));
+}
+
+.anim-entrada {
+  animation: entrada 260ms ease-out both;
+}
+
+.card.anim-entrada {
+  transform-origin: 50% 0;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes entrada {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner,
+  .anim-entrada {
+    animation: none !important;
+  }
 }
 
 * {
@@ -12,6 +101,8 @@
 
 body {
   margin: 0;
+  color: var(--texto);
+  line-height: 1.4;
 }
 
 main.page {
@@ -24,14 +115,26 @@ main.page {
 .card {
   max-width: 900px;
   width: 100%;
-  background: #ffffffcc;
+  background: var(--superficie);
+  -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--borde);
   border-radius: 20px;
   padding: 2rem;
   box-shadow: 0 30px 80px -40px rgba(15, 23, 42, 0.4);
   display: grid;
   gap: 0.9rem;
+}
+
+@media (max-width: 600px) {
+  main.page {
+    padding: 1.5rem 1rem;
+  }
+
+  .card {
+    padding: 1.25rem;
+    border-radius: 16px;
+  }
 }
 
 .cabecera {
@@ -45,7 +148,7 @@ main.page {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-size: 0.75rem;
-  color: #475569;
+  color: var(--muted);
   margin: 0;
 }
 
@@ -56,7 +159,7 @@ h1 {
 
 p {
   margin: 0;
-  color: #334155;
+  color: var(--textoSuave);
 }
 
 .panel {
@@ -70,20 +173,38 @@ p {
   gap: 0.5rem;
 }
 
+@media (max-width: 520px) {
+  .tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 0.25rem;
+  }
+}
+
 .tab {
-  border: 1px solid #cbd5f5;
+  border: 1px solid var(--bordeSuave);
   background: #f8fafc;
   color: #1f2937;
   border-radius: 999px;
   padding: 0.45rem 0.9rem;
   font-weight: 600;
   cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.tab:hover {
+  border-color: #a5b4fc;
+}
+
+.tab:focus-visible {
+  outline: 3px solid rgba(99, 102, 241, 0.35);
+  outline-offset: 2px;
 }
 
 .tab.activa {
-  background: #1f3a8a;
+  background: var(--primario);
   color: #ffffff;
-  border-color: #1f3a8a;
+  border-color: var(--primario);
 }
 
 .meta {
@@ -93,14 +214,29 @@ p {
   margin-top: 0.25rem;
 }
 
-.meta span {
+.chip {
   padding: 0.4rem 0.75rem;
-  background: #eef2ff;
+  background: var(--chipBg);
   border-radius: 12px;
-  border: 1px solid #c7d2fe;
-  color: #312e81;
+  border: 1px solid var(--chipBorde);
+  color: var(--chipTexto);
   font-weight: 600;
   font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.chip:hover {
+  border-color: #a5b4fc;
+}
+
+.chip:focus-visible {
+  outline: 3px solid rgba(99, 102, 241, 0.35);
+  outline-offset: 2px;
+}
+
+.chip[disabled] {
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .campo {
@@ -115,8 +251,15 @@ p {
 .campo select {
   padding: 0.6rem 0.75rem;
   border-radius: 10px;
-  border: 1px solid #cbd5f5;
+  border: 1px solid var(--bordeSuave);
   font-size: 1rem;
+}
+
+.campo input:focus-visible,
+.campo textarea:focus-visible,
+.campo select:focus-visible {
+  outline: 3px solid rgba(99, 102, 241, 0.35);
+  outline-offset: 2px;
 }
 
 .campo textarea {
@@ -134,13 +277,28 @@ p {
   border-radius: 12px;
   padding: 0.65rem 1rem;
   font-weight: 700;
-  background: #1f3a8a;
+  background: var(--primario);
   color: #ffffff;
   cursor: pointer;
+  transition: background 120ms ease, transform 120ms ease, opacity 120ms ease;
 }
 
 .boton:hover {
-  background: #1e40af;
+  background: var(--primarioHover);
+}
+
+.boton:active {
+  transform: translateY(1px);
+}
+
+.boton:focus-visible {
+  outline: 3px solid rgba(99, 102, 241, 0.35);
+  outline-offset: 2px;
+}
+
+.boton[disabled] {
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .boton.secundario {
@@ -183,7 +341,7 @@ p {
 .resultado {
   padding: 1rem;
   border-radius: 14px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--borde);
   background: #f8fafc;
 }
 
@@ -191,6 +349,65 @@ p {
   margin-top: 0.75rem;
   padding: 0.75rem;
   border-radius: 12px;
-  background: #fee2e2;
-  color: #7f1d1d;
+  background: var(--peligroBg);
+  color: var(--peligroTexto);
+}
+
+.mensaje {
+  margin-top: 0.25rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 12px;
+  border: 1px solid var(--borde);
+  background: rgba(255, 255, 255, 0.65);
+}
+
+.mensaje.ok {
+  background: var(--exitoBg);
+  color: var(--exitoTexto);
+  border-color: rgba(34, 197, 94, 0.35);
+}
+
+.mensaje.error {
+  background: var(--peligroBg);
+  color: var(--peligroTexto);
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.55rem;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  border: 1px solid var(--borde);
+  background: rgba(255, 255, 255, 0.75);
+  color: var(--texto);
+}
+
+.badge.ok {
+  background: var(--exitoBg);
+  color: var(--exitoTexto);
+  border-color: rgba(34, 197, 94, 0.35);
+}
+
+.badge.error {
+  background: var(--peligroBg);
+  color: var(--peligroTexto);
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+.badge .dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.preview {
+  max-width: 100%;
+  border-radius: 14px;
+  border: 1px solid var(--borde);
+  box-shadow: 0 20px 40px -30px rgba(15, 23, 42, 0.5);
 }

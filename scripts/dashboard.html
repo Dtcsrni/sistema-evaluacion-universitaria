@@ -28,6 +28,16 @@
 
     * { box-sizing: border-box; }
 
+    button:focus-visible,
+    a:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible {
+      outline: 3px solid rgba(47, 164, 221, 0.9);
+      outline-offset: 3px;
+      box-shadow: 0 0 0 4px rgba(47, 164, 221, 0.18);
+    }
+
     body {
       margin: 0;
       font-family: "Trebuchet MS", "Candara", sans-serif;
@@ -97,6 +107,21 @@
       font-weight: 600;
     }
 
+    .chip.ok {
+      background: rgba(34, 197, 94, 0.18);
+      border-color: rgba(34, 197, 94, 0.35);
+    }
+
+    .chip.warn {
+      background: rgba(245, 158, 11, 0.2);
+      border-color: rgba(245, 158, 11, 0.35);
+    }
+
+    .chip.error {
+      background: rgba(239, 68, 68, 0.18);
+      border-color: rgba(239, 68, 68, 0.35);
+    }
+
     main {
       padding: 16px 20px 30px;
       max-width: 1800px;
@@ -136,6 +161,8 @@
       display: none;
       animation: fadeUp 0.35s ease both;
     }
+
+    .tab-panel[hidden] { display: none; }
 
     .tab-panel.active { display: block; }
 
@@ -1080,24 +1107,42 @@
     <div class="header-chips">
       <span class="chip" id="mode-chip">Modo: -</span>
       <span class="chip" id="running-chip">Procesos: -</span>
+      <span class="chip" id="paused-chip">Actualizacion: Activa</span>
+      <span class="chip" id="connection-chip">Conexion: -</span>
     </div>
   </header>
 
-  <div class="toast-wrap" id="toast-wrap"></div>
+  <div class="toast-wrap" id="toast-wrap" role="status" aria-live="polite" aria-atomic="true"></div>
 
   <main>
-    <div class="tabs">
-      <button class="tab-btn active" data-tab="main">
+    <div class="tabs" role="tablist" aria-label="Secciones del dashboard">
+      <button
+        id="tab-main"
+        class="tab-btn active"
+        data-tab="main"
+        role="tab"
+        aria-selected="true"
+        aria-controls="panel-main"
+        tabindex="0"
+      >
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v7H4V4zm9 0h7v7h-7V4zM4 13h7v7H4v-7zm9 0h7v7h-7v-7z"/></svg>
         Principal
       </button>
-      <button class="tab-btn" data-tab="status">
+      <button
+        id="tab-status"
+        class="tab-btn"
+        data-tab="status"
+        role="tab"
+        aria-selected="false"
+        aria-controls="panel-status"
+        tabindex="-1"
+      >
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16v2H4v-2zM6 4h4v11H6V4zm6 3h4v8h-4V7z"/></svg>
         Estado y logs
       </button>
     </div>
 
-    <section class="tab-panel active" data-panel="main">
+    <section id="panel-main" class="tab-panel active" data-panel="main" role="tabpanel" tabindex="0" aria-labelledby="tab-main">
       <div class="panel-grid">
         <div class="left-col">
           <div class="card">
@@ -1261,7 +1306,7 @@
             <p class="hint">El acceso a la Web Docente se ajusta al modo activo. Dev usa Vite (5173) y prod usa serve (4173).</p>
             <div class="links">
               <div class="link-item" id="web-docente-item">
-                <a id="web-docente-link" href="http://localhost:5173" target="_blank">
+                <a id="web-docente-link" href="http://localhost:5173" target="_blank" rel="noreferrer noopener">
                   <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18v14H3V5zm2 2v10h14V7H5z"/></svg>
                   <div class="link-copy">
                     <div class="link-title">Web docente</div>
@@ -1277,7 +1322,7 @@
                 </div>
               </div>
               <div class="link-item" id="api-docente-item">
-                <a href="http://localhost:4000/api/salud" target="_blank">
+                <a href="http://localhost:4000/api/salud" target="_blank" rel="noreferrer noopener">
                   <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h4l2-4 4 8 2-4h4"/></svg>
                   <div class="link-copy">
                     <div class="link-title">API docente salud</div>
@@ -1293,7 +1338,7 @@
                 </div>
               </div>
               <div class="link-item" id="api-portal-item">
-                <a href="http://localhost:8080/api/portal/salud" target="_blank">
+                <a href="http://localhost:8080/api/portal/salud" target="_blank" rel="noreferrer noopener">
                   <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h4l2-4 4 8 2-4h4"/></svg>
                   <div class="link-copy">
                     <div class="link-title">API portal alumno salud</div>
@@ -1314,7 +1359,7 @@
       </div>
     </section>
 
-    <section class="tab-panel" data-panel="status">
+    <section id="panel-status" class="tab-panel" data-panel="status" role="tabpanel" tabindex="0" aria-labelledby="tab-status" hidden>
       <div class="panel-grid">
         <div>
           <div class="card">
@@ -1342,6 +1387,8 @@
               <div>Procesos: <span id="running-status">-</span></div>
               <div>Modo: <span id="mode-status">-</span></div>
               <div>Proyecto: <span id="root-status">-</span></div>
+              <div>Conexion: <span id="connection-status">-</span></div>
+              <div>Ultimo error: <span id="connection-error">-</span></div>
             </div>
             
           </div>
@@ -1356,7 +1403,7 @@
               Salida y consola
             </h2>
             <div class="toolbar">
-              <button class="ok" id="toggle-logs">
+              <button class="ok" id="toggle-logs" aria-expanded="false" aria-controls="log-shell">
                 <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5l7 7-7 7-1.4-1.4L15.2 13H5v-2h10.2l-4.6-4.6L12 5z"/></svg>
                 Mostrar salida
               </button>
@@ -1376,7 +1423,8 @@
                 <input type="checkbox" id="pause-updates" />
                 Pausar actualizaciones
               </label>
-              <input class="search" id="log-filter" placeholder="Filtrar texto" />
+              <input class="search" id="log-filter" placeholder="Filtrar texto" aria-label="Filtrar salida" />
+              <button class="ghost-btn" id="clear-filter" type="button">Limpiar filtro</button>
             </div>
             <div class="pills">
               <span class="pill" id="log-size">0 lineas</span>
@@ -1385,7 +1433,7 @@
               <span class="pill"><span class="dot" id="running-dot"></span> activo</span>
             </div>
             <div class="log-shell collapsed" id="log-shell">
-              <div class="log-body" id="log">Cargando...</div>
+              <div class="log-body" id="log" role="log" aria-label="Salida de consola" aria-live="off">Cargando...</div>
             </div>
           </div>
         </div>
@@ -1424,7 +1472,13 @@
       healthHistory: [],
       sessionStarted: Date.now(),
       hasLoaded: false,
-      webDocenteInfoKey: 'webDocenteDev'
+      webDocenteInfoKey: 'webDocenteDev',
+      connection: 'unknown',
+      lastConnectionAt: 0,
+      lastConnectionError: '',
+      lastErrorToastAt: 0,
+      lastLogsOk: true,
+      lastLogsError: ''
     };
 
     const HOLD_DEFAULT = 1200;
@@ -1440,13 +1494,57 @@
       system: 'info'
     };
 
+    function normalizeErrorMessage(error) {
+      if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') {
+        return error.message;
+      }
+      return 'Sin respuesta';
+    }
+
+    function setConnection(stateName, detail = '') {
+      state.connection = stateName;
+      state.lastConnectionAt = Date.now();
+      state.lastConnectionError = stateName === 'error' ? String(detail || 'Sin respuesta') : '';
+
+      const chip = $('connection-chip');
+      if (chip) {
+        chip.className = `chip ${stateName === 'ok' ? 'ok' : stateName === 'error' ? 'error' : 'warn'}`;
+        chip.textContent = `Conexion: ${stateName === 'ok' ? 'OK' : stateName === 'error' ? 'Error' : '-'}`;
+      }
+
+      setText('connection-status', stateName === 'ok' ? 'OK' : stateName === 'error' ? 'Error' : '-');
+      setText('connection-error', stateName === 'error'
+        ? truncateMessage(state.lastConnectionError, 90)
+        : '-');
+    }
+
+    function setPausedChip(paused) {
+      const chip = $('paused-chip');
+      if (!chip) return;
+      chip.className = `chip ${paused ? 'warn' : 'ok'}`;
+      chip.textContent = paused ? 'Actualizacion: Pausada' : 'Actualizacion: Activa';
+    }
+
+    function maybeToastError(text) {
+      const now = Date.now();
+      if (now - state.lastErrorToastAt < 9000) return;
+      state.lastErrorToastAt = now;
+      showToast(text, 'error');
+    }
+
     async function api(path, body) {
-      const res = await fetch(path, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body || {})
-      });
-      return res.json();
+      try {
+        const res = await fetch(path, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body || {})
+        });
+        return await res.json();
+      } catch (error) {
+        maybeToastError('No se pudo contactar al dashboard.');
+        setConnection('error', normalizeErrorMessage(error));
+        return { ok: false };
+      }
     }
 
     function showToast(text, type = 'info') {
@@ -1590,8 +1688,12 @@
       try {
         const res = await fetch('/api/logs');
         const data = await res.json();
+        state.lastLogsOk = true;
+        state.lastLogsError = '';
         updateSignals(data.entries || []);
-      } catch {
+      } catch (error) {
+        state.lastLogsOk = false;
+        state.lastLogsError = normalizeErrorMessage(error);
         updateSignals([]);
       }
     }
@@ -1920,6 +2022,7 @@
       const toggle = $('toggle-logs');
       if (!shell || !toggle) return;
       shell.classList.toggle('collapsed', !visible);
+      toggle.setAttribute('aria-expanded', visible ? 'true' : 'false');
       toggle.innerHTML = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5l7 7-7 7-1.4-1.4L15.2 13H5v-2h10.2l-4.6-4.6L12 5z"/></svg> ' + (visible ? 'Ocultar salida' : 'Mostrar salida');
       if (visible) refreshLogs();
       else refreshSignals();
@@ -1928,10 +2031,15 @@
     function setTab(name) {
       state.activeTab = name;
       document.querySelectorAll('.tab-btn').forEach((btn) => {
-        btn.classList.toggle('active', btn.dataset.tab === name);
+        const isActive = btn.dataset.tab === name;
+        btn.classList.toggle('active', isActive);
+        btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        btn.tabIndex = isActive ? 0 : -1;
       });
       document.querySelectorAll('.tab-panel').forEach((panel) => {
-        panel.classList.toggle('active', panel.dataset.panel === name);
+        const isActive = panel.dataset.panel === name;
+        panel.classList.toggle('active', isActive);
+        panel.hidden = !isActive;
       });
       if (name === 'status' && state.logsVisible) refreshLogs();
     }
@@ -1993,8 +2101,10 @@
     }
 
     async function refreshStatus() {
-      const res = await fetch('/api/status');
-      const data = await res.json();
+      try {
+        const res = await fetch('/api/status');
+        const data = await res.json();
+        setConnection('ok');
 
       const runningList = Array.isArray(data.running) ? data.running : [];
       const runningCount = runningList.length;
@@ -2038,7 +2148,42 @@
         apiPortalItem.classList.toggle('inactive', !state.running.has('portal'));
       }
 
-      await refreshHealth();
+        await refreshHealth();
+      } catch (error) {
+        setConnection('error', normalizeErrorMessage(error));
+        maybeToastError('Sin conexion: no se pudo leer /api/status.');
+
+        state.running = new Set();
+        state.mode = 'none';
+        state.health = {};
+
+        setText('root', '-');
+        setText('mode', '-');
+        setText('running-count', '0');
+        setText('running', '-');
+        setText('last-refresh', '-');
+
+        setText('root-status', '-');
+        setText('mode-status', '-');
+        setText('running-status', '-');
+        setText('node', '-');
+        setText('npm', '-');
+        setText('docker', '-');
+        setText('mode-chip', 'Modo: -');
+        setText('running-chip', 'Procesos: -');
+
+        setRunningDot(false);
+        updateEnvButtons();
+        updateWebDocenteLink(state.mode);
+        updateAnalytics();
+
+        renderAlert({
+          level: 'error',
+          text: 'No hay conexion con el servidor del dashboard. Inicia scripts/launcher-dashboard para habilitar /api/*.',
+          source: 'dashboard',
+          time: new Date().toLocaleTimeString()
+        });
+      }
     }
 
     function renderLogs(entries) {
@@ -2047,10 +2192,21 @@
       if (!log) return;
       log.innerHTML = '';
 
+      if (!state.lastLogsOk) {
+        const offline = document.createElement('div');
+        offline.className = 'log-line';
+        offline.textContent = 'Sin conexion: no se pudo obtener la salida de logs.';
+        log.appendChild(offline);
+        return;
+      }
+
+      const safeEntries = Array.isArray(entries) ? entries : [];
+      const totalEntries = safeEntries.length;
+
       const fragment = document.createDocumentFragment();
       let visible = 0;
 
-      entries.forEach((entry) => {
+      safeEntries.forEach((entry) => {
         const text = `${entry.time} ${entry.source} ${entry.text}`;
         if (filter && !text.toLowerCase().includes(filter)) return;
 
@@ -2073,7 +2229,11 @@
       if (visible === 0) {
         const empty = document.createElement('div');
         empty.className = 'log-line';
-        empty.textContent = 'Sin salida para el filtro actual.';
+        if (totalEntries === 0 && !filter) {
+          empty.textContent = 'Aun no hay logs. Inicia un entorno o espera actividad.';
+        } else {
+          empty.textContent = 'Sin salida para el filtro actual.';
+        }
         fragment.appendChild(empty);
       }
 
@@ -2086,17 +2246,46 @@
 
     async function refreshLogs() {
       if (!state.logsVisible) return;
-      const query = state.showFull ? '/api/logs?full=1' : '/api/logs';
-      const res = await fetch(query);
-      const data = await res.json();
-      const entries = data.entries || [];
-      renderLogs(entries);
-      updateSignals(entries);
+      try {
+        const query = state.showFull ? '/api/logs?full=1' : '/api/logs';
+        const res = await fetch(query);
+        const data = await res.json();
+        const entries = data.entries || [];
+        state.lastLogsOk = true;
+        state.lastLogsError = '';
+        renderLogs(entries);
+        updateSignals(entries);
+      } catch (error) {
+        state.lastLogsOk = false;
+        state.lastLogsError = normalizeErrorMessage(error);
+        maybeToastError('No se pudo obtener la salida de logs.');
+        renderLogs([]);
+        updateSignals([]);
+      }
     }
 
     // Tab switching.
-    document.querySelectorAll('.tab-btn').forEach((button) => {
+    const tabButtons = Array.from(document.querySelectorAll('.tab-btn'));
+    tabButtons.forEach((button, index) => {
       button.addEventListener('click', () => setTab(button.dataset.tab));
+      button.addEventListener('keydown', (event) => {
+        const key = event.key;
+        if (!['ArrowLeft', 'ArrowRight', 'Home', 'End', 'Enter', ' '].includes(key)) return;
+        event.preventDefault();
+
+        const last = tabButtons.length - 1;
+        const go = (nextIndex) => {
+          const next = tabButtons[nextIndex];
+          next.focus();
+          setTab(next.dataset.tab);
+        };
+
+        if (key === 'ArrowLeft') go(index === 0 ? last : index - 1);
+        if (key === 'ArrowRight') go(index === last ? 0 : index + 1);
+        if (key === 'Home') go(0);
+        if (key === 'End') go(last);
+        if (key === 'Enter' || key === ' ') setTab(button.dataset.tab);
+      });
     });
 
     // Toggle buttons for environments (hold to start/stop).
@@ -2178,6 +2367,8 @@
     if (pauseUpdates) {
       pauseUpdates.addEventListener('change', (event) => {
         state.paused = event.target.checked;
+        setPausedChip(state.paused);
+        showToast(state.paused ? 'Actualizaciones pausadas' : 'Actualizaciones reanudadas', state.paused ? 'warn' : 'ok');
       });
     }
 
@@ -2189,7 +2380,20 @@
       });
     }
 
+    const clearFilter = $('clear-filter');
+    if (clearFilter) {
+      clearFilter.addEventListener('click', () => {
+        state.filter = '';
+        const input = $('log-filter');
+        if (input) input.value = '';
+        refreshLogs();
+      });
+    }
+
     // Initial load and periodic refresh.
+    setTab(state.activeTab);
+    setPausedChip(false);
+    setConnection('unknown');
     setLogsVisible(false);
     renderActivity();
     renderHealthHistory();

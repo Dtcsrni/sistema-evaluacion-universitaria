@@ -2,13 +2,15 @@
  * App docente: panel basico para banco, examenes, recepcion, escaneo y calificacion.
  */
 import type { ChangeEvent } from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   crearClienteApi,
+  ErrorRemoto,
   guardarTokenDocente,
   limpiarTokenDocente,
   obtenerTokenDocente
 } from '../../servicios_api/clienteApi';
+import { Icono, Spinner } from '../../ui/iconos';
 
 const clienteApi = crearClienteApi();
 
@@ -27,8 +29,29 @@ type ResultadoOmr = {
   advertencias: string[];
 };
 
+type EstadoApi =
+  | { estado: 'cargando'; texto: string }
+  | { estado: 'ok'; texto: string; tiempoActivo: number }
+  | { estado: 'error'; texto: string };
+
+function esMensajeError(texto: string) {
+  const lower = texto.toLowerCase();
+  return lower.includes('no se pudo') || lower.includes('falta') || lower.includes('inval') || lower.includes('error');
+}
+
+function mensajeDeError(error: unknown, fallback: string) {
+  if (error instanceof ErrorRemoto) {
+    const detalle = error.detalle;
+    if (detalle?.mensaje) return detalle.mensaje;
+    if (detalle?.codigo) return `Error: ${detalle.codigo}`;
+    return fallback;
+  }
+  if (error instanceof Error && error.message) return error.message;
+  return fallback;
+}
+
 export function AppDocente() {
-  const [estadoApi, setEstadoApi] = useState('Verificando API...');
+  const [estadoApi, setEstadoApi] = useState<EstadoApi>({ estado: 'cargando', texto: 'Verificando API...' });
   const [docente, setDocente] = useState<Docente | null>(null);
   const [vista, setVista] = useState('inicio');
   const [alumnos, setAlumnos] = useState<Alumno[]>([]);
@@ -41,12 +64,37 @@ export function AppDocente() {
   >([]);
   const [examenIdOmr, setExamenIdOmr] = useState<string | null>(null);
   const [examenAlumnoId, setExamenAlumnoId] = useState<string | null>(null);
+  const [cargandoDatos, setCargandoDatos] = useState(false);
+
+  const itemsVista = useMemo(
+    () =>
+      [
+        { id: 'inicio', label: 'Inicio', icono: 'inicio' as const },
+        { id: 'periodos', label: 'Periodos', icono: 'periodos' as const },
+        { id: 'alumnos', label: 'Alumnos', icono: 'alumnos' as const },
+        { id: 'banco', label: 'Banco', icono: 'banco' as const },
+        { id: 'plantillas', label: 'Plantillas', icono: 'plantillas' as const },
+        { id: 'recepcion', label: 'Recepcion', icono: 'recepcion' as const },
+        { id: 'escaneo', label: 'Escaneo', icono: 'escaneo' as const },
+        { id: 'calificar', label: 'Calificar', icono: 'calificar' as const },
+        { id: 'publicar', label: 'Publicar', icono: 'publicar' as const }
+      ],
+    []
+  );
+
+  const tabsRef = useRef<Array<HTMLButtonElement | null>>([]);
 
   useEffect(() => {
     clienteApi
       .obtener<{ tiempoActivo: number }>('/salud')
-      .then((payload) => setEstadoApi(`API lista (tiempo activo ${Math.round(payload.tiempoActivo)}s)`))
-      .catch(() => setEstadoApi('No se pudo contactar la API'));
+      .then((payload) =>
+        setEstadoApi({
+          estado: 'ok',
+          tiempoActivo: payload.tiempoActivo,
+          texto: `API lista (tiempo activo ${Math.round(payload.tiempoActivo)}s)`
+        })
+      )
+      .catch(() => setEstadoApi({ estado: 'error', texto: 'No se pudo contactar la API' }));
   }, []);
 
   useEffect(() => {
@@ -59,45 +107,97 @@ export function AppDocente() {
 
   useEffect(() => {
     if (!docente) return;
-    clienteApi.obtener<{ alumnos: Alumno[] }>('/alumnos').then((payload) => setAlumnos(payload.alumnos));
-    clienteApi.obtener<{ periodos: Periodo[] }>('/periodos').then((payload) => setPeriodos(payload.periodos));
-    clienteApi.obtener<{ plantillas: Plantilla[] }>('/examenes/plantillas').then((payload) =>
-      setPlantillas(payload.plantillas)
-    );
-    clienteApi.obtener<{ preguntas: Pregunta[] }>('/banco-preguntas').then((payload) =>
-      setPreguntas(payload.preguntas)
-    );
+    setCargandoDatos(true);
+    Promise.all([
+      clienteApi.obtener<{ alumnos: Alumno[] }>('/alumnos'),
+      clienteApi.obtener<{ periodos: Periodo[] }>('/periodos'),
+      clienteApi.obtener<{ plantillas: Plantilla[] }>('/examenes/plantillas'),
+      clienteApi.obtener<{ preguntas: Pregunta[] }>('/banco-preguntas')
+    ])
+      .then(([al, pe, pl, pr]) => {
+        setAlumnos(al.alumnos);
+        setPeriodos(pe.periodos);
+        setPlantillas(pl.plantillas);
+        setPreguntas(pr.preguntas);
+      })
+      .finally(() => setCargandoDatos(false));
   }, [docente]);
 
   const contenido = docente ? (
     <div className="panel">
-      <nav className="tabs">
-        {[
-          { id: 'inicio', label: 'Inicio' },
-          { id: 'periodos', label: 'Periodos' },
-          { id: 'alumnos', label: 'Alumnos' },
-          { id: 'banco', label: 'Banco' },
-          { id: 'plantillas', label: 'Plantillas' },
-          { id: 'recepcion', label: 'Recepcion' },
-          { id: 'escaneo', label: 'Escaneo' },
-          { id: 'calificar', label: 'Calificar' },
-          { id: 'publicar', label: 'Publicar' }
-        ].map((item) => (
-          <button key={item.id} className={vista === item.id ? 'tab activa' : 'tab'} onClick={() => setVista(item.id)}>
+      <nav
+        className="tabs"
+        aria-label="Secciones del portal docente"
+        onKeyDown={(event) => {
+          if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight' && event.key !== 'Home' && event.key !== 'End') {
+            return;
+          }
+          event.preventDefault();
+
+          const idxActual = Math.max(
+            0,
+            itemsVista.findIndex((item) => item.id === vista)
+          );
+          const ultimo = itemsVista.length - 1;
+          let idxNuevo = idxActual;
+
+          if (event.key === 'ArrowLeft') idxNuevo = Math.max(0, idxActual - 1);
+          if (event.key === 'ArrowRight') idxNuevo = Math.min(ultimo, idxActual + 1);
+          if (event.key === 'Home') idxNuevo = 0;
+          if (event.key === 'End') idxNuevo = ultimo;
+
+          const nuevoId = itemsVista[idxNuevo]?.id;
+          if (!nuevoId) return;
+          setVista(nuevoId);
+          requestAnimationFrame(() => tabsRef.current[idxNuevo]?.focus());
+        }}
+      >
+        {itemsVista.map((item, idx) => (
+          <button
+            key={item.id}
+            ref={(el) => {
+              tabsRef.current[idx] = el;
+            }}
+            type="button"
+            className={vista === item.id ? 'tab activa' : 'tab'}
+            aria-current={vista === item.id ? 'page' : undefined}
+            onClick={() => setVista(item.id)}
+          >
+            <Icono nombre={item.icono} />
             {item.label}
           </button>
         ))}
       </nav>
 
+      <div className="panel" aria-live="polite">
+        <div className={estadoApi.estado === 'ok' ? 'badge ok' : estadoApi.estado === 'error' ? 'badge error' : 'badge'}>
+          <span className="dot" aria-hidden="true" />
+          <span>{estadoApi.texto}</span>
+        </div>
+        {cargandoDatos && (
+          <p className="mensaje" role="status">
+            <Spinner /> Cargando datos…
+          </p>
+        )}
+      </div>
+
       {vista === 'inicio' && (
         <div className="panel">
-          <p className="eyebrow">Panel Docente</p>
+          <p className="eyebrow">
+            <Icono nombre="docente" /> Panel Docente
+          </p>
           <h1>Banco y Examenes</h1>
-          <p>{estadoApi}</p>
-          <div className="meta">
-            <span>Banco de preguntas</span>
-            <span>Generacion PDF</span>
-            <span>Escaneo y calificacion</span>
+          <p>Atajos</p>
+          <div className="meta" aria-label="Atajos rapidos">
+            <button type="button" className="chip" onClick={() => setVista('banco')}>
+              <Icono nombre="banco" /> Banco de preguntas
+            </button>
+            <button type="button" className="chip" onClick={() => setVista('plantillas')}>
+              <Icono nombre="plantillas" /> Generacion PDF
+            </button>
+            <button type="button" className="chip" onClick={() => setVista('escaneo')}>
+              <Icono nombre="escaneo" /> Escaneo y calificacion
+            </button>
           </div>
         </div>
       )}
@@ -186,21 +286,29 @@ export function AppDocente() {
   );
 
   return (
-    <section className="card">
+    <section className="card anim-entrada">
       <div className="cabecera">
-        <p className="eyebrow">Plataforma Docente</p>
+        <p className="eyebrow">
+          <Icono nombre="docente" /> Plataforma Docente
+        </p>
         {docente && (
           <button
             className="boton secundario"
+            type="button"
             onClick={() => {
               limpiarTokenDocente();
               setDocente(null);
             }}
           >
-            Salir
+            <Icono nombre="salir" /> Salir
           </button>
         )}
       </div>
+      {docente && (
+        <p className="mensaje" role="status">
+          <Icono nombre="ok" /> Sesion: {docente.nombreCompleto} ({docente.correo})
+        </p>
+      )}
       {contenido}
     </section>
   );
@@ -218,7 +326,7 @@ function SeccionAutenticacion({ onIngresar }: { onIngresar: (token: string) => v
       const respuesta = await clienteApi.enviar<{ token: string }>('/autenticacion/ingresar', { correo, contrasena });
       onIngresar(respuesta.token);
     } catch (error) {
-      setMensaje('No se pudo ingresar');
+      setMensaje(mensajeDeError(error, 'No se pudo ingresar'));
     }
   }
 
@@ -231,13 +339,18 @@ function SeccionAutenticacion({ onIngresar }: { onIngresar: (token: string) => v
       });
       onIngresar(respuesta.token);
     } catch (error) {
-      setMensaje('No se pudo registrar');
+      setMensaje(mensajeDeError(error, 'No se pudo registrar'));
     }
   }
 
+  const puedeIngresar = Boolean(correo.trim() && contrasena.trim());
+  const puedeRegistrar = Boolean(nombreCompleto.trim() && correo.trim() && contrasena.trim());
+
   return (
     <div className="panel">
-      <h2>Acceso docente</h2>
+      <h2>
+        <Icono nombre="docente" /> Acceso docente
+      </h2>
       <div className="acciones">
         <button
           className={modo === 'ingresar' ? 'boton' : 'boton secundario'}
@@ -263,23 +376,55 @@ function SeccionAutenticacion({ onIngresar }: { onIngresar: (token: string) => v
       {modo === 'registrar' && (
         <label className="campo">
           Nombre completo
-          <input value={nombreCompleto} onChange={(event) => setNombreCompleto(event.target.value)} />
+          <input value={nombreCompleto} onChange={(event) => setNombreCompleto(event.target.value)} autoComplete="name" />
         </label>
       )}
       <label className="campo">
         Correo
-        <input value={correo} onChange={(event) => setCorreo(event.target.value)} />
+        <input type="email" value={correo} onChange={(event) => setCorreo(event.target.value)} autoComplete="email" />
       </label>
       <label className="campo">
         Contrasena
-        <input type="password" value={contrasena} onChange={(event) => setContrasena(event.target.value)} />
+        {modo === 'ingresar' ? (
+          <input
+            type="password"
+            value={contrasena}
+            onChange={(event) => setContrasena(event.target.value)}
+            autoComplete="current-password"
+          />
+        ) : (
+          <input
+            type="password"
+            value={contrasena}
+            onChange={(event) => setContrasena(event.target.value)}
+            autoComplete="new-password"
+          />
+        )}
       </label>
       <div className="acciones">
-        <button className="boton" type="button" onClick={modo === 'ingresar' ? ingresar : registrar}>
-          {modo === 'ingresar' ? 'Ingresar' : 'Crear cuenta'}
+        <button
+          className="boton"
+          type="button"
+          disabled={modo === 'ingresar' ? !puedeIngresar : !puedeRegistrar}
+          onClick={modo === 'ingresar' ? ingresar : registrar}
+        >
+          {modo === 'ingresar' ? (
+            <>
+              <Icono nombre="entrar" /> Ingresar
+            </>
+          ) : (
+            <>
+              <Icono nombre="nuevo" /> Crear cuenta
+            </>
+          )}
         </button>
       </div>
-      {mensaje && <p>{mensaje}</p>}
+      {mensaje && (
+        <p className={esMensajeError(mensaje) ? 'mensaje error' : 'mensaje ok'} role="status">
+          <Icono nombre={esMensajeError(mensaje) ? 'alerta' : 'ok'} />
+          {mensaje}
+        </p>
+      )}
     </div>
   );
 }
@@ -296,6 +441,13 @@ function SeccionBanco({ preguntas, onRefrescar }: { preguntas: Pregunta[]; onRef
   ]);
   const [mensaje, setMensaje] = useState('');
 
+  const puedeGuardar = Boolean(
+    enunciado.trim() &&
+      tema.trim() &&
+      opciones.every((opcion) => opcion.texto.trim()) &&
+      opciones.some((opcion) => opcion.esCorrecta)
+  );
+
   async function guardar() {
     try {
       await clienteApi.enviar('/banco-preguntas', { enunciado, tema, opciones });
@@ -310,13 +462,15 @@ function SeccionBanco({ preguntas, onRefrescar }: { preguntas: Pregunta[]; onRef
       ]);
       onRefrescar();
     } catch (error) {
-      setMensaje('No se pudo guardar');
+      setMensaje(mensajeDeError(error, 'No se pudo guardar'));
     }
   }
 
   return (
     <div className="panel">
-      <h2>Banco de preguntas</h2>
+      <h2>
+        <Icono nombre="banco" /> Banco de preguntas
+      </h2>
       <label className="campo">
         Enunciado
         <textarea value={enunciado} onChange={(event) => setEnunciado(event.target.value)} />
@@ -347,10 +501,14 @@ function SeccionBanco({ preguntas, onRefrescar }: { preguntas: Pregunta[]; onRef
           Correcta
         </label>
       ))}
-      <button className="boton" type="button" onClick={guardar}>
-        Guardar
+      <button className="boton" type="button" disabled={!puedeGuardar} onClick={guardar}>
+        <Icono nombre="ok" /> Guardar
       </button>
-      {mensaje && <p>{mensaje}</p>}
+      {mensaje && (
+        <p className={esMensajeError(mensaje) ? 'mensaje error' : 'mensaje ok'} role="status">
+          {mensaje}
+        </p>
+      )}
       <h3>Preguntas recientes</h3>
       <ul className="lista">
         {preguntas.slice(0, 5).map((pregunta) => (
@@ -374,6 +532,8 @@ function SeccionPeriodos({
   const [grupos, setGrupos] = useState('');
   const [mensaje, setMensaje] = useState('');
 
+  const puedeCrear = Boolean(nombre.trim());
+
   async function crearPeriodo() {
     try {
       await clienteApi.enviar('/periodos', {
@@ -385,13 +545,15 @@ function SeccionPeriodos({
       setMensaje('Periodo creado');
       onRefrescar();
     } catch (error) {
-      setMensaje('No se pudo crear el periodo');
+      setMensaje(mensajeDeError(error, 'No se pudo crear el periodo'));
     }
   }
 
   return (
     <div className="panel">
-      <h2>Periodos</h2>
+      <h2>
+        <Icono nombre="periodos" /> Periodos
+      </h2>
       <label className="campo">
         Nombre
         <input value={nombre} onChange={(event) => setNombre(event.target.value)} />
@@ -408,10 +570,14 @@ function SeccionPeriodos({
         Grupos (separados por coma)
         <input value={grupos} onChange={(event) => setGrupos(event.target.value)} />
       </label>
-      <button className="boton" type="button" onClick={crearPeriodo}>
-        Crear periodo
+      <button className="boton" type="button" disabled={!puedeCrear} onClick={crearPeriodo}>
+        <Icono nombre="nuevo" /> Crear periodo
       </button>
-      {mensaje && <p>{mensaje}</p>}
+      {mensaje && (
+        <p className={esMensajeError(mensaje) ? 'mensaje error' : 'mensaje ok'} role="status">
+          {mensaje}
+        </p>
+      )}
       <h3>Periodos activos</h3>
       <ul className="lista">
         {periodos.map((periodo) => (
@@ -438,6 +604,8 @@ function SeccionAlumnos({
   const [periodoId, setPeriodoId] = useState('');
   const [mensaje, setMensaje] = useState('');
 
+  const puedeCrear = Boolean(matricula.trim() && nombreCompleto.trim() && periodoId);
+
   async function crearAlumno() {
     try {
       await clienteApi.enviar('/alumnos', {
@@ -450,13 +618,15 @@ function SeccionAlumnos({
       setMensaje('Alumno creado');
       onRefrescar();
     } catch (error) {
-      setMensaje('No se pudo crear el alumno');
+      setMensaje(mensajeDeError(error, 'No se pudo crear el alumno'));
     }
   }
 
   return (
     <div className="panel">
-      <h2>Alumnos</h2>
+      <h2>
+        <Icono nombre="alumnos" /> Alumnos
+      </h2>
       <label className="campo">
         Matricula
         <input value={matricula} onChange={(event) => setMatricula(event.target.value)} />
@@ -484,10 +654,14 @@ function SeccionAlumnos({
           ))}
         </select>
       </label>
-      <button className="boton" type="button" onClick={crearAlumno}>
-        Crear alumno
+      <button className="boton" type="button" disabled={!puedeCrear} onClick={crearAlumno}>
+        <Icono nombre="nuevo" /> Crear alumno
       </button>
-      {mensaje && <p>{mensaje}</p>}
+      {mensaje && (
+        <p className={esMensajeError(mensaje) ? 'mensaje error' : 'mensaje ok'} role="status">
+          {mensaje}
+        </p>
+      )}
       <h3>Alumnos recientes</h3>
       <ul className="lista">
         {alumnos.slice(0, 10).map((alumno) => (
@@ -523,6 +697,9 @@ function SeccionPlantillas({
   const [alumnoId, setAlumnoId] = useState('');
   const [mensajeGeneracion, setMensajeGeneracion] = useState('');
 
+  const puedeCrear = Boolean(titulo.trim() && periodoId && seleccion.length > 0 && totalReactivos > 0);
+  const puedeGenerar = Boolean(plantillaId);
+
   async function crear() {
     try {
       await clienteApi.enviar('/examenes/plantillas', {
@@ -535,13 +712,15 @@ function SeccionPlantillas({
       setMensaje('Plantilla creada');
       onRefrescar();
     } catch (error) {
-      setMensaje('No se pudo crear');
+      setMensaje(mensajeDeError(error, 'No se pudo crear'));
     }
   }
 
   return (
     <div className="panel">
-      <h2>Plantillas</h2>
+      <h2>
+        <Icono nombre="plantillas" /> Plantillas
+      </h2>
       <label className="campo">
         Titulo
         <input value={titulo} onChange={(event) => setTitulo(event.target.value)} />
@@ -588,11 +767,14 @@ function SeccionPlantillas({
           ))}
         </select>
       </label>
-      <button className="boton" type="button" onClick={crear}>
-        Crear plantilla
+      <button className="boton" type="button" disabled={!puedeCrear} onClick={crear}>
+        <Icono nombre="nuevo" /> Crear plantilla
       </button>
-      {mensaje && <p>{mensaje}</p>}
-      {mensaje && <p>{mensaje}</p>}
+      {mensaje && (
+        <p className={esMensajeError(mensaje) ? 'mensaje error' : 'mensaje ok'} role="status">
+          {mensaje}
+        </p>
+      )}
       <h3>Plantillas existentes</h3>
       <ul className="lista">
         {plantillas.map((plantilla) => (
@@ -625,18 +807,23 @@ function SeccionPlantillas({
       <button
         className="boton"
         type="button"
+        disabled={!puedeGenerar}
         onClick={async () => {
           try {
             await clienteApi.enviar('/examenes/generados', { plantillaId, alumnoId: alumnoId || undefined });
             setMensajeGeneracion('Examen generado');
           } catch (error) {
-            setMensajeGeneracion('No se pudo generar');
+            setMensajeGeneracion(mensajeDeError(error, 'No se pudo generar'));
           }
         }}
       >
-        Generar
+        <Icono nombre="pdf" /> Generar
       </button>
-      {mensajeGeneracion && <p>{mensajeGeneracion}</p>}
+      {mensajeGeneracion && (
+        <p className={esMensajeError(mensajeGeneracion) ? 'mensaje error' : 'mensaje ok'} role="status">
+          {mensajeGeneracion}
+        </p>
+      )}
     </div>
   );
 }
@@ -652,18 +839,22 @@ function SeccionRecepcion({
   const [alumnoId, setAlumnoId] = useState('');
   const [mensaje, setMensaje] = useState('');
 
+  const puedeVincular = Boolean(folio.trim() && alumnoId);
+
   async function vincular() {
     try {
       await onVincular(folio, alumnoId);
       setMensaje('Entrega vinculada');
     } catch (error) {
-      setMensaje('No se pudo vincular');
+      setMensaje(mensajeDeError(error, 'No se pudo vincular'));
     }
   }
 
   return (
     <div className="panel">
-      <h2>Recepcion de examenes</h2>
+      <h2>
+        <Icono nombre="recepcion" /> Recepcion de examenes
+      </h2>
       <label className="campo">
         Folio
         <input value={folio} onChange={(event) => setFolio(event.target.value)} />
@@ -679,10 +870,14 @@ function SeccionRecepcion({
           ))}
         </select>
       </label>
-      <button className="boton" type="button" onClick={vincular}>
-        Vincular
+      <button className="boton" type="button" disabled={!puedeVincular} onClick={vincular}>
+        <Icono nombre="recepcion" /> Vincular
       </button>
-      {mensaje && <p>{mensaje}</p>}
+      {mensaje && (
+        <p className={esMensajeError(mensaje) ? 'mensaje error' : 'mensaje ok'} role="status">
+          {mensaje}
+        </p>
+      )}
     </div>
   );
 }
@@ -703,6 +898,8 @@ function SeccionEscaneo({
   const [imagenBase64, setImagenBase64] = useState('');
   const [mensaje, setMensaje] = useState('');
 
+  const puedeAnalizar = Boolean(folio.trim() && imagenBase64);
+
   async function cargarArchivo(event: ChangeEvent<HTMLInputElement>) {
     const archivo = event.target.files?.[0];
     if (!archivo) return;
@@ -718,13 +915,15 @@ function SeccionEscaneo({
       await onAnalizar(folio, numeroPagina, imagenBase64);
       setMensaje('Analisis completado');
     } catch (error) {
-      setMensaje('No se pudo analizar');
+      setMensaje(mensajeDeError(error, 'No se pudo analizar'));
     }
   }
 
   return (
     <div className="panel">
-      <h2>Escaneo OMR</h2>
+      <h2>
+        <Icono nombre="escaneo" /> Escaneo OMR
+      </h2>
       <label className="campo">
         Folio
         <input value={folio} onChange={(event) => setFolio(event.target.value)} />
@@ -741,10 +940,22 @@ function SeccionEscaneo({
         Imagen
         <input type="file" accept="image/*" onChange={cargarArchivo} />
       </label>
-      <button className="boton" type="button" onClick={analizar}>
-        Analizar
+      <button className="boton" type="button" disabled={!puedeAnalizar} onClick={analizar}>
+        <Icono nombre="escaneo" /> Analizar
       </button>
-      {mensaje && <p>{mensaje}</p>}
+      {mensaje && (
+        <p className={esMensajeError(mensaje) ? 'mensaje error' : 'mensaje ok'} role="status">
+          {mensaje}
+        </p>
+      )}
+
+      {imagenBase64 && (
+        <div className="resultado">
+          <h3>Vista previa</h3>
+          <img className="preview" src={imagenBase64} alt="Imagen cargada para analisis OMR" />
+        </div>
+      )}
+
       {resultado && (
         <div className="resultado">
           <h3>Respuestas detectadas</h3>
@@ -755,6 +966,7 @@ function SeccionEscaneo({
                   {item.numeroPregunta}:
                 </span>
                 <select
+                  aria-label={`Respuesta pregunta ${item.numeroPregunta}`}
                   value={item.opcion ?? ''}
                   onChange={(event) => {
                     const nuevas = [...respuestas];
@@ -802,6 +1014,8 @@ function SeccionCalificar({
   const [proyecto, setProyecto] = useState(0);
   const [mensaje, setMensaje] = useState('');
 
+  const puedeCalificar = Boolean(examenId && alumnoId);
+
   async function calificar() {
     if (!examenId || !alumnoId) {
       setMensaje('Falta examen o alumno');
@@ -818,35 +1032,48 @@ function SeccionCalificar({
       });
       setMensaje('Calificacion guardada');
     } catch (error) {
-      setMensaje('No se pudo calificar');
+      setMensaje(mensajeDeError(error, 'No se pudo calificar'));
     }
   }
 
   return (
     <div className="panel">
-      <h2>Calificar examen</h2>
+      <h2>
+        <Icono nombre="calificar" /> Calificar examen
+      </h2>
       <p>Examen: {examenId ?? 'Sin examen'}</p>
       <p>Alumno: {alumnoId ?? 'Sin alumno'}</p>
       <label className="campo">
         Bono (max 0.5)
-        <input type="number" value={bono} onChange={(event) => setBono(Number(event.target.value))} />
+        <input
+          type="number"
+          step="0.1"
+          min={0}
+          max={0.5}
+          value={bono}
+          onChange={(event) => setBono(Math.max(0, Math.min(0.5, Number(event.target.value))))}
+        />
       </label>
       <label className="campo">
         Evaluacion continua (parcial)
         <input
           type="number"
           value={evaluacionContinua}
-          onChange={(event) => setEvaluacionContinua(Number(event.target.value))}
+          onChange={(event) => setEvaluacionContinua(Math.max(0, Number(event.target.value)))}
         />
       </label>
       <label className="campo">
         Proyecto (global)
-        <input type="number" value={proyecto} onChange={(event) => setProyecto(Number(event.target.value))} />
+        <input type="number" value={proyecto} onChange={(event) => setProyecto(Math.max(0, Number(event.target.value)))} />
       </label>
-      <button className="boton" type="button" onClick={calificar}>
-        Calificar
+      <button className="boton" type="button" disabled={!puedeCalificar} onClick={calificar}>
+        <Icono nombre="calificar" /> Calificar
       </button>
-      {mensaje && <p>{mensaje}</p>}
+      {mensaje && (
+        <p className={esMensajeError(mensaje) ? 'mensaje error' : 'mensaje ok'} role="status">
+          {mensaje}
+        </p>
+      )}
     </div>
   );
 }
@@ -865,12 +1092,14 @@ function SeccionPublicar({
   const [codigo, setCodigo] = useState('');
   const [expiraEn, setExpiraEn] = useState('');
 
+  const puedeAccionar = Boolean(periodoId);
+
   async function publicar() {
     try {
       await onPublicar(periodoId);
       setMensaje('Resultados publicados');
     } catch (error) {
-      setMensaje('No se pudo publicar');
+      setMensaje(mensajeDeError(error, 'No se pudo publicar'));
     }
   }
 
@@ -880,13 +1109,15 @@ function SeccionPublicar({
       setCodigo(respuesta.codigo ?? '');
       setExpiraEn(respuesta.expiraEn ?? '');
     } catch (error) {
-      setMensaje('No se pudo generar codigo');
+      setMensaje(mensajeDeError(error, 'No se pudo generar codigo'));
     }
   }
 
   return (
     <div className="panel">
-      <h2>Publicar en portal</h2>
+      <h2>
+        <Icono nombre="publicar" /> Publicar en portal
+      </h2>
       <label className="campo">
         Periodo
         <select value={periodoId} onChange={(event) => setPeriodoId(event.target.value)}>
@@ -899,11 +1130,11 @@ function SeccionPublicar({
         </select>
       </label>
       <div className="acciones">
-        <button className="boton" type="button" onClick={publicar}>
-          Publicar
+        <button className="boton" type="button" disabled={!puedeAccionar} onClick={publicar}>
+          <Icono nombre="publicar" /> Publicar
         </button>
-        <button className="boton secundario" type="button" onClick={generarCodigo}>
-          Generar codigo
+        <button className="boton secundario" type="button" disabled={!puedeAccionar} onClick={generarCodigo}>
+          <Icono nombre="info" /> Generar codigo
         </button>
       </div>
       {codigo && (
@@ -911,7 +1142,11 @@ function SeccionPublicar({
           Codigo generado: {codigo} {expiraEn ? `(expira ${new Date(expiraEn).toLocaleString()})` : ''}
         </p>
       )}
-      {mensaje && <p>{mensaje}</p>}
+      {mensaje && (
+        <p className={esMensajeError(mensaje) ? 'mensaje error' : 'mensaje ok'} role="status">
+          {mensaje}
+        </p>
+      )}
     </div>
   );
 }

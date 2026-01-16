@@ -70,6 +70,10 @@ function mensajeDeError(error: unknown, fallback: string) {
   return mensajeUsuarioDeErrorConSugerencia(error, fallback);
 }
 
+function esMensajeError(texto: string): boolean {
+  return tipoMensajeInline(texto) === 'error';
+}
+
 function obtenerDominiosCorreoPermitidosFrontend(): string[] {
   return String(import.meta.env.VITE_DOMINIOS_CORREO_PERMITIDOS || '')
     .split(',')
@@ -221,7 +225,10 @@ export function AppDocente() {
     ])
       .then(([al, pe, pl, pr]) => {
         setAlumnos(al.alumnos);
-        setPeriodos(pe.periodos);
+        const materias = (pe as unknown as { periodos?: Periodo[]; materias?: Periodo[] }).periodos ??
+          (pe as unknown as { periodos?: Periodo[]; materias?: Periodo[] }).materias ??
+          [];
+        setPeriodos(Array.isArray(materias) ? materias : []);
         setPlantillas(pl.plantillas);
         setPreguntas(pr.preguntas);
       })
@@ -319,7 +326,12 @@ export function AppDocente() {
       {vista === 'periodos' && (
         <SeccionPeriodos
           periodos={periodos}
-          onRefrescar={() => clienteApi.obtener<{ periodos: Periodo[] }>('/periodos').then((p) => setPeriodos(p.periodos))}
+          onRefrescar={() =>
+            clienteApi.obtener<{ periodos?: Periodo[]; materias?: Periodo[] }>('/periodos').then((p) => {
+              const materias = p.periodos ?? p.materias ?? [];
+              setPeriodos(Array.isArray(materias) ? materias : []);
+            })
+          }
         />
       )}
 

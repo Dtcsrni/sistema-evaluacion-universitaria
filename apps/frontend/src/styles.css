@@ -458,6 +458,11 @@ p {
   flex-wrap: wrap;
 }
 
+.lista .item-principal {
+  flex: 1;
+  min-width: 14rem;
+}
+
 .lista select {
   padding: 0.3rem 0.5rem;
   border-radius: 8px;

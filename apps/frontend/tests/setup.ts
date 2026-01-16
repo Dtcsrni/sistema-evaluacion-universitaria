@@ -1,6 +1,7 @@
 // Setup comun de pruebas React.
 import '@testing-library/jest-dom/vitest';
-import { beforeEach, vi } from 'vitest';
+import { cleanup } from '@testing-library/react';
+import { afterEach, beforeEach, vi } from 'vitest';
 import { instalarTestHardening } from '../../../test-utils/vitestStrict';
 
 instalarTestHardening();
@@ -20,6 +21,10 @@ vi.stubGlobal(
     return respuestaVacia;
   })
 );
+
+afterEach(() => {
+  cleanup();
+});
 
 beforeEach(() => {
   localStorage.clear();

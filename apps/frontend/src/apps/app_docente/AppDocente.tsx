@@ -1396,8 +1396,22 @@ function SeccionPeriodos({
   const [grupos, setGrupos] = useState('');
   const [mensaje, setMensaje] = useState('');
   const [creando, setCreando] = useState(false);
+  const [borrandoId, setBorrandoId] = useState<string | null>(null);
 
-  const puedeCrear = Boolean(nombre.trim() && fechaInicio && fechaFin && fechaFin >= fechaInicio);
+  function normalizarNombreMateria(valor: string): string {
+    return String(valor || '')
+      .trim()
+      .replace(/\s+/g, ' ')
+      .toLowerCase();
+  }
+
+  const nombreNormalizado = useMemo(() => normalizarNombreMateria(nombre), [nombre]);
+  const nombreDuplicado = useMemo(() => {
+    if (!nombreNormalizado) return false;
+    return periodos.some((p) => normalizarNombreMateria(p.nombre) === nombreNormalizado);
+  }, [nombreNormalizado, periodos]);
+
+  const puedeCrear = Boolean(nombre.trim() && fechaInicio && fechaFin && fechaFin >= fechaInicio && !nombreDuplicado);
 
   async function crearPeriodo() {
     try {
@@ -1435,6 +1449,37 @@ function SeccionPeriodos({
     }
   }
 
+  async function borrarMateria(periodo: Periodo) {
+    const confirmado = globalThis.confirm(
+      `¿Borrar la materia "${periodo.nombre}"?\n\nSe borrara TODO lo asociado: alumnos, banco de preguntas, plantillas, examenes generados, calificaciones y codigos.`
+    );
+    if (!confirmado) return;
+
+    try {
+      const inicio = Date.now();
+      setBorrandoId(periodo._id);
+      setMensaje('');
+      await clienteApi.eliminar(`/periodos/${periodo._id}`);
+      setMensaje('Materia borrada');
+      emitToast({ level: 'ok', title: 'Materias', message: 'Materia borrada', durationMs: 2200 });
+      registrarAccionDocente('borrar_periodo', true, Date.now() - inicio);
+      onRefrescar();
+    } catch (error) {
+      const msg = mensajeDeError(error, 'No se pudo borrar la materia');
+      setMensaje(msg);
+      emitToast({
+        level: 'error',
+        title: 'No se pudo borrar',
+        message: msg,
+        durationMs: 5200,
+        action: accionToastSesionParaError(error, 'docente')
+      });
+      registrarAccionDocente('borrar_periodo', false);
+    } finally {
+      setBorrandoId(null);
+    }
+  }
+
   return (
     <div className="panel">
       <h2>
@@ -1463,6 +1508,9 @@ function SeccionPeriodos({
         Nombre de la materia
         <input value={nombre} onChange={(event) => setNombre(event.target.value)} />
       </label>
+      {nombre.trim() && nombreDuplicado && (
+        <InlineMensaje tipo="error">Ya existe una materia con ese nombre. Cambia el nombre para crearla.</InlineMensaje>
+      )}
       <label className="campo">
         Fecha inicio
         <input type="date" value={fechaInicio} onChange={(event) => setFechaInicio(event.target.value)} />
@@ -1489,7 +1537,18 @@ function SeccionPeriodos({
       <h3>Materias activas</h3>
       <ul className="lista">
         {periodos.map((periodo) => (
-          <li key={periodo._id}>{periodo.nombre}</li>
+          <li key={periodo._id}>
+            <span className="item-principal">{periodo.nombre}</span>
+            <Boton
+              variante="secundario"
+              type="button"
+              icono={<Icono nombre="alerta" />}
+              cargando={borrandoId === periodo._id}
+              onClick={() => borrarMateria(periodo)}
+            >
+              Borrar
+            </Boton>
+          </li>
         ))}
       </ul>
     </div>

@@ -2027,33 +2027,46 @@ function SeccionPeriodos({
         </p>
       )}
       <h3>Materias activas</h3>
-      <ul className="lista">
+      <ul className="lista lista-items">
         {periodos.map((periodo) => (
           <li key={periodo._id}>
-            <span className="item-principal" title={periodo._id}>
-              {etiquetaMateria(periodo)}
-            </span>
-            <div className="ayuda">
-              Inicio: {formatearFecha(periodo.fechaInicio)} · Fin: {formatearFecha(periodo.fechaFin)}
-              {Array.isArray(periodo.grupos) && periodo.grupos.length > 0 ? ` · Grupos: ${periodo.grupos.join(', ')}` : ''}
+            <div className="item-glass">
+              <div className="item-row">
+                <div>
+                  <div className="item-title" title={periodo._id}>
+                    {etiquetaMateria(periodo)}
+                  </div>
+                  <div className="item-meta">
+                    <span>ID: {idCortoMateria(periodo._id)}</span>
+                    <span>Inicio: {formatearFecha(periodo.fechaInicio)}</span>
+                    <span>Fin: {formatearFecha(periodo.fechaFin)}</span>
+                    <span>
+                      Grupos:{' '}
+                      {Array.isArray(periodo.grupos) && periodo.grupos.length > 0 ? periodo.grupos.join(', ') : '-'}
+                    </span>
+                  </div>
+                </div>
+                <div className="item-actions">
+                  <Boton
+                    variante="secundario"
+                    type="button"
+                    cargando={archivandoId === periodo._id}
+                    onClick={() => archivarMateria(periodo)}
+                  >
+                    Archivar
+                  </Boton>
+                  <Boton
+                    variante="secundario"
+                    type="button"
+                    icono={<Icono nombre="alerta" />}
+                    cargando={borrandoId === periodo._id}
+                    onClick={() => borrarMateria(periodo)}
+                  >
+                    Borrar
+                  </Boton>
+                </div>
+              </div>
             </div>
-            <Boton
-              variante="secundario"
-              type="button"
-              cargando={archivandoId === periodo._id}
-              onClick={() => archivarMateria(periodo)}
-            >
-              Archivar
-            </Boton>
-            <Boton
-              variante="secundario"
-              type="button"
-              icono={<Icono nombre="alerta" />}
-              cargando={borrandoId === periodo._id}
-              onClick={() => borrarMateria(periodo)}
-            >
-              Borrar
-            </Boton>
           </li>
         ))}
       </ul>
@@ -2142,32 +2155,41 @@ function SeccionPeriodosArchivados({
       {periodos.length === 0 ? (
         <InlineMensaje tipo="info">No hay materias archivadas.</InlineMensaje>
       ) : (
-        <ul className="lista">
+        <ul className="lista lista-items">
           {periodos.map((periodo) => (
             <li key={periodo._id}>
-              <span className="item-principal" title={periodo._id}>
-                {etiquetaMateria(periodo)}
-              </span>
-              <div className="ayuda">
-                Creada: {formatearFechaHora(periodo.createdAt)} · Archivada: {formatearFechaHora(periodo.archivadoEn)}
-              </div>
-              {periodo.resumenArchivado && (
-                <div className="ayuda">
-                  Resumen: alumnos {periodo.resumenArchivado.alumnos ?? 0}, banco {periodo.resumenArchivado.bancoPreguntas ?? 0},
-                  plantillas {periodo.resumenArchivado.plantillas ?? 0}, generados {periodo.resumenArchivado.examenesGenerados ?? 0},
-                  calificaciones {periodo.resumenArchivado.calificaciones ?? 0}, codigos {periodo.resumenArchivado.codigosAcceso ?? 0}
+              <div className="item-glass">
+                <div className="item-row">
+                  <div>
+                    <div className="item-title" title={periodo._id}>
+                      {etiquetaMateria(periodo)}
+                    </div>
+                    <div className="item-meta">
+                      <span>ID: {idCortoMateria(periodo._id)}</span>
+                      <span>Creada: {formatearFechaHora(periodo.createdAt)}</span>
+                      <span>Archivada: {formatearFechaHora(periodo.archivadoEn)}</span>
+                    </div>
+                    {periodo.resumenArchivado && (
+                      <div className="item-sub">
+                        Resumen: alumnos {periodo.resumenArchivado.alumnos ?? 0}, banco {periodo.resumenArchivado.bancoPreguntas ?? 0},
+                        plantillas {periodo.resumenArchivado.plantillas ?? 0}, generados {periodo.resumenArchivado.examenesGenerados ?? 0},
+                        calificaciones {periodo.resumenArchivado.calificaciones ?? 0}, codigos {periodo.resumenArchivado.codigosAcceso ?? 0}
+                      </div>
+                    )}
+                  </div>
+                  <div className="item-actions">
+                    <Boton
+                      variante="secundario"
+                      type="button"
+                      icono={<Icono nombre="alerta" />}
+                      cargando={borrandoId === periodo._id}
+                      onClick={() => borrarMateria(periodo)}
+                    >
+                      Borrar definitivamente
+                    </Boton>
+                  </div>
                 </div>
-              )}
-
-              <Boton
-                variante="secundario"
-                type="button"
-                icono={<Icono nombre="alerta" />}
-                cargando={borrandoId === periodo._id}
-                onClick={() => borrarMateria(periodo)}
-              >
-                Borrar definitivamente
-              </Boton>
+              </div>
             </li>
           ))}
         </ul>
@@ -2510,20 +2532,30 @@ function SeccionAlumnos({
           <span className="ayuda">Mostrando todos los alumnos de: {nombreMateriaSeleccionada}</span>
         )}
       </label>
-      <ul className="lista">
+      <ul className="lista lista-items">
         {!periodoIdLista && <li>Selecciona una materia para ver sus alumnos.</li>}
         {periodoIdLista && alumnosDeMateria.length === 0 && <li>No hay alumnos registrados en esta materia.</li>}
         {periodoIdLista &&
           alumnosDeMateria.map((alumno) => (
             <li key={alumno._id}>
-              <span>
-                {alumno.matricula} - {alumno.nombreCompleto}
-                {alumno.grupo ? ` (Grupo: ${alumno.grupo})` : ''}
-              </span>
-              <div className="acciones">
-                <Boton variante="secundario" type="button" onClick={() => iniciarEdicion(alumno)}>
-                  Editar
-                </Boton>
+              <div className="item-glass">
+                <div className="item-row">
+                  <div>
+                    <div className="item-title">
+                      {alumno.matricula} - {alumno.nombreCompleto}
+                    </div>
+                    <div className="item-meta">
+                      <span>ID: {idCortoMateria(alumno._id)}</span>
+                      <span>Grupo: {alumno.grupo ? alumno.grupo : '-'}</span>
+                      <span>Correo: {alumno.correo ? alumno.correo : '-'}</span>
+                    </div>
+                  </div>
+                  <div className="item-actions">
+                    <Boton variante="secundario" type="button" onClick={() => iniciarEdicion(alumno)}>
+                      Editar
+                    </Boton>
+                  </div>
+                </div>
               </div>
             </li>
           ))}
@@ -3059,29 +3091,35 @@ function SeccionEscaneo({
       {resultado && (
         <div className="resultado">
           <h3>Respuestas detectadas</h3>
-          <ul className="lista">
+          <ul className="lista lista-items">
             {respuestas.map((item, idx) => (
               <li key={item.numeroPregunta}>
-                <span>
-                  {item.numeroPregunta}:
-                </span>
-                <select
-                  aria-label={`Respuesta pregunta ${item.numeroPregunta}`}
-                  value={item.opcion ?? ''}
-                  onChange={(event) => {
-                    const nuevas = [...respuestas];
-                    nuevas[idx] = { ...nuevas[idx], opcion: event.target.value || null };
-                    onActualizar(nuevas);
-                  }}
-                >
-                  <option value="">-</option>
-                  <option value="A">A</option>
-                  <option value="B">B</option>
-                  <option value="C">C</option>
-                  <option value="D">D</option>
-                  <option value="E">E</option>
-                </select>
-                <span>({Math.round(item.confianza * 100)}%)</span>
+                <div className="item-glass">
+                  <div className="item-row">
+                    <div>
+                      <div className="item-title">Pregunta {item.numeroPregunta}</div>
+                      <div className="item-sub">Confianza: {Math.round(item.confianza * 100)}%</div>
+                    </div>
+                    <div className="item-actions">
+                      <select
+                        aria-label={`Respuesta pregunta ${item.numeroPregunta}`}
+                        value={item.opcion ?? ''}
+                        onChange={(event) => {
+                          const nuevas = [...respuestas];
+                          nuevas[idx] = { ...nuevas[idx], opcion: event.target.value || null };
+                          onActualizar(nuevas);
+                        }}
+                      >
+                        <option value="">-</option>
+                        <option value="A">A</option>
+                        <option value="B">B</option>
+                        <option value="C">C</option>
+                        <option value="D">D</option>
+                        <option value="E">E</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
               </li>
             ))}
           </ul>

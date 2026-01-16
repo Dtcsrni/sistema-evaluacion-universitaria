@@ -144,7 +144,7 @@ export function AppDocente() {
     () =>
       [
         { id: 'inicio', label: 'Inicio', icono: 'inicio' as const },
-        { id: 'periodos', label: 'Periodos', icono: 'periodos' as const },
+        { id: 'periodos', label: 'Materias', icono: 'periodos' as const },
         { id: 'alumnos', label: 'Alumnos', icono: 'alumnos' as const },
         { id: 'banco', label: 'Banco', icono: 'banco' as const },
         { id: 'plantillas', label: 'Plantillas', icono: 'plantillas' as const },
@@ -704,7 +704,7 @@ function SeccionAutenticacion({ onIngresar }: { onIngresar: (token: string) => v
       <div className="auth-form">
         <AyudaFormulario titulo="Como llenar este formulario">
           <p>
-            <b>Proposito:</b> ingresar o crear tu cuenta de docente para administrar periodos, alumnos, banco de preguntas,
+            <b>Proposito:</b> ingresar o crear tu cuenta de docente para administrar materias, alumnos, banco de preguntas,
             generar examenes y calificar.
           </p>
           <p>
@@ -1403,12 +1403,12 @@ function SeccionPeriodos({
               .filter(Boolean)
           : []
       });
-      setMensaje('Periodo creado');
-      emitToast({ level: 'ok', title: 'Periodos', message: 'Periodo creado', durationMs: 2200 });
+      setMensaje('Materia creada');
+      emitToast({ level: 'ok', title: 'Materias', message: 'Materia creada', durationMs: 2200 });
       registrarAccionDocente('crear_periodo', true, Date.now() - inicio);
       onRefrescar();
     } catch (error) {
-      const msg = mensajeDeError(error, 'No se pudo crear el periodo');
+      const msg = mensajeDeError(error, 'No se pudo crear la materia');
       setMensaje(msg);
       emitToast({
         level: 'error',
@@ -1426,18 +1426,18 @@ function SeccionPeriodos({
   return (
     <div className="panel">
       <h2>
-        <Icono nombre="periodos" /> Periodos
+        <Icono nombre="periodos" /> Materias
       </h2>
       <AyudaFormulario titulo="Para que sirve y como llenarlo">
         <p>
-          <b>Proposito:</b> definir el periodo academico (ciclo) al que pertenecen alumnos, plantillas, examenes y publicaciones.
+          <b>Proposito:</b> definir cada <b>materia</b> (unidad de trabajo) a la que pertenecen alumnos, plantillas, examenes y publicaciones.
         </p>
         <ul className="lista">
           <li>
-            <b>Nombre:</b> etiqueta corta del ciclo (ej. <code>2026-1</code> o <code>Ene-Jun 2026</code>).
+            <b>Nombre:</b> nombre de la materia (ej. <code>Algebra I</code>, <code>Programacion</code>, <code>Fisica</code>).
           </li>
           <li>
-            <b>Fecha inicio/fin:</b> deben estar dentro del calendario del periodo; fin debe ser mayor o igual a inicio.
+            <b>Fecha inicio/fin:</b> rango de la materia; normalmente dura aproximadamente 30 dias. La fecha fin debe ser mayor o igual a la inicio.
           </li>
           <li>
             <b>Grupos:</b> lista opcional separada por comas.
@@ -1448,7 +1448,7 @@ function SeccionPeriodos({
         </p>
       </AyudaFormulario>
       <label className="campo">
-        Nombre
+        Nombre de la materia
         <input value={nombre} onChange={(event) => setNombre(event.target.value)} />
       </label>
       <label className="campo">
@@ -1467,14 +1467,14 @@ function SeccionPeriodos({
         <input value={grupos} onChange={(event) => setGrupos(event.target.value)} />
       </label>
       <Boton type="button" icono={<Icono nombre="nuevo" />} cargando={creando} disabled={!puedeCrear} onClick={crearPeriodo}>
-        {creando ? 'Creando…' : 'Crear periodo'}
+        {creando ? 'Creando…' : 'Crear materia'}
       </Boton>
       {mensaje && (
         <p className={esMensajeError(mensaje) ? 'mensaje error' : 'mensaje ok'} role="status">
           {mensaje}
         </p>
       )}
-      <h3>Periodos activos</h3>
+      <h3>Materias activas</h3>
       <ul className="lista">
         {periodos.map((periodo) => (
           <li key={periodo._id}>{periodo.nombre}</li>
@@ -1555,7 +1555,7 @@ function SeccionAlumnos({
       </h2>
       <AyudaFormulario titulo="Para que sirve y como llenarlo">
         <p>
-          <b>Proposito:</b> registrar alumnos dentro de un periodo para poder generar examenes, vincular folios y publicar resultados.
+          <b>Proposito:</b> registrar alumnos dentro de una materia para poder generar examenes, vincular folios y publicar resultados.
         </p>
         <ul className="lista">
           <li>
@@ -1571,7 +1571,7 @@ function SeccionAlumnos({
             <b>Grupo:</b> opcional (ej. <code>3A</code>).
           </li>
           <li>
-            <b>Periodo:</b> obligatorio; selecciona el periodo correspondiente.
+            <b>Materia:</b> obligatorio; selecciona la materia correspondiente.
           </li>
         </ul>
         <p>
@@ -1603,7 +1603,7 @@ function SeccionAlumnos({
         <input value={grupo} onChange={(event) => setGrupo(event.target.value)} />
       </label>
       <label className="campo">
-        Periodo
+        Materia
         <select value={periodoId} onChange={(event) => setPeriodoId(event.target.value)}>
           <option value="">Selecciona</option>
           {periodos.map((periodo) => (
@@ -1710,7 +1710,7 @@ function SeccionPlantillas({
             <b>Tipo:</b> <code>parcial</code> o <code>global</code> (afecta campos de calificacion).
           </li>
           <li>
-            <b>Periodo:</b> el ciclo al que pertenece.
+            <b>Materia:</b> la materia a la que pertenece.
           </li>
           <li>
             <b>Total reactivos:</b> numero de preguntas del examen (entero mayor o igual a 1).
@@ -1735,7 +1735,7 @@ function SeccionPlantillas({
         </select>
       </label>
       <label className="campo">
-        Periodo
+        Materia
         <select value={periodoId} onChange={(event) => setPeriodoId(event.target.value)}>
           <option value="">Selecciona</option>
           {periodos.map((periodo) => (
@@ -2299,14 +2299,14 @@ function SeccionPublicar({
       </h2>
       <AyudaFormulario titulo="Para que sirve y como llenarlo">
         <p>
-          <b>Proposito:</b> enviar los resultados del periodo al portal alumno y emitir un codigo de acceso para consulta.
+          <b>Proposito:</b> enviar los resultados de la materia al portal alumno y emitir un codigo de acceso para consulta.
         </p>
         <ul className="lista">
           <li>
-            <b>Periodo:</b> selecciona el periodo a publicar.
+            <b>Materia:</b> selecciona la materia a publicar.
           </li>
           <li>
-            <b>Publicar:</b> sincroniza resultados del periodo hacia el portal.
+            <b>Publicar:</b> sincroniza resultados de la materia hacia el portal.
           </li>
           <li>
             <b>Generar codigo:</b> crea un codigo temporal; compartelo con alumnos junto con su matricula.
@@ -2317,7 +2317,7 @@ function SeccionPublicar({
         </p>
       </AyudaFormulario>
       <label className="campo">
-        Periodo
+        Materia
         <select value={periodoId} onChange={(event) => setPeriodoId(event.target.value)}>
           <option value="">Selecciona</option>
           {periodos.map((periodo) => (

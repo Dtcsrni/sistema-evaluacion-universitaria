@@ -10,7 +10,7 @@ Esta guía describe **cómo llenar cada formulario** del sistema (plataforma doc
 
 - **Fechas**: los campos `Fecha inicio`/`Fecha fin` usan selector de fecha del navegador y se envían como `YYYY-MM-DD`.
 - **Campos requeridos**: si un botón aparece deshabilitado, normalmente falta un campo obligatorio o hay un error de validación.
-- **Listas desplegables**: debes elegir una opción válida (p. ej. `Periodo`, `Alumno`).
+- **Listas desplegables**: debes elegir una opción válida (p. ej. `Materia`, `Alumno`).
 - **Selección múltiple** (Plantillas → Preguntas):
   - Windows: `Ctrl` + clic para seleccionar varias preguntas.
   - También puedes usar `Shift` + clic para rangos.
@@ -114,23 +114,24 @@ Recomendaciones:
 
 ---
 
-### Periodos (Crear periodo)
+### Materias (Crear materia)
 
-Sección: **Periodos**.
+Sección: **Materias**.
 
 Campos:
-- **Nombre** (requerido): nombre del periodo (ej. “2026-1”, “Enero-Junio 2026”).
+- **Nombre** (requerido): nombre de la materia (ej. “Algebra I”, “Programacion”, “Fisica”).
 - **Fecha inicio** (requerido)
 - **Fecha fin** (requerido)
   - Debe ser **igual o posterior** a la fecha inicio.
+- Nota: cada materia suele durar aproximadamente **30 dias**. Ajusta el rango segun tu calendario.
 - **Grupos (separados por coma)** (opcional): lista de grupos.
   - Ejemplos: `A1,B1,C2` o `3A,3B`.
 
 Cómo llenarlo:
-1) Escribe el nombre del periodo.
+1) Escribe el nombre de la materia.
 2) Selecciona fecha inicio y fecha fin.
 3) (Opcional) escribe grupos separados por coma.
-4) Presiona **Crear periodo**.
+4) Presiona **Crear materia**.
 
 ---
 
@@ -145,11 +146,11 @@ Campos:
 - **Correo** (opcional)
   - Si hay política de dominios permitidos, debe ser institucional.
 - **Grupo** (opcional): grupo/sección (ej. `3A`).
-- **Periodo** (requerido): periodo al que pertenece.
+- **Materia** (requerido): materia a la que pertenece.
 
 Cómo llenarlo:
 1) Captura matrícula, nombres y apellidos.
-2) Selecciona el periodo.
+2) Selecciona la materia.
 3) (Opcional) captura correo y grupo.
 4) Presiona **Crear alumno**.
 
@@ -163,12 +164,12 @@ Campos:
 - **Titulo** (requerido): nombre de la plantilla (ej. “Parcial 1 – Álgebra”).
 - **Tipo** (requerido):
   - `Parcial` o `Global`.
-- **Periodo** (requerido)
+- **Materia** (requerido)
 - **Total reactivos** (requerido): número entero ≥ 1.
 - **Preguntas** (requerido): selecciona una o más preguntas (selección múltiple).
 
 Cómo llenarlo:
-1) Define título, tipo y periodo.
+1) Define título, tipo y materia.
 2) Ajusta total de reactivos.
 3) Selecciona preguntas (usa `Ctrl` + clic para varias).
 4) Presiona **Crear plantilla**.
@@ -265,14 +266,14 @@ Cómo llenarlo:
 Sección: **Publicar en portal**.
 
 Objetivo:
-- Publicar resultados del periodo en el portal alumno.
+- Publicar resultados de la materia en el portal alumno.
 - Generar un **código de acceso** para que estudiantes consulten.
 
 Campos:
-- **Periodo** (requerido): el periodo a publicar.
+- **Materia** (requerido): la materia a publicar.
 
 Acciones:
-- **Publicar**: envía resultados del periodo al portal.
+- **Publicar**: envía resultados de la materia al portal.
 - **Generar codigo**: crea un código temporal para acceso de alumnos.
 
 Qué debes compartir con alumnos:
@@ -310,8 +311,8 @@ Cómo llenarlo:
 
 ## Checklist rápido (si algo falla)
 
-- ¿Ya creaste el **Periodo** antes de crear alumnos/plantillas?
+- ¿Ya creaste la **Materia** antes de crear alumnos/plantillas?
 - ¿Ya hay **preguntas** en el banco antes de crear plantillas?
 - ¿El **folio** que estás usando coincide con el examen (PDF/QR)?
 - En OMR: ¿la **página** corresponde a la hoja escaneada?
-- En portal alumno: ¿el periodo fue **publicado** y el código está vigente?
+- En portal alumno: ¿la materia fue **publicada** y el código está vigente?

@@ -44,25 +44,28 @@
     body {
       margin: 0;
       font-family: "Trebuchet MS", "Candara", sans-serif;
-      font-size: 15px;
+      font-size: clamp(13px, 1.5vw, 15px);
       background: radial-gradient(circle at 12% 18%, #eaf2ff, transparent 40%),
                   radial-gradient(circle at 88% 12%, #eef9ff, transparent 30%),
                   linear-gradient(180deg, #f7fbff 0%, #f5f7fb 100%);
       color: var(--ink);
+      min-height: 100vh;
+      overflow-x: hidden;
     }
 
     header {
       background: linear-gradient(120deg, #0b3a6b, #1d6fb8 60%, #2fa4dd);
       color: #ffffff;
-      padding: 18px 22px;
+      padding: clamp(12px, 2vw, 18px) clamp(12px, 2.5vw, 22px);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 16px;
+      gap: clamp(8px, 1.5vw, 16px);
       position: sticky;
       top: 0;
       z-index: 3;
       box-shadow: 0 6px 18px rgba(15, 23, 42, 0.25);
+      flex-wrap: wrap;
     }
 
     .brand {
@@ -162,15 +165,21 @@
     }
 
     .title {
-      font-size: 18px;
+      font-size: clamp(14px, 2vw, 18px);
       font-weight: 700;
       letter-spacing: 0.3px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .subtitle {
-      font-size: 12px;
+      font-size: clamp(10px, 1.3vw, 12px);
       opacity: 0.96;
       text-shadow: 0 1px 1px rgba(0, 0, 0, 0.28);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .header-chips {
@@ -287,17 +296,21 @@
 
     .panel-grid {
       display: grid;
-      grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);
-      gap: 20px;
+      grid-template-columns: 1fr;
+      gap: clamp(12px, 2vw, 20px);
       align-items: start;
     }
 
+    @media (min-width: 768px) {
+      .panel-grid { grid-template-columns: minmax(240px, 320px) minmax(0, 1fr); }
+    }
+
     @media (min-width: 1101px) {
-      .panel-grid { grid-template-columns: minmax(320px, 420px) minmax(0, 1fr); }
+      .panel-grid { grid-template-columns: minmax(280px, 380px) minmax(0, 1fr); }
     }
 
     @media (min-width: 1500px) {
-      .panel-grid { grid-template-columns: minmax(360px, 480px) minmax(0, 1fr); }
+      .panel-grid { grid-template-columns: minmax(320px, 420px) minmax(0, 1fr); }
     }
 
     .left-col {
@@ -326,12 +339,13 @@
     .card {
       background: var(--panel);
       border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 16px;
+      border-radius: clamp(12px, 1.5vw, 18px);
+      padding: clamp(12px, 1.8vw, 16px);
       box-shadow: var(--shadow);
       position: relative;
       overflow: hidden;
       animation: fadeUp 0.35s ease both;
+      word-wrap: break-word;
     }
 
     .card::after {
@@ -490,9 +504,9 @@
 
     .signal-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-      gap: 12px;
-      margin-bottom: 12px;
+      grid-template-columns: repeat(auto-fit, minmax(clamp(110px, 16vw, 140px), 1fr));
+      gap: clamp(8px, 1.2vw, 12px);
+      margin-bottom: clamp(8px, 1.2vw, 12px);
     }
     .signal-pill {
       border: 1px solid var(--border);
@@ -619,10 +633,10 @@
       position: relative;
       overflow: hidden;
       display: grid;
-      grid-template-columns: 28px minmax(0, 1fr) auto;
+      grid-template-columns: clamp(20px, 3vw, 28px) minmax(0, 1fr) auto;
       align-items: center;
-      gap: 12px;
-      min-height: 72px;
+      gap: clamp(8px, 1.2vw, 12px);
+      min-height: clamp(60px, 8vw, 72px);
       background: #f4f9ff;
     }
 
@@ -831,8 +845,8 @@
 
     .metrics {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 12px;
+      grid-template-columns: repeat(auto-fit, minmax(clamp(120px, 18vw, 180px), 1fr));
+      gap: clamp(8px, 1.2vw, 12px);
     }
 
     .metric {
@@ -870,9 +884,9 @@
 
     .summary-grid {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 12px;
-      margin-bottom: 12px;
+      grid-template-columns: repeat(auto-fit, minmax(clamp(140px, 20vw, 200px), 1fr));
+      gap: clamp(8px, 1.2vw, 12px);
+      margin-bottom: clamp(8px, 1.2vw, 12px);
     }
 
     .summary-card {
@@ -1181,11 +1195,12 @@
     }
 
     .log-body {
-      padding: 14px;
-      height: clamp(360px, 46vh, 720px);
+      padding: clamp(10px, 1.5vw, 14px);
+      height: clamp(280px, 46vh, 720px);
       overflow: auto;
       font-family: Consolas, monospace;
-      font-size: 12px;
+      font-size: clamp(10px, 1.2vw, 12px);
+      word-break: break-word;
     }
 
     .status-events {
@@ -1570,11 +1585,16 @@
       }
     }
 
+    @media (max-width: 767px) {
+      .header-chips { width: 100%; }
+      .toast-wrap { right: 10px; left: 10px; top: 72px; }
+      .toast { min-width: auto; max-width: 100%; }
+    }
+
     @media (max-width: 1100px) {
       .panel-grid { grid-template-columns: 1fr; }
       .right-grid { grid-template-columns: 1fr; }
       .right-grid .card { grid-column: 1 / -1; }
-      header { position: static; }
     }
 
     @media (min-width: 1101px) and (max-width: 1199px) {

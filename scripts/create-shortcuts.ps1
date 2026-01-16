@@ -177,7 +177,8 @@ function New-Shortcut([string]$name, [string]$mode, [string]$iconPath) {
   $lnkPath = Join-Path $outPath ($name + ".lnk")
   $shortcut = $wsh.CreateShortcut($lnkPath)
   $shortcut.TargetPath = $target
-  $shortcut.Arguments = "//nologo `"$root\scripts\launcher-dashboard-hidden.vbs`" $mode 4519"
+  # Usa ruta relativa al WorkingDirectory para que funcione desde cualquier ubicacion.
+  $shortcut.Arguments = "//nologo `"scripts\launcher-dashboard-hidden.vbs`" $mode 4519"
   $shortcut.WorkingDirectory = $root
   $shortcut.Description = "Dashboard $name"
   $shortcut.IconLocation = $iconPath

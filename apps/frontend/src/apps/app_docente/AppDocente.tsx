@@ -3302,6 +3302,11 @@ function SeccionPlantillas({
   alumnos: Alumno[];
   onRefrescar: () => void;
 }) {
+  const INSTRUCCIONES_DEFAULT =
+    'Por favor conteste las siguientes preguntas referentes al parcial. ' +
+    'Rellene el círculo de la respuesta más adecuada, evitando salirse del mismo. ' +
+    'Cada pregunta vale 10 puntos si está completa y es correcta.';
+
   type ExamenGeneradoResumen = {
     _id: string;
     folio: string;
@@ -3318,7 +3323,7 @@ function SeccionPlantillas({
   const [periodoId, setPeriodoId] = useState('');
   const [numeroPaginas, setNumeroPaginas] = useState(2);
   const [temasSeleccionados, setTemasSeleccionados] = useState<string[]>([]);
-  const [instrucciones, setInstrucciones] = useState('');
+  const [instrucciones, setInstrucciones] = useState(INSTRUCCIONES_DEFAULT);
   const [margenMm, setMargenMm] = useState<number>(10);
   const [mensaje, setMensaje] = useState('');
   const [plantillaId, setPlantillaId] = useState('');
@@ -3603,7 +3608,7 @@ function SeccionPlantillas({
   useEffect(() => {
     // Defaults para creacion.
     if (!modoEdicion) {
-      setInstrucciones('');
+      setInstrucciones(INSTRUCCIONES_DEFAULT);
       setMargenMm(10);
     }
   }, [modoEdicion]);
@@ -3651,7 +3656,7 @@ function SeccionPlantillas({
     setPeriodoId('');
     setNumeroPaginas(2);
     setTemasSeleccionados([]);
-    setInstrucciones('');
+    setInstrucciones(INSTRUCCIONES_DEFAULT);
     setMargenMm(10);
     setMensaje('');
   }
@@ -3855,16 +3860,19 @@ function SeccionPlantillas({
       const inicio = Date.now();
       setCreando(true);
       setMensaje('');
-      await clienteApi.enviar('/examenes/plantillas', {
-        periodoId,
+
+      const payload: Record<string, unknown> = {
         tipo,
         titulo: titulo.trim(),
         instrucciones: String(instrucciones || '').trim() || undefined,
         numeroPaginas: Math.max(1, Math.floor(numeroPaginas)),
-        temas: temasSeleccionados
-        ,
         configuracionPdf: { margenMm: Math.max(1, Math.floor(Number(margenMm) || 10)) }
-      });
+      };
+      const periodoIdNorm = String(periodoId || '').trim();
+      if (periodoIdNorm) payload.periodoId = periodoIdNorm;
+      if (temasSeleccionados.length > 0) payload.temas = temasSeleccionados;
+
+      await clienteApi.enviar('/examenes/plantillas', payload);
       setMensaje('Plantilla creada');
       emitToast({ level: 'ok', title: 'Plantillas', message: 'Plantilla creada', durationMs: 2200 });
       registrarAccionDocente('crear_plantilla', true, Date.now() - inicio);

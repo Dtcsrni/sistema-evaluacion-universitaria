@@ -85,6 +85,17 @@ function construirNombrePdfExamen(parametros: {
   return `${nombre}.pdf`;
 }
 
+function formatearDocente(nombreCompleto: unknown): string {
+  const n = String(nombreCompleto ?? '').trim();
+  if (!n) return '';
+
+  // Si ya viene con prefijo (ej. "I.S.C."), respetarlo.
+  if (/^(I\.?S\.?C\.?\s+)/i.test(n)) return n;
+
+  // Requerimiento: mostrar con prefijo profesional por defecto.
+  return `I.S.C. ${n}`;
+}
+
 /**
  * Lista plantillas del docente autenticado (opcionalmente filtradas por periodo).
  */
@@ -390,7 +401,8 @@ export async function previsualizarPlantilla(req: SolicitudDocente, res: Respons
     margenMm: plantilla.configuracionPdf?.margenMm ?? 10,
     encabezado: {
       materia: String((periodo as unknown as { nombre?: unknown })?.nombre ?? ''),
-      docente: String((docenteDb as unknown as { nombreCompleto?: unknown })?.nombreCompleto ?? '')
+      docente: formatearDocente((docenteDb as unknown as { nombreCompleto?: unknown })?.nombreCompleto),
+      instrucciones: String((plantilla as unknown as { instrucciones?: unknown })?.instrucciones ?? '')
     }
   });
 
@@ -634,9 +646,10 @@ export async function generarExamen(req: SolicitudDocente, res: Response) {
   const loteId = randomUUID().split('-')[0].toUpperCase();
   const folio = randomUUID().split('-')[0].toUpperCase();
 
-  const [periodo, docenteDb] = await Promise.all([
+  const [periodo, docenteDb, alumno] = await Promise.all([
     plantilla.periodoId ? Periodo.findById(plantilla.periodoId).lean() : Promise.resolve(null),
-    Docente.findById(docenteId).lean()
+    Docente.findById(docenteId).lean(),
+    alumnoId ? Alumno.findById(String(alumnoId)).lean() : Promise.resolve(null)
   ]);
 
   const { pdfBytes, paginas, metricasPaginas, mapaOmr } = await generarPdfExamen({
@@ -649,7 +662,12 @@ export async function generarExamen(req: SolicitudDocente, res: Response) {
     margenMm: plantilla.configuracionPdf?.margenMm ?? 10,
     encabezado: {
       materia: String((periodo as unknown as { nombre?: unknown })?.nombre ?? ''),
-      docente: String((docenteDb as unknown as { nombreCompleto?: unknown })?.nombreCompleto ?? '')
+      docente: formatearDocente((docenteDb as unknown as { nombreCompleto?: unknown })?.nombreCompleto),
+      instrucciones: String((plantilla as unknown as { instrucciones?: unknown })?.instrucciones ?? ''),
+      alumno: {
+        nombre: String((alumno as unknown as { nombreCompleto?: unknown })?.nombreCompleto ?? ''),
+        grupo: String((alumno as unknown as { grupo?: unknown })?.grupo ?? '')
+      }
     }
   });
 
@@ -746,6 +764,12 @@ export async function generarExamenesLote(req: SolicitudDocente, res: Response) 
     throw new ErrorAplicacion('SIN_ALUMNOS', 'No hay alumnos activos en esta materia', 400);
   }
 
+  const alumnosPorId = new Map<string, unknown>();
+  for (const a of Array.isArray(alumnos) ? alumnos : []) {
+    const id = String((a as unknown as { _id?: unknown })?._id ?? '').trim();
+    if (id) alumnosPorId.set(id, a);
+  }
+
   const LIMITE_SIN_CONFIRMAR = 200;
   if (totalAlumnos > LIMITE_SIN_CONFIRMAR && !confirmarMasivo) {
     throw new ErrorAplicacion(
@@ -814,7 +838,8 @@ export async function generarExamenesLote(req: SolicitudDocente, res: Response) 
       margenMm: plantilla.configuracionPdf?.margenMm ?? 10,
       encabezado: {
         materia: String((periodo as unknown as { nombre?: unknown })?.nombre ?? ''),
-        docente: String((docenteDb as unknown as { nombreCompleto?: unknown })?.nombreCompleto ?? '')
+        docente: formatearDocente((docenteDb as unknown as { nombreCompleto?: unknown })?.nombreCompleto),
+        instrucciones: String((plantilla as unknown as { instrucciones?: unknown })?.instrucciones ?? '')
       }
     });
     const usadosSet = new Set<string>();
@@ -856,7 +881,12 @@ export async function generarExamenesLote(req: SolicitudDocente, res: Response) 
           margenMm: plantilla.configuracionPdf?.margenMm ?? 10,
           encabezado: {
             materia: String((periodo as unknown as { nombre?: unknown })?.nombre ?? ''),
-            docente: String((docenteDb as unknown as { nombreCompleto?: unknown })?.nombreCompleto ?? '')
+            docente: formatearDocente((docenteDb as unknown as { nombreCompleto?: unknown })?.nombreCompleto),
+            instrucciones: String((plantilla as unknown as { instrucciones?: unknown })?.instrucciones ?? ''),
+            alumno: {
+              nombre: String((alumnosPorId.get(alumnoId) as unknown as { nombreCompleto?: unknown })?.nombreCompleto ?? ''),
+              grupo: String((alumnosPorId.get(alumnoId) as unknown as { grupo?: unknown })?.grupo ?? '')
+            }
           }
         });
 

@@ -403,6 +403,8 @@ export async function generarPdfExamen({
     lema?: string;
     materia?: string;
     docente?: string;
+    instrucciones?: string;
+    alumno?: { nombre?: string; grupo?: string };
     mostrarInstrucciones?: boolean;
     logos?: { izquierdaPath?: string; derechaPath?: string };
   };
@@ -446,11 +448,21 @@ export async function generarPdfExamen({
   const xTextoPregunta = margen + 18;
   const anchoTextoPregunta = Math.max(60, xDerechaTexto - xTextoPregunta);
 
-  const institucion = String(encabezado?.institucion ?? process.env.EXAMEN_INSTITUCION ?? '').trim();
+  const INSTRUCCIONES_DEFAULT =
+    'Por favor conteste las siguientes preguntas referentes al parcial. ' +
+    'Rellene el círculo de la respuesta más adecuada, evitando salirse del mismo. ' +
+    'Cada pregunta vale 10 puntos si está completa y es correcta.';
+
+  const institucion = String(
+    encabezado?.institucion ?? process.env.EXAMEN_INSTITUCION ?? 'Sistema de Evaluacion Universitaria'
+  ).trim();
   const lema = String(encabezado?.lema ?? process.env.EXAMEN_LEMA ?? '').trim();
   const materia = String(encabezado?.materia ?? '').trim();
   const docente = String(encabezado?.docente ?? '').trim();
   const mostrarInstrucciones = encabezado?.mostrarInstrucciones !== false;
+  const alumnoNombre = String(encabezado?.alumno?.nombre ?? '').trim();
+  const alumnoGrupo = String(encabezado?.alumno?.grupo ?? '').trim();
+  const instrucciones = String(encabezado?.instrucciones ?? '').trim() || INSTRUCCIONES_DEFAULT;
 
   const logos = {
     izquierda: await intentarEmbedImagen(pdfDoc, encabezado?.logos?.izquierdaPath ?? process.env.EXAMEN_LOGO_IZQ_PATH),
@@ -526,30 +538,80 @@ export async function generarPdfExamen({
     // Texto del encabezado
     const xTexto = margen + 70;
     if (esPrimera) {
-      if (institucion) page.drawText(institucion, { x: xTexto, y: yTop - 22, size: 12, font: fuenteBold, color: colorPrimario });
-      page.drawText(titulo, { x: xTexto, y: yTop - 42, size: sizeTitulo, font: fuenteBold, color: rgb(0.1, 0.1, 0.1) });
-      if (lema) page.drawText(lema, { x: xTexto, y: yTop - 58, size: 9, font: fuenteItalica, color: colorGris });
+      // Reservar placeholders de logo si no hay imagen para evitar "huecos" y mantener consistencia visual.
+      const logoPlaceholderW = 56;
+      const logoPlaceholderH = 36;
+      if (!logos.izquierda) {
+        page.drawRectangle({ x: margen + 8, y: yTop - logoPlaceholderH - 8, width: logoPlaceholderW, height: logoPlaceholderH, borderWidth: 1, borderColor: colorLinea, color: rgb(1, 1, 1) });
+        page.drawText('LOGO', { x: margen + 18, y: yTop - 30, size: 9, font: fuenteBold, color: colorGris });
+      }
+      if (!logos.derecha) {
+        const xMax = xQr - 10;
+        const x = Math.max(margen + 8, xMax - logoPlaceholderW);
+        if (x + logoPlaceholderW <= xMax) {
+          page.drawRectangle({ x, y: yTop - logoPlaceholderH - 8, width: logoPlaceholderW, height: logoPlaceholderH, borderWidth: 1, borderColor: colorLinea, color: rgb(1, 1, 1) });
+          page.drawText('LOGO', { x: x + 10, y: yTop - 30, size: 9, font: fuenteBold, color: colorGris });
+        }
+      }
+
+      const maxWidthEnc = Math.max(120, xQr - 12 - xTexto);
+      const lineasInsti = partirEnLineas({ texto: institucion, maxWidth: maxWidthEnc, font: fuenteBold, size: 12 });
+      page.drawText(lineasInsti[0] ?? '', { x: xTexto, y: yTop - 22, size: 12, font: fuenteBold, color: colorPrimario });
+
+      const lineasTitulo = partirEnLineas({ texto: titulo, maxWidth: maxWidthEnc, font: fuenteBold, size: sizeTitulo });
+      page.drawText(lineasTitulo[0] ?? '', { x: xTexto, y: yTop - 42, size: sizeTitulo, font: fuenteBold, color: rgb(0.1, 0.1, 0.1) });
+      if (lema) {
+        const lineasLema = partirEnLineas({ texto: lema, maxWidth: maxWidthEnc, font: fuenteItalica, size: 9 });
+        page.drawText(lineasLema[0] ?? '', { x: xTexto, y: yTop - 58, size: 9, font: fuenteItalica, color: colorGris });
+      }
 
       const metaY = yTop - 74;
-      const meta = [materia ? `Materia: ${materia}` : '', docente ? `Docente: ${docente}` : '', `Pagina: ${numeroPagina}`].filter(Boolean);
-      page.drawText(meta.join('   |   '), { x: xTexto, y: metaY, size: sizeMeta, font: fuente, color: colorGris });
+      const meta = [materia ? `Materia: ${materia}` : '', docente ? `Docente: ${docente}` : '', `Pagina: ${numeroPagina}`].filter(Boolean).join('   |   ');
+      const metaLineas = partirEnLineas({ texto: meta, maxWidth: maxWidthEnc, font: fuente, size: sizeMeta });
+      page.drawText(metaLineas[0] ?? '', { x: xTexto, y: metaY, size: sizeMeta, font: fuente, color: colorGris });
       page.drawText(`Folio: ${qrTexto}`, { x: xTexto, y: metaY - 14, size: sizeMeta, font: fuenteBold, color: colorPrimario });
 
-      const yCampos = metaY - 32;
+      // Campos de alumno/grupo (subidos un poco para no chocar con instrucciones)
+      const yCampos = metaY - 20;
       page.drawText('Alumno:', { x: xTexto, y: yCampos, size: 10, font: fuenteBold, color: rgb(0.15, 0.15, 0.15) });
       page.drawLine({ start: { x: xTexto + 52, y: yCampos + 3 }, end: { x: xTexto + 300, y: yCampos + 3 }, color: colorLinea, thickness: 1 });
+      if (alumnoNombre) {
+        const alumnoLinea = partirEnLineas({ texto: alumnoNombre, maxWidth: 240, font: fuente, size: 10 })[0] ?? '';
+        page.drawText(alumnoLinea, { x: xTexto + 56, y: yCampos, size: 10, font: fuente, color: rgb(0.1, 0.1, 0.1) });
+      }
+
       page.drawText('Grupo:', { x: xTexto + 320, y: yCampos, size: 10, font: fuenteBold, color: rgb(0.15, 0.15, 0.15) });
       page.drawLine({ start: { x: xTexto + 365, y: yCampos + 3 }, end: { x: xTexto + 470, y: yCampos + 3 }, color: colorLinea, thickness: 1 });
+      if (alumnoGrupo) {
+        const grupoLinea = partirEnLineas({ texto: alumnoGrupo, maxWidth: 100, font: fuente, size: 10 })[0] ?? '';
+        page.drawText(grupoLinea, { x: xTexto + 370, y: yCampos, size: 10, font: fuente, color: rgb(0.1, 0.1, 0.1) });
+      }
 
       if (mostrarInstrucciones) {
-        const yInst = yCaja + 10;
         const xInst = margen + 10;
-        const wInst = 360;
-        page.drawRectangle({ x: xInst, y: yInst, width: wInst, height: 30, borderWidth: 1, borderColor: colorLinea, color: rgb(1, 1, 1) });
-        page.drawText('Instrucciones:', { x: xInst + 8, y: yInst + 18, size: 9, font: fuenteBold, color: colorPrimario });
-        const inst = 'Rellena un solo circulo por pregunta. Evita tachones. Usa pluma negra.';
-        const lineasInst = partirEnLineas({ texto: inst, maxWidth: wInst - 90, font: fuente, size: 9 });
-        page.drawText(lineasInst.join(' '), { x: xInst + 88, y: yInst + 18, size: 9, font: fuente, color: colorGris });
+        const wInst = Math.min(420, xDerechaTexto - xInst - 10);
+        const textoInst = instrucciones;
+        const lineasInst = partirEnLineas({ texto: textoInst, maxWidth: wInst - 16, font: fuente, size: 9 });
+        const yInst = yCaja + 8;
+
+        // No permitir que la caja invada el area de Alumno/Grupo.
+        const maxH = Math.max(32, yCampos - yInst - 6);
+        const hDeseada = Math.max(32, 8 + lineasInst.length * 10);
+        const hInst = Math.min(maxH, hDeseada);
+
+        // Recortar líneas para que quepan.
+        const lineasMax = Math.max(1, Math.floor((hInst - 26) / 10));
+        const lineasVisibles = lineasInst.slice(0, lineasMax);
+
+        page.drawRectangle({ x: xInst, y: yInst, width: wInst, height: hInst, borderWidth: 1, borderColor: colorLinea, color: rgb(1, 1, 1) });
+        page.drawText('Instrucciones:', { x: xInst + 8, y: yInst + hInst - 14, size: 9, font: fuenteBold, color: colorPrimario });
+        // Texto debajo del label
+        let yTexto = yInst + hInst - 26;
+        for (const linea of lineasVisibles) {
+          page.drawText(linea, { x: xInst + 8, y: yTexto, size: 9, font: fuente, color: colorGris });
+          yTexto -= 10;
+          if (yTexto < yInst + 6) break;
+        }
       }
     } else {
       page.drawText(titulo, { x: margen + 10, y: yTop - 26, size: 12, font: fuenteBold, color: colorPrimario });
@@ -699,7 +761,8 @@ export async function generarPdfExamen({
       const letras = [...itemsCol1.map((x) => x.letra), ...itemsCol2.map((x) => x.letra)];
       const ys = letras.map((l) => yPrimeraLinea[l]).filter((v) => typeof v === 'number');
       if (ys.length > 0) {
-        const top = Math.max(...ys) + 16;
+        // Reservar espacio superior para el título "RESPUESTA" y evitar tapar la primera burbuja.
+        const top = Math.max(...ys) + 30;
         const bottom = Math.min(...ys) - 16;
         const hCaja = Math.max(40, top - bottom);
         const padding = 8;

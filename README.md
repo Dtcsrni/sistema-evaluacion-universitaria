@@ -171,6 +171,7 @@ La idea es que el “modo local” siga funcionando como base sólida incluso si
 ## Documentacion
 - Arquitectura: `docs/ARQUITECTURA.md`
 - Flujo del examen: `docs/FLUJO_EXAMEN.md`
+- Guia para llenar formularios (UI): `docs/GUIA_FORMULARIOS.md`
 - Despliegue local y cloud: `docs/DESPLIEGUE.md`
 - Seguridad: `docs/SEGURIDAD.md`
 - Formato PDF y OMR: `docs/FORMATO_PDF.md`

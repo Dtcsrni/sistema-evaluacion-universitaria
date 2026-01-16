@@ -15,7 +15,7 @@ scriptDir = fso.GetParentFolderName(WScript.ScriptFullName)
 rootDir = fso.GetParentFolderName(scriptDir)
 
 Dim mode, port
-mode = "none"
+mode = "dev"
 port = "0"
 If WScript.Arguments.Count >= 1 Then mode = WScript.Arguments(0)
 If WScript.Arguments.Count >= 2 Then port = WScript.Arguments(1)

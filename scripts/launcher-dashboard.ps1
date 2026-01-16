@@ -2,7 +2,7 @@
 # Keeps UI logic in JavaScript for portability.
 param(
   [ValidateSet('dev','prod','none')]
-  [string]$Mode = 'none',
+  [string]$Mode = 'dev',
   [int]$Port = 0,
   [switch]$NoOpen,
   [switch]$Verbose

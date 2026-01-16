@@ -2129,6 +2129,33 @@
       if (el) el.textContent = value;
     };
 
+    function normalizeModeValue(value) {
+      const v = String(value || '').toLowerCase();
+      return v === 'dev' || v === 'prod' || v === 'none' ? v : 'none';
+    }
+
+    function deriveDisplayMode(configMode, runningList) {
+      const cfg = normalizeModeValue(configMode);
+      const running = new Set(Array.isArray(runningList) ? runningList : []);
+      const hasDev = running.has('dev');
+      const hasProd = running.has('prod');
+
+      // If config explicitly sets dev/prod, respect it.
+      if (cfg === 'dev' || cfg === 'prod') return cfg;
+
+      // Otherwise, infer from what's running.
+      if (hasDev && !hasProd) return 'dev';
+      if (hasProd && !hasDev) return 'prod';
+      if (hasDev && hasProd) return 'dev';
+      return 'none';
+    }
+
+    function formatModeLabel(modeValue) {
+      const m = normalizeModeValue(modeValue);
+      if (m === 'none') return 'Sin modo';
+      return m.toUpperCase();
+    }
+
     const ENV_LABELS = {
       dev: 'Dev local',
       prod: 'Prod local',
@@ -2271,8 +2298,10 @@
 
         const startedAgo = startedAt ? formatMs(Date.now() - startedAt) : '-';
 
+        const modeLabel = mode === '-' ? '-' : formatModeLabel(normalizeModeValue(mode));
+
         setText('install-version', name && version !== '-' ? `${name} v${version}` : (version !== '-' ? `v${version}` : '-'));
-        setText('install-dashboard', `Modo: ${mode} · Puerto: ${port || '-'} · PID: ${pid} · Inicio: hace ${startedAgo}`);
+        setText('install-dashboard', `Modo: ${modeLabel} · Puerto: ${port || '-'} · PID: ${pid} · Inicio: hace ${startedAgo}`);
         setText('install-root', truncatePath(root, 96));
         setText('install-logs', `${truncatePath(logs, 96)}\nPersistencia: ${persist} · Flush: ${flushMs ? flushMs + 'ms' : '-'} · Rotacion: ${maxBytes ? Math.round(maxBytes/1000) + 'KB' : '-'} · Keep: ${keep || '-'}`);
         setText('install-runtime', truncatePath(runtime, 110));
@@ -3056,22 +3085,23 @@
       const runningCount = runningList.length;
       const previousRunning = new Set(state.running);
 
-      state.mode = data.mode;
+      const displayMode = deriveDisplayMode(data.mode, runningList);
+      state.mode = displayMode;
       state.running = new Set(runningList);
 
       setText('root', data.root);
-      setText('mode', data.mode);
+      setText('mode', formatModeLabel(displayMode));
       setText('running-count', String(runningCount));
       setText('running', renderRunning(runningList));
       setText('last-refresh', `Actualizado ${new Date().toLocaleTimeString()}`);
 
       setText('root-status', data.root);
-      setText('mode-status', data.mode);
+      setText('mode-status', formatModeLabel(displayMode));
       setText('running-status', renderRunning(runningList));
       setText('node', data.node);
       setText('npm', data.npm);
       setText('docker', data.docker);
-      setText('mode-chip', `Modo: ${data.mode}`);
+      setText('mode-chip', `Modo: ${formatModeLabel(displayMode)}`);
       setText('running-chip', `Procesos: ${runningCount}`);
       setText('port-chip', `Puerto: ${data.port || '-'}`);
       setText('log-size', `${data.logSize} lineas`);
@@ -3081,7 +3111,7 @@
       state.autoRestart = Boolean(data.autoRestart);
       const autoRestartToggle = $('auto-restart');
       if (autoRestartToggle) {
-        autoRestartToggle.disabled = String(data.mode || '').toLowerCase() !== 'dev';
+        autoRestartToggle.disabled = String(data.modeConfig || data.mode || '').toLowerCase() !== 'dev';
         autoRestartToggle.checked = state.autoRestart;
       }
 

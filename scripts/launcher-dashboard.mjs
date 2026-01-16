@@ -646,6 +646,7 @@ function writeLock(port) {
   const payload = {
     pid: process.pid,
     port,
+    mode,
     startedAt: new Date().toISOString()
   };
   try {
@@ -679,7 +680,10 @@ const server = http.createServer(async (req, res) => {
   const pathName = reqUrl.pathname;
 
   if (req.method === 'GET' && pathName === '/') {
-    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.writeHead(200, {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'no-store'
+    });
     res.end(dashboardHtml);
     return;
   }
@@ -705,14 +709,27 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'GET' && pathName === '/api/status') {
     const noise = noiseSnapshot();
     const noiseTotal = Object.values(noise).reduce((acc, val) => acc + val, 0);
+    const running = runningTasks();
+
+    const hasDev = running.includes('dev');
+    const hasProd = running.includes('prod');
+    let uiMode = mode;
+    if (mode !== 'dev' && mode !== 'prod') {
+      if (hasDev && !hasProd) uiMode = 'dev';
+      else if (hasProd && !hasDev) uiMode = 'prod';
+      else if (hasDev && hasProd) uiMode = 'dev';
+      else uiMode = 'none';
+    }
+
     const payload = {
       root,
-      mode,
+      mode: uiMode,
+      modeConfig: mode,
       port: listeningPort,
       node: safeExec('node -v', 'No detectado'),
       npm: safeExec('npm -v', 'No detectado'),
       docker: safeExec('docker version --format "{{.Server.Version}}"', 'No disponible'),
-      running: runningTasks(),
+      running,
       logSize: logLines.length,
       rawSize: rawLines.length,
       noise,
@@ -725,13 +742,24 @@ const server = http.createServer(async (req, res) => {
 
   if (req.method === 'GET' && pathName === '/api/install') {
     const pkg = readRootPackageInfo();
+    const running = runningTasks();
+    const hasDev = running.includes('dev');
+    const hasProd = running.includes('prod');
+    let uiMode = mode;
+    if (mode !== 'dev' && mode !== 'prod') {
+      if (hasDev && !hasProd) uiMode = 'dev';
+      else if (hasProd && !hasDev) uiMode = 'prod';
+      else if (hasDev && hasProd) uiMode = 'dev';
+      else uiMode = 'none';
+    }
     const payload = {
       app: {
         name: pkg.name || 'sistema-evaluacion-universitaria',
         version: pkg.version || ''
       },
       dashboard: {
-        mode,
+        mode: uiMode,
+        modeConfig: mode,
         port: listeningPort,
         pid: process.pid,
         startedAt: dashboardStartedAt,

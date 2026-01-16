@@ -81,6 +81,12 @@ docker compose --profile dev up --build
 - `PORTAL_API_KEY`: API key de validacion en el portal cloud.
 - `WEB_URL`: usado por `scripts/dashboard.mjs` para verificar la web.
 
+Branding del PDF (opcional):
+- `EXAMEN_INSTITUCION`: texto en encabezado.
+- `EXAMEN_LEMA`: texto opcional bajo el título.
+- `EXAMEN_LOGO_IZQ_PATH`: ruta a logo izquierdo (ej. `logos/cuh.png`) o `data:image/png;base64,...`.
+- `EXAMEN_LOGO_DER_PATH`: ruta a logo derecho (ej. `logos/isc.png`) o `data:image/png;base64,...`.
+
 Seed de cuenta admin/docente (solo para entornos locales o controlados):
 - `SEED_ADMIN_EMAIL`: correo del docente a crear/asegurar.
 - `SEED_ADMIN_PASSWORD`: password inicial (se guarda hasheado).

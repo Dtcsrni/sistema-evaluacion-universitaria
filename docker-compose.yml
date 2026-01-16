@@ -43,6 +43,10 @@ services:
     environment:
       - MONGODB_URI=${MONGODB_URI:-mongodb://mongo_local:27017/mern_app}
       - PUERTO_API=${PUERTO_API:-4000}
+      - EXAMEN_LOGO_IZQ_PATH=${EXAMEN_LOGO_IZQ_PATH:-logos/cuh.png}
+      - EXAMEN_LOGO_DER_PATH=${EXAMEN_LOGO_DER_PATH:-logos/isc.png}
+    volumes:
+      - ./logos:/app/logos:ro
     depends_on:
       mongo_local:
         condition: service_healthy
@@ -76,6 +80,10 @@ services:
     environment:
       - MONGODB_URI=${MONGODB_URI:-mongodb://mongo_local:27017/mern_app}
       - PUERTO_API=${PUERTO_API:-4000}
+      - EXAMEN_LOGO_IZQ_PATH=${EXAMEN_LOGO_IZQ_PATH:-logos/cuh.png}
+      - EXAMEN_LOGO_DER_PATH=${EXAMEN_LOGO_DER_PATH:-logos/isc.png}
+    volumes:
+      - ./logos:/app/logos:ro
     depends_on:
       mongo_local:
         condition: service_healthy

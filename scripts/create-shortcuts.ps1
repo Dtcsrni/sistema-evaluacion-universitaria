@@ -15,6 +15,13 @@ if (-not (Test-Path $outPath)) {
   New-Item -ItemType Directory -Path $outPath | Out-Null
 }
 
+if ($Force) {
+  # Limpia accesos previos para evitar duplicados (incluye "Bandeja" y legacy).
+  Get-ChildItem -Path $outPath -Filter "Sistema Evaluacion - *.lnk" -ErrorAction SilentlyContinue | ForEach-Object {
+    try { Remove-Item -LiteralPath $_.FullName -Force -ErrorAction SilentlyContinue } catch {}
+  }
+}
+
 if (-not (Test-Path $iconDir)) {
   New-Item -ItemType Directory -Path $iconDir | Out-Null
 }
@@ -177,18 +184,7 @@ function New-Shortcut([string]$name, [string]$mode, [string]$iconPath) {
   $lnkPath = Join-Path $outPath ($name + ".lnk")
   $shortcut = $wsh.CreateShortcut($lnkPath)
   $shortcut.TargetPath = $target
-  # Usa ruta relativa al WorkingDirectory para que funcione desde cualquier ubicacion.
-  $shortcut.Arguments = "//nologo `"scripts\launcher-dashboard-hidden.vbs`" $mode 4519"
-  $shortcut.WorkingDirectory = $root
-  $shortcut.Description = "Dashboard $name"
-  $shortcut.IconLocation = $iconPath
-  $shortcut.Save()
-}
-
-function New-TrayShortcut([string]$name, [string]$mode, [string]$iconPath) {
-  $lnkPath = Join-Path $outPath ($name + ".lnk")
-  $shortcut = $wsh.CreateShortcut($lnkPath)
-  $shortcut.TargetPath = $target
+  # Solo 2 accesos directos: Dev y Prod. Ambos lanzan el ícono en bandeja.
   $shortcut.Arguments = "//nologo `"scripts\launcher-tray-hidden.vbs`" $mode 4519"
   $shortcut.WorkingDirectory = $root
   $shortcut.Description = "Bandeja (tray) $name"
@@ -198,9 +194,5 @@ function New-TrayShortcut([string]$name, [string]$mode, [string]$iconPath) {
 
 New-Shortcut "Sistema Evaluacion - Dev" "dev" $iconDev
 New-Shortcut "Sistema Evaluacion - Prod" "prod" $iconProd
-
-New-TrayShortcut "Sistema Evaluacion - Bandeja (Dev)" "dev" $iconDev
-New-TrayShortcut "Sistema Evaluacion - Bandeja (Prod)" "prod" $iconProd
-New-TrayShortcut "Sistema Evaluacion - Bandeja (Manual)" "none" $iconDev
 
 Write-Host "Accesos directos creados en: $outPath"

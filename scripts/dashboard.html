@@ -430,6 +430,21 @@
     }
     .alert-card.ok .alert-icon { background: rgba(34, 197, 94, 0.14); color: #166534; }
     .alert-card.error .alert-icon { background: rgba(239, 68, 68, 0.14); color: #b91c1c; }
+
+    :root[data-theme="dark"] .alert-icon {
+      background: rgba(245, 158, 11, 0.16);
+      color: rgba(253, 230, 138, 0.96);
+    }
+
+    :root[data-theme="dark"] .alert-card.ok .alert-icon {
+      background: rgba(34, 197, 94, 0.14);
+      color: rgba(187, 247, 208, 0.96);
+    }
+
+    :root[data-theme="dark"] .alert-card.error .alert-icon {
+      background: rgba(239, 68, 68, 0.14);
+      color: rgba(254, 202, 202, 0.96);
+    }
     .alert-content { flex: 1; min-width: 0; }
     .alert-content h3 { margin: 0; font-size: 15px; }
     .alert-content p { margin: 6px 0 0; color: var(--ink-soft); font-size: 13px; }
@@ -555,6 +570,21 @@
 
     button.ghost-btn.restart-btn.is-holding {
       box-shadow: 0 12px 24px rgba(124, 45, 18, 0.18);
+    }
+
+    :root[data-theme="dark"] button.ghost-btn.restart-btn {
+      background: rgba(245, 158, 11, 0.14);
+      border-color: rgba(245, 158, 11, 0.32);
+      color: rgba(253, 230, 138, 0.96);
+    }
+
+    :root[data-theme="dark"] button.ghost-btn.restart-btn:hover {
+      background: rgba(245, 158, 11, 0.18);
+      border-color: rgba(245, 158, 11, 0.38);
+    }
+
+    :root[data-theme="dark"] button.ghost-btn.restart-btn.is-holding {
+      box-shadow: 0 14px 30px rgba(0, 0, 0, 0.28);
     }
 
     button.ghost-btn.hold-done {
@@ -1606,7 +1636,8 @@
     }
 
     .search::placeholder {
-      color: color-mix(in srgb, var(--ink-soft) 82%, transparent);
+      color: var(--ink-soft);
+      opacity: 0.75;
     }
 
     .pills { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -2395,7 +2426,7 @@
 
     // Identificador de UI (útil para confirmar que el HTML recargó cambios).
     // Nota: actualiza este valor cuando hagas cambios visibles al dashboard.
-    const UI_REV = '2026-01-17.2';
+    const UI_REV = '2026-01-17.3';
 
     const THEME_STORAGE_KEY = 'seuDashboardTheme';
 

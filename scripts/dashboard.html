@@ -399,6 +399,48 @@
       border-color: rgba(239, 68, 68, 0.75);
     }
 
+    .sys-indicator {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 36px;
+      height: 30px;
+      padding: 0;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.24);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      color: #ffffff;
+      cursor: pointer;
+      -webkit-appearance: none;
+      appearance: none;
+      box-shadow: 0 10px 26px rgba(0, 0, 0, 0.16);
+      transition: transform var(--dur-fast) var(--ease-out),
+        background var(--dur-fast) var(--ease-out),
+        border-color var(--dur-fast) var(--ease-out),
+        box-shadow var(--dur-fast) var(--ease-out);
+    }
+
+    .sys-indicator svg {
+      width: 16px;
+      height: 16px;
+      opacity: 0.95;
+    }
+
+    .sys-indicator:hover {
+      transform: translateY(-1px);
+      background: rgba(0, 0, 0, 0.3);
+    }
+
+    .sys-indicator:active {
+      transform: translateY(0px);
+    }
+
+    :root[data-mood="ok"] .sys-indicator { border-color: rgba(34, 197, 94, 0.85); box-shadow: 0 14px 34px rgba(34, 197, 94, 0.14); }
+    :root[data-mood="warn"] .sys-indicator { border-color: rgba(245, 158, 11, 0.9); box-shadow: 0 14px 34px rgba(245, 158, 11, 0.16); }
+    :root[data-mood="error"] .sys-indicator { border-color: rgba(239, 68, 68, 0.9); box-shadow: 0 14px 34px rgba(239, 68, 68, 0.16); }
+    :root[data-mood="info"] .sys-indicator { border-color: rgba(34, 232, 255, 0.85); box-shadow: 0 14px 34px rgba(34, 232, 255, 0.14); }
+
     .mono {
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
       font-size: 12px;
@@ -2126,6 +2168,13 @@
       <span class="chip" id="running-chip">Procesos: -</span>
       <span class="chip" id="paused-chip">Actualizacion: Activa</span>
       <span class="chip" id="connection-chip">Conexion: -</span>
+      <button class="sys-indicator" id="system-indicator" type="button" title="Estado del sistema" aria-label="Estado del sistema">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M12 2l7 3v6c0 5-3 9-7 11C8 20 5 16 5 11V5l7-3z" fill="none" stroke="currentColor" stroke-width="1.8" />
+          <path d="M12 7v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+          <circle cx="12" cy="16.8" r="1" fill="currentColor" />
+        </svg>
+      </button>
       <button class="chip" id="theme-toggle" type="button" title="Cambiar tema (claro/oscuro)">Tema</button>
     </div>
   </header>
@@ -2623,8 +2672,26 @@
       return 'warn';
     }
 
+    function updateSystemIndicator(mood) {
+      const btn = $('system-indicator');
+      if (!btn) return;
+
+      const map = {
+        ok: { label: 'Sistema: OK', hint: 'Todos los servicios esperados están activos.' },
+        warn: { label: 'Sistema: Atención', hint: 'Servicios sin comprobar o estado parcial.' },
+        error: { label: 'Sistema: Error', hint: 'Hay servicios esperados caídos o sin conexión.' },
+        info: { label: 'Sistema: Info', hint: 'No hay servicios esperados activos (stack detenido).' }
+      };
+      const m = map[mood] ? mood : 'info';
+      const text = `${map[m].label} · Click para ver Status`;
+      btn.setAttribute('aria-label', text);
+      btn.setAttribute('title', `${map[m].label}. ${map[m].hint} Click para ir a Status.`);
+    }
+
     function applyMood() {
-      document.documentElement.dataset.mood = computeMood();
+      const mood = computeMood();
+      document.documentElement.dataset.mood = mood;
+      updateSystemIndicator(mood);
     }
 
     function syncThemeMetaFromCurrent() {
@@ -4177,6 +4244,13 @@
         const value = event.target.checked;
         showToast(value ? 'Auto-reinicio activado' : 'Auto-reinicio desactivado', value ? 'ok' : 'warn');
         setAutoRestart(value);
+      });
+    }
+
+    const systemIndicator = $('system-indicator');
+    if (systemIndicator) {
+      systemIndicator.addEventListener('click', () => {
+        setTab('status');
       });
     }
 

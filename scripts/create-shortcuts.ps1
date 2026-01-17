@@ -10,6 +10,19 @@ $iconDir = Join-Path $root "scripts\icons"
 $iconDev = Join-Path $iconDir "dashboard-dev.ico"
 $iconProd = Join-Path $iconDir "dashboard-prod.ico"
 
+# Copia local para mejorar compatibilidad de Explorer (especialmente si el repo vive en unidad mapeada/red).
+$localIconDir = $null
+try {
+  if ($env:LOCALAPPDATA) {
+    $localIconDir = Join-Path $env:LOCALAPPDATA "EvaluaPro\icons"
+    if (-not (Test-Path $localIconDir)) {
+      New-Item -ItemType Directory -Path $localIconDir -Force | Out-Null
+    }
+  }
+} catch {
+  $localIconDir = $null
+}
+
 $outPath = Join-Path $root $OutputDir
 if (-not (Test-Path $outPath)) {
   New-Item -ItemType Directory -Path $outPath | Out-Null
@@ -30,6 +43,22 @@ if (-not (Test-Path $iconDir)) {
 
 Add-Type -AssemblyName System.Drawing
 
+$csharp = @'
+using System;
+using System.Runtime.InteropServices;
+
+public static class NativeIcons {
+  [DllImport("user32.dll", SetLastError=true)]
+  public static extern bool DestroyIcon(IntPtr hIcon);
+}
+'@
+
+try {
+  Add-Type -TypeDefinition $csharp -ErrorAction SilentlyContinue | Out-Null
+} catch {
+  # ignore
+}
+
 function New-RoundedRectPath([System.Drawing.RectangleF]$rect, [float]$radius) {
   $path = New-Object System.Drawing.Drawing2D.GraphicsPath
   $d = [Math]::Max(1.0, $radius * 2.0)
@@ -46,50 +75,26 @@ function New-RoundedRectPath([System.Drawing.RectangleF]$rect, [float]$radius) {
   return $path
 }
 
-function Save-IcoFromPngImages([string]$path, [System.Collections.Generic.List[byte[]]]$pngImages, [int[]]$sizes) {
-  # ICO con imágenes PNG embebidas (nítido en múltiples escalas).
-  if ($pngImages.Count -ne $sizes.Count) {
-    throw "Save-IcoFromPngImages: conteos no coinciden"
-  }
-
-  $count = [uint16]$pngImages.Count
-  $headerSize = 6
-  $dirEntrySize = 16
-  $offset = $headerSize + ($dirEntrySize * $pngImages.Count)
-
-  $fs = New-Object System.IO.FileStream($path, [System.IO.FileMode]::Create, [System.IO.FileAccess]::Write, [System.IO.FileShare]::None)
-  $bw = New-Object System.IO.BinaryWriter($fs)
+function Save-IcoFromBitmap([string]$path, [System.Drawing.Bitmap]$bitmap) {
+  # ICO clásico de una sola imagen via GetHicon + Icon.Save.
+  $hIcon = [IntPtr]::Zero
+  $ico = $null
+  $fs = $null
   try {
-    # ICONDIR
-    $bw.Write([uint16]0) # reserved
-    $bw.Write([uint16]1) # type = icon
-    $bw.Write([uint16]$count)
-
-    # ICONDIRENTRY
-    for ($i = 0; $i -lt $pngImages.Count; $i++) {
-      $size = [int]$sizes[$i]
-      $png = $pngImages[$i]
-      $w = if ($size -ge 256) { 0 } else { [byte]$size }
-      $h = if ($size -ge 256) { 0 } else { [byte]$size }
-      $bw.Write($w)
-      $bw.Write($h)
-      $bw.Write([byte]0) # color count
-      $bw.Write([byte]0) # reserved
-      $bw.Write([uint16]1) # planes
-      $bw.Write([uint16]32) # bitcount
-      $bw.Write([uint32]$png.Length) # bytes in res
-      $bw.Write([uint32]$offset) # image offset
-      $offset += $png.Length
-    }
-
-    # Image data
-    for ($i = 0; $i -lt $pngImages.Count; $i++) {
-      $bw.Write($pngImages[$i])
-    }
+    $hIcon = $bitmap.GetHicon()
+    $ico = [System.Drawing.Icon]::FromHandle($hIcon)
+    $fs = New-Object System.IO.FileStream($path, [System.IO.FileMode]::Create, [System.IO.FileAccess]::Write, [System.IO.FileShare]::None)
+    $ico.Save($fs)
   } finally {
-    $bw.Flush()
-    $bw.Dispose()
-    $fs.Dispose()
+    try { if ($fs) { $fs.Dispose() } } catch {}
+    try { if ($ico) { $ico.Dispose() } } catch {}
+    try {
+      if ($hIcon -ne [IntPtr]::Zero) {
+        [NativeIcons]::DestroyIcon($hIcon) | Out-Null
+      }
+    } catch {
+      # ignore
+    }
   }
 }
 
@@ -237,30 +242,35 @@ function New-DashboardIcon([string]$path, [string]$label, [string]$bgHexA, [stri
     return
   }
 
-  $sizes = @(16, 24, 32, 48, 64, 96, 128, 256)
-  $pngs = New-Object "System.Collections.Generic.List[byte[]]"
-
-  foreach ($s in $sizes) {
-    $bmp = New-ModernDashboardBitmap $s $label $bgHexA $bgHexB $accentHex
-    try {
-      $ms = New-Object System.IO.MemoryStream
-      try {
-        $bmp.Save($ms, [System.Drawing.Imaging.ImageFormat]::Png)
-        $pngs.Add($ms.ToArray()) | Out-Null
-      } finally {
-        $ms.Dispose()
-      }
-    } finally {
-      $bmp.Dispose()
-    }
+  # Un solo tamaño grande: Explorer escalará para las vistas pequeñas.
+  $bmp = New-ModernDashboardBitmap 256 $label $bgHexA $bgHexB $accentHex
+  try {
+    Save-IcoFromBitmap $path $bmp
+  } finally {
+    try { $bmp.Dispose() } catch {}
   }
-
-  Save-IcoFromPngImages $path $pngs $sizes
 }
 
 # Paleta (oscuro + neón), consistente con los favicons.
 New-DashboardIcon $iconDev "DEV" "#02030a" "#0b1220" "#22e8ff"
 New-DashboardIcon $iconProd "PROD" "#02030a" "#0b1220" "#35ff93"
+
+$iconDevForLnk = $iconDev
+$iconProdForLnk = $iconProd
+if ($localIconDir) {
+  try {
+    $localDev = Join-Path $localIconDir "dashboard-dev.ico"
+    $localProd = Join-Path $localIconDir "dashboard-prod.ico"
+    Copy-Item -LiteralPath $iconDev -Destination $localDev -Force
+    Copy-Item -LiteralPath $iconProd -Destination $localProd -Force
+    $iconDevForLnk = $localDev
+    $iconProdForLnk = $localProd
+  } catch {
+    # Si falla la copia local, seguimos con los iconos del repo.
+    $iconDevForLnk = $iconDev
+    $iconProdForLnk = $iconProd
+  }
+}
 
 $wsh = New-Object -ComObject WScript.Shell
 
@@ -277,7 +287,7 @@ function New-Shortcut([string]$name, [string]$mode, [string]$iconPath) {
   $shortcut.Save()
 }
 
-New-Shortcut "EvaluaPro - Dev" "dev" $iconDev
-New-Shortcut "EvaluaPro - Prod" "prod" $iconProd
+New-Shortcut "EvaluaPro - Dev" "dev" $iconDevForLnk
+New-Shortcut "EvaluaPro - Prod" "prod" $iconProdForLnk
 
 Write-Host "Accesos directos creados en: $outPath"

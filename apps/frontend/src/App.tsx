@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AppAlumno } from './apps/app_alumno/AppAlumno';
 import { AppDocente } from './apps/app_docente/AppDocente';
+import { TemaProvider } from './tema/TemaProvider';
 
 function establecerFavicon(href: string) {
   if (typeof document === 'undefined') return;
@@ -31,7 +32,13 @@ function App() {
 
   const contenido = destino === 'alumno' ? <AppAlumno /> : <AppDocente />;
 
-  return <main className="page">{googleClientId && destino !== 'alumno' ? <GoogleOAuthProvider clientId={googleClientId}>{contenido}</GoogleOAuthProvider> : contenido}</main>;
+  return (
+    <TemaProvider>
+      <main className="page">
+        {googleClientId && destino !== 'alumno' ? <GoogleOAuthProvider clientId={googleClientId}>{contenido}</GoogleOAuthProvider> : contenido}
+      </main>
+    </TemaProvider>
+  );
 }
 
 export default App;

@@ -3,10 +3,15 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { AppDocente } from '../src/apps/app_docente/AppDocente';
+import { TemaProvider } from '../src/tema/TemaProvider';
 
 describe('AppDocente', () => {
   it('muestra formulario de acceso cuando no hay token', () => {
-    render(<AppDocente />);
+    render(
+      <TemaProvider>
+        <AppDocente />
+      </TemaProvider>
+    );
 
     expect(screen.getByText('Acceso docente')).toBeInTheDocument();
     expect(screen.getByText('Plataforma Docente')).toBeInTheDocument();
@@ -14,7 +19,11 @@ describe('AppDocente', () => {
 
   it('muestra panel docente cuando existe token', async () => {
     localStorage.setItem('tokenDocente', 'token-falso');
-    render(<AppDocente />);
+    render(
+      <TemaProvider>
+        <AppDocente />
+      </TemaProvider>
+    );
 
     expect(await screen.findByRole('navigation', { name: 'Secciones del portal docente' })).toBeInTheDocument();
   });
@@ -22,7 +31,11 @@ describe('AppDocente', () => {
   it('permite crear materia sin crashear el render', async () => {
     localStorage.setItem('tokenDocente', 'token-falso');
     const user = userEvent.setup();
-    render(<AppDocente />);
+    render(
+      <TemaProvider>
+        <AppDocente />
+      </TemaProvider>
+    );
 
     expect(await screen.findByRole('navigation', { name: 'Secciones del portal docente' })).toBeInTheDocument();
 

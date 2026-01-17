@@ -14,6 +14,7 @@ import { Boton } from '../../ui/ux/componentes/Boton';
 import { CampoTexto } from '../../ui/ux/componentes/CampoTexto';
 import { InlineMensaje } from '../../ui/ux/componentes/InlineMensaje';
 import { obtenerSessionId } from '../../ui/ux/sesion';
+import { TemaBoton } from '../../tema/TemaBoton';
 import {
   accionCerrarSesion,
   accionToastSesionParaError,
@@ -146,15 +147,18 @@ export function AppAlumno() {
         <p className="eyebrow">
           <Icono nombre="alumno" /> Portal Alumno
         </p>
-        {token && (
-          <button
-            className="boton secundario"
-            type="button"
-            onClick={() => cerrarSesion()}
-          >
-            <Icono nombre="salir" /> Salir
-          </button>
-        )}
+        <div className="cabecera__acciones">
+          <TemaBoton />
+          {token && (
+            <button
+              className="boton secundario"
+              type="button"
+              onClick={() => cerrarSesion()}
+            >
+              <Icono nombre="salir" /> Salir
+            </button>
+          )}
+        </div>
       </div>
       <h1>Resultados de examen</h1>
 

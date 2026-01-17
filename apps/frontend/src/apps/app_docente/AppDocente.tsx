@@ -16,6 +16,7 @@ import { Icono, Spinner } from '../../ui/iconos';
 import { Boton } from '../../ui/ux/componentes/Boton';
 import { InlineMensaje } from '../../ui/ux/componentes/InlineMensaje';
 import { obtenerSessionId } from '../../ui/ux/sesion';
+import { TemaBoton } from '../../tema/TemaBoton';
 import { tipoMensajeInline } from './mensajeInline';
 
 const clienteApi = crearClienteApi();
@@ -563,16 +564,19 @@ export function AppDocente() {
           </p>
           <h1>Banco y Examenes</h1>
         </div>
-        {docente && (
-          <Boton
-            variante="secundario"
-            type="button"
-            icono={<Icono nombre="salir" />}
-            onClick={() => cerrarSesion()}
-          >
-            Salir
-          </Boton>
-        )}
+        <div className="cabecera__acciones">
+          <TemaBoton />
+          {docente && (
+            <Boton
+              variante="secundario"
+              type="button"
+              icono={<Icono nombre="salir" />}
+              onClick={() => cerrarSesion()}
+            >
+              Salir
+            </Boton>
+          )}
+        </div>
       </div>
       {docente && (
         <InlineMensaje tipo="info">

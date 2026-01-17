@@ -9,6 +9,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#02030a" />
   <link rel="icon" type="image/svg+xml" href="/assets/dashboard-icon.svg" />
   <link rel="apple-touch-icon" href="/assets/dashboard-icon.svg" />
   <link rel="manifest" href="/manifest.webmanifest" />
@@ -111,6 +112,44 @@
       --header-chip-border: rgba(148, 163, 184, 0.22);
     }
 
+    /* Estado del sistema (mood) -> afecta acentos y energía visual */
+    :root[data-mood="ok"] {
+      --accent: var(--neon-lime);
+      --accent-3: var(--neon-cyan);
+      --accent-soft: var(--neon-lime-soft);
+    }
+    :root[data-mood="warn"] {
+      --accent: #f59e0b;
+      --accent-3: var(--neon-magenta);
+      --accent-soft: rgba(245, 158, 11, 0.14);
+    }
+    :root[data-mood="error"] {
+      --accent: #ef4444;
+      --accent-3: var(--neon-magenta);
+      --accent-soft: rgba(239, 68, 68, 0.14);
+    }
+    :root[data-mood="info"] {
+      --accent: var(--neon-cyan);
+      --accent-3: var(--neon-magenta);
+      --accent-soft: var(--neon-cyan-soft);
+    }
+
+    /* Hora del día (day/night/dawn/dusk) -> sutil, sin bajar legibilidad */
+    :root[data-time="day"] { --grid-alpha: 0.055; --scan-alpha: 0.02; }
+    :root[data-time="dawn"] { --grid-alpha: 0.06; --scan-alpha: 0.03; }
+    :root[data-time="dusk"] { --grid-alpha: 0.07; --scan-alpha: 0.05; }
+    :root[data-time="night"] { --grid-alpha: 0.075; --scan-alpha: 0.055; }
+
+    :root[data-theme="light"][data-time="dusk"] {
+      --header-grad: linear-gradient(120deg, rgba(2, 6, 23, 0.84), rgba(255, 43, 214, 0.22) 45%, rgba(0, 213, 255, 0.16));
+    }
+    :root[data-theme="dark"][data-time="night"] {
+      --header-grad: linear-gradient(120deg, rgba(2, 3, 10, 0.98), rgba(34, 232, 255, 0.14) 55%, rgba(255, 56, 218, 0.20));
+    }
+    :root[data-theme="dark"][data-time="dawn"] {
+      --header-grad: linear-gradient(120deg, rgba(2, 3, 10, 0.98), rgba(53, 255, 147, 0.10) 55%, rgba(34, 232, 255, 0.16));
+    }
+
     * { box-sizing: border-box; }
 
     button:focus-visible,
@@ -188,7 +227,7 @@
     header {
       background: var(--header-grad);
       color: #ffffff;
-      padding: clamp(12px, 2vw, 18px) clamp(12px, 2.5vw, 22px);
+      padding: calc(clamp(12px, 2vw, 18px) + env(safe-area-inset-top)) calc(clamp(12px, 2.5vw, 22px) + env(safe-area-inset-right)) clamp(12px, 2vw, 18px) calc(clamp(12px, 2.5vw, 22px) + env(safe-area-inset-left));
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -1794,7 +1833,7 @@
 
     .toast-wrap {
       position: fixed;
-      top: 86px;
+      top: calc(86px + env(safe-area-inset-top));
       right: 18px;
       display: grid;
       gap: 10px;
@@ -2553,13 +2592,50 @@
 
     // Identificador de UI (útil para confirmar que el HTML recargó cambios).
     // Nota: actualiza este valor cuando hagas cambios visibles al dashboard.
-    const UI_REV = '2026-01-17.6';
+    const UI_REV = '2026-01-17.7';
 
     const THEME_STORAGE_KEY = 'seuDashboardTheme';
+
+    function setThemeMetaColor(color) {
+      const meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.setAttribute('content', String(color || ''));
+    }
+
+    function computeTimeBucket(date = new Date()) {
+      const h = date.getHours();
+      if (h >= 6 && h < 10) return 'dawn';
+      if (h >= 10 && h < 17) return 'day';
+      if (h >= 17 && h < 21) return 'dusk';
+      return 'night';
+    }
+
+    function applyTimeBucket() {
+      document.documentElement.dataset.time = computeTimeBucket();
+    }
+
+    function computeMood() {
+      if (state.connection === 'error') return 'error';
+      const snapshot = getServiceSnapshot();
+      const expectedTotal = snapshot.items.filter((item) => item.expected).length;
+      if (!expectedTotal) return 'info';
+      if (snapshot.downCount > 0) return 'error';
+      if (snapshot.okCount === expectedTotal) return 'ok';
+      return 'warn';
+    }
+
+    function applyMood() {
+      document.documentElement.dataset.mood = computeMood();
+    }
+
+    function syncThemeMetaFromCurrent() {
+      const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+      setThemeMetaColor(theme === 'dark' ? '#02030a' : '#f8fafc');
+    }
 
     function applyTheme(theme) {
       const t = theme === 'dark' ? 'dark' : 'light';
       document.documentElement.setAttribute('data-theme', t);
+      syncThemeMetaFromCurrent();
       const btn = $('theme-toggle');
       if (btn) btn.textContent = t === 'dark' ? 'Tema: Oscuro' : 'Tema: Claro';
     }
@@ -2574,6 +2650,20 @@
 
     function initTheme() {
       applyTheme(getPreferredTheme());
+      applyTimeBucket();
+      applyMood();
+
+      // Si no hay preferencia guardada, reaccionar a cambios del sistema.
+      try {
+        const stored = String(localStorage.getItem(THEME_STORAGE_KEY) || '').trim();
+        if (!stored && window.matchMedia) {
+          const mq = window.matchMedia('(prefers-color-scheme: dark)');
+          const onChange = () => applyTheme(getPreferredTheme());
+          if (typeof mq.addEventListener === 'function') mq.addEventListener('change', onChange);
+          else if (typeof mq.addListener === 'function') mq.addListener(onChange);
+        }
+      } catch {}
+
       const btn = $('theme-toggle');
       if (!btn) return;
       btn.addEventListener('click', () => {
@@ -2582,6 +2672,60 @@
         try { localStorage.setItem(THEME_STORAGE_KEY, next); } catch {}
         applyTheme(next);
       });
+    }
+
+    function getTabFromHash() {
+      const raw = String(location.hash || '').replace(/^#/, '').trim();
+      if (!raw) return null;
+      const params = new URLSearchParams(raw.includes('=') ? raw : `tab=${raw}`);
+      const tab = String(params.get('tab') || '').trim();
+      if (tab === 'main' || tab === 'status' || tab === 'db') return tab;
+      return null;
+    }
+
+    function setHashTab(tabId) {
+      try {
+        const next = `tab=${encodeURIComponent(String(tabId || ''))}`;
+        const current = String(location.hash || '').replace(/^#/, '');
+        if (current === next) return;
+        history.replaceState(null, '', `#${next}`);
+      } catch {}
+    }
+
+    function registerServiceWorker() {
+      if (!('serviceWorker' in navigator)) return;
+      navigator.serviceWorker
+        .register('/sw.js', { scope: '/' })
+        .then((reg) => {
+          const promptUpdate = () => {
+            if (!reg.waiting) return;
+            showToastAdvanced('Hay una actualización del dashboard lista.', 'info', {
+              id: 'sw-update',
+              title: 'Actualización',
+              actionLabel: 'Actualizar',
+              onAction: () => reg.waiting && reg.waiting.postMessage({ type: 'SKIP_WAITING' }),
+              duration: 9000
+            });
+          };
+
+          reg.update().catch(() => undefined);
+          if (reg.waiting) promptUpdate();
+
+          reg.addEventListener('updatefound', () => {
+            const sw = reg.installing;
+            if (!sw) return;
+            sw.addEventListener('statechange', () => {
+              if (sw.state === 'installed' && navigator.serviceWorker.controller) {
+                promptUpdate();
+              }
+            });
+          });
+
+          navigator.serviceWorker.addEventListener('controllerchange', () => {
+            location.reload();
+          });
+        })
+        .catch(() => undefined);
     }
 
     function normalizeModeValue(value) {
@@ -2688,6 +2832,8 @@
       setText('connection-error', stateName === 'error'
         ? truncateMessage(state.lastConnectionError, 90)
         : '-');
+
+      applyMood();
     }
 
     function setPausedChip(paused) {
@@ -3363,6 +3509,7 @@
       setHealthItem('api-portal', state.health.apiPortal, state.running.has('portal'));
       updateWebDocenteLink(state.mode);
       updateAnalytics();
+      applyMood();
     }
 
     function updateMongoExpressUi() {
@@ -3468,6 +3615,8 @@
       } else if (name === 'db') {
         refreshMongoExpress(true);
       }
+
+      setHashTab(name);
     }
 
     function renderStatusEvents(entries) {
@@ -3671,6 +3820,7 @@
       }
 
         await refreshHealth();
+        applyMood();
       } catch (error) {
         setConnection('error', normalizeErrorMessage(error));
         maybeToastError('Sin conexion: no se pudo leer /api/status.');
@@ -3705,6 +3855,8 @@
           source: 'dashboard',
           time: new Date().toLocaleTimeString()
         });
+
+        applyMood();
       }
     }
 
@@ -4113,7 +4265,20 @@
     // Initial load and periodic refresh.
     initTheme();
     setText('ui-chip', `UI: ${UI_REV}`);
+    registerServiceWorker();
+
+    const initialTab = getTabFromHash();
+    if (initialTab) state.activeTab = initialTab;
     setTab(state.activeTab);
+    setHashTab(state.activeTab);
+
+    window.addEventListener('hashchange', () => {
+      const tab = getTabFromHash();
+      if (!tab || tab === state.activeTab) return;
+      setTab(tab);
+    });
+
+    setInterval(() => applyTimeBucket(), 60 * 1000);
     setPausedChip(false);
     setConnection('unknown');
     setLogsVisible(false);

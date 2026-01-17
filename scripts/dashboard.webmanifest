@@ -1,17 +1,51 @@
 {
   "name": "Dashboard - Sistema de Evaluacion Universitaria",
   "short_name": "Dashboard SEU",
+  "description": "Control local del stack, tareas, logs y salud de servicios.",
+  "lang": "es",
+  "dir": "ltr",
+  "id": "/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#f5f7fb",
-  "theme_color": "#0b3a6b",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui", "browser"],
+  "orientation": "any",
+  "background_color": "#02030a",
+  "theme_color": "#02030a",
+  "prefer_related_applications": false,
+  "categories": ["utilities", "productivity", "education"],
   "icons": [
     {
       "src": "/assets/dashboard-icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
+    },
+    {
+      "src": "/assets/dashboard-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Principal",
+      "short_name": "Principal",
+      "url": "/#tab=main",
+      "icons": [{ "src": "/assets/dashboard-icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Estado y logs",
+      "short_name": "Logs",
+      "url": "/#tab=status",
+      "icons": [{ "src": "/assets/dashboard-icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Base de datos",
+      "short_name": "DB",
+      "url": "/#tab=db",
+      "icons": [{ "src": "/assets/dashboard-icon.svg", "sizes": "any", "type": "image/svg+xml" }]
     }
   ]
 }

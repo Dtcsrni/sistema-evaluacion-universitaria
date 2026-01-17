@@ -75,10 +75,12 @@ let restartTimer = null;
 const dashboardPath = path.join(__dirname, 'dashboard.html');
 const manifestPath = path.join(__dirname, 'dashboard.webmanifest');
 const iconPath = path.join(__dirname, 'dashboard-icon.svg');
+const swPath = path.join(__dirname, 'dashboard-sw.js');
 
 const cachedDashboardHtml = fs.readFileSync(dashboardPath, 'utf8');
 const cachedManifestJson = fs.readFileSync(manifestPath, 'utf8');
 const cachedIconSvg = fs.readFileSync(iconPath, 'utf8');
+const cachedSwJs = fs.existsSync(swPath) ? fs.readFileSync(swPath, 'utf8') : '';
 
 function shouldLiveReloadUi() {
   // En prod: UI estable (cache en memoria).
@@ -825,6 +827,20 @@ const server = http.createServer(async (req, res) => {
       'X-Content-Type-Options': 'nosniff'
     });
     res.end(readTextDevOrCache(iconPath, cachedIconSvg));
+    return;
+  }
+
+  if (req.method === 'GET' && pathName === '/sw.js') {
+    // Service Worker: debe poder actualizarse rápido.
+    res.writeHead(200, {
+      'Content-Type': 'application/javascript; charset=utf-8',
+      'Cache-Control': 'no-cache, must-revalidate, max-age=0',
+      Pragma: 'no-cache',
+      Expires: '0',
+      'Service-Worker-Allowed': '/',
+      'X-Content-Type-Options': 'nosniff'
+    });
+    res.end(readTextDevOrCache(swPath, cachedSwJs));
     return;
   }
 

@@ -54,6 +54,8 @@
     "start": "npm run start:prod",
     "start:portal": "npm -C apps/portal_alumno_cloud run start",
     "status": "node scripts/dashboard.mjs",
+    "vscode:tune": "node scripts/vscode-tune.mjs",
+    "vscode:prune-extensions": "node scripts/vscode-prune-extensions.mjs",
     "reset:local": "node scripts/reset-local.mjs",
     "reset:local:yes": "node scripts/reset-local.mjs --yes"
   },
@@ -75,5 +77,4 @@
     "vitest": "^4.0.17"
   }
 }
-
 

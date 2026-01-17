@@ -30,6 +30,11 @@
   --peligroTexto: #7f1d1d;
   --exitoBg: #dcfce7;
   --exitoTexto: #14532d;
+
+  --campoBg: rgba(255, 255, 255, 0.92);
+  --campoBorde: rgba(148, 163, 184, 0.55);
+  --campoBordeHover: rgba(129, 140, 248, 0.55);
+  --campoPlaceholder: rgba(71, 85, 105, 0.92);
 }
 
 /* Microvariaciones por hora (data-time). */
@@ -73,6 +78,11 @@
   --peligroTexto: #fecaca;
   --exitoBg: rgba(34, 197, 94, 0.16);
   --exitoTexto: #bbf7d0;
+
+  --campoBg: rgba(2, 6, 23, 0.55);
+  --campoBorde: rgba(148, 163, 184, 0.22);
+  --campoBordeHover: rgba(167, 139, 250, 0.40);
+  --campoPlaceholder: rgba(148, 163, 184, 0.92);
 }
 
 :root[data-theme="dark"][data-time="dawn"] {

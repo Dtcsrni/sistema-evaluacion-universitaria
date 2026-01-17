@@ -159,52 +159,80 @@ export function AppAlumno() {
       <h1>Resultados de examen</h1>
 
       {!token && (
-        <p className="nota">
-          Ingresa con el codigo de acceso que te compartio tu docente y tu matricula.
-        </p>
+        <div className="auth-grid">
+          <div className="auth-hero auth-hero--alumno">
+            <p className="eyebrow">Acceso</p>
+            <h2>
+              <Icono nombre="alumno" /> Consulta de resultados
+            </h2>
+            <p className="auth-subtitulo">
+              Ingresa con el codigo de acceso que te compartio tu docente y tu matricula.
+            </p>
+            <ul className="auth-beneficios" aria-label="Beneficios">
+              <li>
+                <Icono nombre="ok" /> Consulta rapida y segura.
+              </li>
+              <li>
+                <Icono nombre="pdf" /> Descarga tu PDF cuando este disponible.
+              </li>
+              <li>
+                <Icono nombre="info" /> Si no aparece, intenta recargar.
+              </li>
+            </ul>
+            <div className="auth-ilustracion" aria-hidden="true">
+              <div className="auth-blob" />
+              <div className="auth-blob auth-blob--2" />
+            </div>
+          </div>
+
+          <div className="auth-form">
+            {mensaje && <InlineMensaje tipo="error">{mensaje}</InlineMensaje>}
+            {cargando && (
+              <p className="mensaje" role="status">
+                <Spinner /> Cargando…
+              </p>
+            )}
+
+            <CampoTexto
+              etiqueta="Codigo de acceso"
+              value={codigo}
+              onChange={(event) => setCodigo(event.target.value)}
+              placeholder="ABC123"
+              autoComplete="one-time-code"
+              inputMode="text"
+              error={!codigoValido && codigo.trim() ? 'Usa 4-12 caracteres alfanumericos.' : undefined}
+            />
+            <CampoTexto
+              etiqueta="Matricula"
+              value={matricula}
+              onChange={(event) => setMatricula(event.target.value)}
+              placeholder="2024-001"
+              autoComplete="username"
+              inputMode="text"
+              error={!matriculaValida && matricula.trim() ? 'Usa 3-20 caracteres (letras/numeros/guion).' : undefined}
+            />
+            <p className="nota">
+              Si no ves resultados tras ingresar, intenta &quot;Recargar&quot;. Si el codigo expiro, solicita uno nuevo al docente.
+            </p>
+            <Boton
+              type="button"
+              icono={<Icono nombre="entrar" />}
+              cargando={cargando}
+              disabled={!puedeIngresar || !codigoValido || !matriculaValida}
+              onClick={ingresar}
+            >
+              Consultar
+            </Boton>
+          </div>
+        </div>
       )}
 
-      {mensaje && <InlineMensaje tipo="error">{mensaje}</InlineMensaje>}
+      {token && mensaje && <InlineMensaje tipo="error">{mensaje}</InlineMensaje>}
 
-      {cargando && (
+      {token && cargando && (
         <p className="mensaje" role="status">
           <Spinner /> Cargando…
         </p>
-      )}
-
-      {!token && (
-        <>
-          <CampoTexto
-            etiqueta="Codigo de acceso"
-            value={codigo}
-            onChange={(event) => setCodigo(event.target.value)}
-            placeholder="ABC123"
-            autoComplete="one-time-code"
-            inputMode="text"
-            error={!codigoValido && codigo.trim() ? 'Usa 4-12 caracteres alfanumericos.' : undefined}
-          />
-          <CampoTexto
-            etiqueta="Matricula"
-            value={matricula}
-            onChange={(event) => setMatricula(event.target.value)}
-            placeholder="2024-001"
-            autoComplete="username"
-            inputMode="text"
-            error={!matriculaValida && matricula.trim() ? 'Usa 3-20 caracteres (letras/numeros/guion).' : undefined}
-          />
-          <p className="nota">
-            Si no ves resultados tras ingresar, intenta &quot;Recargar&quot;. Si el codigo expiro, solicita uno nuevo al docente.
-          </p>
-          <Boton
-            type="button"
-            icono={<Icono nombre="entrar" />}
-            cargando={cargando}
-            disabled={!puedeIngresar || !codigoValido || !matriculaValida}
-            onClick={ingresar}
-          >
-            Consultar
-          </Boton>
-        </>
       )}
 
       {token && resultados.length === 0 && !cargando && (

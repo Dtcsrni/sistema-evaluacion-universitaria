@@ -876,6 +876,30 @@
       width: 16px;
       height: 16px;
       fill: var(--accent-2);
+      display: inline-block;
+      transform-origin: 50% 50%;
+      transition: transform var(--dur-xs) var(--ease-out), filter var(--dur-sm) var(--ease-out), opacity var(--dur-sm) var(--ease-out);
+    }
+
+    button:hover .icon,
+    a:hover .icon {
+      transform: translateY(-1px) scale(1.06);
+      filter: drop-shadow(0 14px 26px rgba(0, 213, 255, 0.18));
+    }
+
+    button:active .icon,
+    a:active .icon {
+      transform: translateY(0) scale(0.98);
+      filter: none;
+    }
+
+    @keyframes iconSpin {
+      from { transform: translateY(-1px) scale(1.06) rotate(0deg); }
+      to { transform: translateY(-1px) scale(1.06) rotate(360deg); }
+    }
+
+    .restart-btn:hover .icon {
+      animation: iconSpin var(--dur-md) var(--ease-out) 1;
     }
 
     .stack { display: grid; gap: 12px; }

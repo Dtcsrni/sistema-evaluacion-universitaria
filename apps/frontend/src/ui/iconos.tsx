@@ -34,7 +34,8 @@ function SvgBase({
   className,
   title,
   ariaHidden = true,
-  viewBox = '0 0 24 24'
+  viewBox = '0 0 24 24',
+  dataIcono
 }: {
   children: ReactNode;
   size?: number;
@@ -42,6 +43,7 @@ function SvgBase({
   title?: string;
   ariaHidden?: boolean;
   viewBox?: string;
+  dataIcono?: string;
 }) {
   const a11y = ariaHidden
     ? ({ 'aria-hidden': true } as const)
@@ -55,6 +57,7 @@ function SvgBase({
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
+      data-icono={dataIcono}
       {...a11y}
     >
       {title && !ariaHidden ? <title>{title}</title> : null}
@@ -65,7 +68,7 @@ function SvgBase({
 
 export function Icono(props: PropsIcono) {
   const { nombre, size, className = 'icono', title, ariaHidden } = props;
-  const common = { size, className, title, ariaHidden };
+  const common = { size, className, title, ariaHidden, dataIcono: nombre };
 
   switch (nombre) {
     case 'inicio':
@@ -231,6 +234,7 @@ export function Spinner({ size = 18, className = 'spinner' }: { size?: number; c
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
+      data-icono="spinner"
       aria-hidden="true"
     >
       <path

@@ -34,6 +34,213 @@ function Log([string]$msg) {
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
+$iconDir = Join-Path $root 'scripts\icons'
+if (-not (Test-Path $iconDir)) {
+  New-Item -ItemType Directory -Path $iconDir | Out-Null
+}
+
+function New-RoundedRectPath([System.Drawing.RectangleF]$rect, [float]$radius) {
+  $path = New-Object System.Drawing.Drawing2D.GraphicsPath
+  $d = [Math]::Max(1.0, $radius * 2.0)
+  $x = $rect.X
+  $y = $rect.Y
+  $w = $rect.Width
+  $h = $rect.Height
+
+  $path.AddArc($x, $y, $d, $d, 180, 90) | Out-Null
+  $path.AddArc(($x + $w - $d), $y, $d, $d, 270, 90) | Out-Null
+  $path.AddArc(($x + $w - $d), ($y + $h - $d), $d, $d, 0, 90) | Out-Null
+  $path.AddArc($x, ($y + $h - $d), $d, $d, 90, 90) | Out-Null
+  $path.CloseFigure() | Out-Null
+  return $path
+}
+
+function Save-IcoFromPngImages([string]$path, [System.Collections.Generic.List[byte[]]]$pngImages, [int[]]$sizes) {
+  if ($pngImages.Count -ne $sizes.Count) {
+    throw "Save-IcoFromPngImages: conteos no coinciden"
+  }
+
+  $count = [uint16]$pngImages.Count
+  $headerSize = 6
+  $dirEntrySize = 16
+  $offset = $headerSize + ($dirEntrySize * $pngImages.Count)
+
+  $fs = New-Object System.IO.FileStream($path, [System.IO.FileMode]::Create, [System.IO.FileAccess]::Write, [System.IO.FileShare]::None)
+  $bw = New-Object System.IO.BinaryWriter($fs)
+  try {
+    $bw.Write([uint16]0)
+    $bw.Write([uint16]1)
+    $bw.Write([uint16]$count)
+
+    for ($i = 0; $i -lt $pngImages.Count; $i++) {
+      $size = [int]$sizes[$i]
+      $png = $pngImages[$i]
+      $w = if ($size -ge 256) { 0 } else { [byte]$size }
+      $h = if ($size -ge 256) { 0 } else { [byte]$size }
+      $bw.Write($w)
+      $bw.Write($h)
+      $bw.Write([byte]0)
+      $bw.Write([byte]0)
+      $bw.Write([uint16]1)
+      $bw.Write([uint16]32)
+      $bw.Write([uint32]$png.Length)
+      $bw.Write([uint32]$offset)
+      $offset += $png.Length
+    }
+
+    for ($i = 0; $i -lt $pngImages.Count; $i++) {
+      $bw.Write($pngImages[$i])
+    }
+  } finally {
+    $bw.Flush();
+    $bw.Dispose();
+    $fs.Dispose();
+  }
+}
+
+function New-TrayBitmap([int]$size, [string]$mood) {
+  $bitmap = New-Object System.Drawing.Bitmap $size, $size
+  $g = [System.Drawing.Graphics]::FromImage($bitmap)
+  $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
+  $g.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
+  $g.PixelOffsetMode = [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
+
+  # Paleta (oscura, moderna)
+  $bg1 = '#0b1220'
+  $bg2 = '#111827'
+  $accent = switch ($mood) {
+    'ok' { '#22c55e' }
+    'warn' { '#f59e0b' }
+    'error' { '#ef4444' }
+    default { '#a78bfa' }
+  }
+
+  $cBg1 = [System.Drawing.ColorTranslator]::FromHtml($bg1)
+  $cBg2 = [System.Drawing.ColorTranslator]::FromHtml($bg2)
+  $cAccent = [System.Drawing.ColorTranslator]::FromHtml($accent)
+  $cInkSoft = [System.Drawing.Color]::FromArgb(210, 226, 232, 240)
+
+  $g.Clear([System.Drawing.Color]::Transparent)
+
+  $pad = [Math]::Max(1, [int]($size * 0.08))
+  $rect = New-Object System.Drawing.RectangleF $pad, $pad, ($size - 2*$pad), ($size - 2*$pad)
+  $radius = [Math]::Max(4, [int]($size * 0.28))
+  $pathBg = New-RoundedRectPath $rect $radius
+
+  try {
+    $brushBg = New-Object System.Drawing.Drawing2D.LinearGradientBrush($rect, $cBg1, $cBg2, 35)
+    $g.FillPath($brushBg, $pathBg)
+    $penBorder = New-Object System.Drawing.Pen ([System.Drawing.Color]::FromArgb(65, 0, 0, 0), [Math]::Max(1, [int]($size * 0.06)))
+    $g.DrawPath($penBorder, $pathBg)
+
+    # Glyph minimal (nodos)
+    $stroke = [Math]::Max(2, [int]($size * 0.16))
+    $node = [Math]::Max(2, [int]($size * 0.18))
+    $pen = New-Object System.Drawing.Pen ([System.Drawing.Color]::FromArgb(235, $cAccent.R, $cAccent.G, $cAccent.B), $stroke)
+    $pen.StartCap = [System.Drawing.Drawing2D.LineCap]::Round
+    $pen.EndCap = [System.Drawing.Drawing2D.LineCap]::Round
+
+    $cx = $size * 0.50
+    $cy = $size * 0.52
+    $dx = $size * 0.18
+    $dy = $size * 0.12
+    $p1 = New-Object System.Drawing.PointF ($cx - $dx), ($cy)
+    $p2 = New-Object System.Drawing.PointF ($cx), ($cy)
+    $p3 = New-Object System.Drawing.PointF ($cx), ($cy + $dy)
+    $p4 = New-Object System.Drawing.PointF ($cx + $dx), ($cy + $dy)
+
+    $g.DrawLine($pen, $p1, $p2)
+    $g.DrawLine($pen, $p2, $p3)
+    $g.DrawLine($pen, $p3, $p4)
+
+    $nodeBrush = New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(245, $cAccent.R, $cAccent.G, $cAccent.B))
+    $g.FillEllipse($nodeBrush, ($p1.X - $node/2), ($p1.Y - $node/2), $node, $node)
+    $g.FillEllipse($nodeBrush, ($p2.X - $node/2), ($p2.Y - $node/2), $node, $node)
+    $g.FillEllipse($nodeBrush, ($p3.X - $node/2), ($p3.Y - $node/2), $node, $node)
+    $g.FillEllipse($nodeBrush, ($p4.X - $node/2), ($p4.Y - $node/2), $node, $node)
+
+    # Dot de estado esquina
+    $dot = [Math]::Max(2, [int]($size * 0.26))
+    $dotRect = New-Object System.Drawing.RectangleF ($size - $pad - $dot), ($pad), $dot, $dot
+    $dotBorder = New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(170, 0, 0, 0))
+    $g.FillEllipse($dotBorder, ($dotRect.X + 1), ($dotRect.Y + 1), $dotRect.Width, $dotRect.Height)
+    $g.FillEllipse($nodeBrush, $dotRect)
+
+    $dotBorder.Dispose()
+    $nodeBrush.Dispose()
+    $pen.Dispose()
+    $penBorder.Dispose()
+    $brushBg.Dispose()
+  } finally {
+    $pathBg.Dispose()
+    $g.Dispose()
+  }
+
+  return $bitmap
+}
+
+function Ensure-TrayIcons {
+  $sizes = @(16, 24, 32, 48)
+  $moods = @('info', 'ok', 'warn', 'error')
+  foreach ($m in $moods) {
+    $path = Join-Path $iconDir ("tray-$m.ico")
+    if (Test-Path $path) { continue }
+
+    $pngs = New-Object "System.Collections.Generic.List[byte[]]"
+    foreach ($s in $sizes) {
+      $bmp = New-TrayBitmap $s $m
+      try {
+        $ms = New-Object System.IO.MemoryStream
+        try {
+          $bmp.Save($ms, [System.Drawing.Imaging.ImageFormat]::Png)
+          $pngs.Add($ms.ToArray()) | Out-Null
+        } finally {
+          $ms.Dispose()
+        }
+      } finally {
+        $bmp.Dispose()
+      }
+    }
+    Save-IcoFromPngImages $path $pngs $sizes
+  }
+}
+
+function Get-TrayIconPath([string]$mood) {
+  $m = ("$mood").ToLowerInvariant()
+  switch ($m) {
+    'ok' { return (Join-Path $iconDir 'tray-ok.ico') }
+    'warn' { return (Join-Path $iconDir 'tray-warn.ico') }
+    'error' { return (Join-Path $iconDir 'tray-error.ico') }
+    default { return (Join-Path $iconDir 'tray-info.ico') }
+  }
+}
+
+function Load-TrayIcon([string]$mood) {
+  if (-not (Test-Path variable:script:TrayIconCache)) {
+    $script:TrayIconCache = @{}
+  }
+
+  $key = ("$mood").ToLowerInvariant()
+  if ($script:TrayIconCache.ContainsKey($key)) {
+    return $script:TrayIconCache[$key]
+  }
+
+  try {
+    Ensure-TrayIcons
+    $p = Get-TrayIconPath $mood
+    if (Test-Path $p) {
+      $ico = New-Object System.Drawing.Icon($p)
+      $script:TrayIconCache[$key] = $ico
+      return $ico
+    }
+  } catch {
+    # fallback abajo
+  }
+
+  $script:TrayIconCache[$key] = $null
+  return $null
+}
+
 # Enforce single tray instance (avoid multiple notification icons).
 # Mutex is per dashboard port, so DEV/PROD shortcuts that target the same port share one tray.
 $mutexName = "Global\\SEU_TRAY_$Port"
@@ -47,7 +254,7 @@ try {
 
 if (-not $createdNew) {
   Log("Tray singleton: instancia ya existe (mutex=$mutexName). Abriendo dashboard y saliendo.")
-  try { Start-Process ((Get-ApiBase) + '/') | Out-Null } catch {}
+  try { Start-Process ("http://127.0.0.1:$Port/") | Out-Null } catch {}
   return
 }
 
@@ -162,6 +369,9 @@ function Get-SystemMood($status, $health) {
 }
 
 function Get-MoodIcon([string]$mood) {
+  $custom = Load-TrayIcon $mood
+  if ($custom) { return $custom }
+
   switch ($mood) {
     'ok' { return [System.Drawing.SystemIcons]::Shield }
     'warn' { return [System.Drawing.SystemIcons]::Warning }
@@ -270,6 +480,19 @@ $miExit.add_Click({
   $timer.Stop()
   $notify.Visible = $false
   $notify.Dispose()
+
+  # Disponer íconos custom (si fueron cargados).
+  try {
+    if (Test-Path variable:script:TrayIconCache) {
+      foreach ($k in @($script:TrayIconCache.Keys)) {
+        $ico = $script:TrayIconCache[$k]
+        if ($ico -and ($ico -is [System.Drawing.Icon])) {
+          try { $ico.Dispose() } catch {}
+        }
+      }
+      $script:TrayIconCache.Clear()
+    }
+  } catch {}
 
   try { if ($mutex) { $mutex.ReleaseMutex(); $mutex.Dispose() } } catch {}
 

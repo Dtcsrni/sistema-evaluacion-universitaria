@@ -99,10 +99,49 @@
   display: inline-block;
   vertical-align: -0.125em;
   color: currentColor;
+  transform-origin: 50% 50%;
+  transition: transform 120ms ease, filter 160ms ease, opacity 160ms ease;
+  will-change: transform;
 }
 
 .icono--muted {
   opacity: 0.75;
+}
+
+/* Micro-animaciones de iconos (sutiles y consistentes) */
+.btn:hover .icono,
+.tabs button:hover .icono,
+.chip:hover .icono,
+a:hover .icono,
+button:hover .icono {
+  transform: translateY(-1px) scale(1.03);
+  filter: drop-shadow(0 12px 20px rgba(124, 58, 237, 0.18));
+}
+
+button:active .icono,
+.btn:active .icono {
+  transform: translateY(0) scale(0.98);
+  filter: none;
+}
+
+button:hover svg[data-icono="chevron"].icono,
+a:hover svg[data-icono="chevron"].icono {
+  transform: translateX(2px) translateY(-1px) scale(1.03);
+}
+
+button:hover svg[data-icono="recargar"].icono,
+a:hover svg[data-icono="recargar"].icono,
+.btn:hover svg[data-icono="recargar"].icono {
+  animation: iconoSpin 720ms cubic-bezier(0.16, 1, 0.3, 1) 1;
+}
+
+button:hover svg[data-icono="alerta"].icono,
+button:hover svg[data-icono="info"].icono,
+button:hover svg[data-icono="ok"].icono,
+.chip:hover svg[data-icono="alerta"].icono,
+.chip:hover svg[data-icono="info"].icono,
+.chip:hover svg[data-icono="ok"].icono {
+  animation: iconoPulse 900ms cubic-bezier(0.16, 1, 0.3, 1) 1;
 }
 
 .btn .icono,
@@ -172,6 +211,16 @@
   }
 }
 
+@keyframes iconoSpin {
+  from { transform: translateY(-1px) scale(1.03) rotate(0deg); }
+  to { transform: translateY(-1px) scale(1.03) rotate(360deg); }
+}
+
+@keyframes iconoPulse {
+  0%, 100% { transform: translateY(-1px) scale(1.03); }
+  55% { transform: translateY(-2px) scale(1.09); }
+}
+
 @keyframes entrada {
   from {
     opacity: 0;
@@ -185,8 +234,21 @@
 
 @media (prefers-reduced-motion: reduce) {
   .spinner,
-  .anim-entrada {
+  .anim-entrada,
+  .icono {
     animation: none !important;
+  }
+
+  .btn:hover .icono,
+  .tabs button:hover .icono,
+  .chip:hover .icono,
+  a:hover .icono,
+  button:hover .icono,
+  button:active .icono,
+  .btn:active .icono {
+    transform: none !important;
+    filter: none !important;
+    transition: none !important;
   }
 }
 

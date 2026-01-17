@@ -80,8 +80,14 @@ const cachedDashboardHtml = fs.readFileSync(dashboardPath, 'utf8');
 const cachedManifestJson = fs.readFileSync(manifestPath, 'utf8');
 const cachedIconSvg = fs.readFileSync(iconPath, 'utf8');
 
+function shouldLiveReloadUi() {
+  // En prod: UI estable (cache en memoria).
+  // En dev/none: leer desde disco por request para que cambios de UI se vean al refrescar.
+  return mode !== 'prod';
+}
+
 function readTextDevOrCache(filePath, cached) {
-  if (mode !== 'dev') return cached;
+  if (!shouldLiveReloadUi()) return cached;
   try {
     return fs.readFileSync(filePath, 'utf8');
   } catch {
@@ -610,7 +616,10 @@ function sendJson(res, status, payload) {
   const data = JSON.stringify(payload, null, 2);
   res.writeHead(status, {
     'Content-Type': 'application/json',
-    'Cache-Control': 'no-store'
+    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+    Pragma: 'no-cache',
+    Expires: '0',
+    'X-Content-Type-Options': 'nosniff'
   });
   res.end(data);
 }
@@ -786,7 +795,10 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'GET' && pathName === '/') {
     res.writeHead(200, {
       'Content-Type': 'text/html; charset=utf-8',
-      'Cache-Control': 'no-store'
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+      Pragma: 'no-cache',
+      Expires: '0',
+      'X-Content-Type-Options': 'nosniff'
     });
     res.end(readTextDevOrCache(dashboardPath, cachedDashboardHtml));
     return;
@@ -795,7 +807,10 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'GET' && pathName === '/manifest.webmanifest') {
     res.writeHead(200, {
       'Content-Type': 'application/manifest+json; charset=utf-8',
-      'Cache-Control': 'no-store'
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+      Pragma: 'no-cache',
+      Expires: '0',
+      'X-Content-Type-Options': 'nosniff'
     });
     res.end(readTextDevOrCache(manifestPath, cachedManifestJson));
     return;
@@ -804,7 +819,10 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'GET' && pathName === '/assets/dashboard-icon.svg') {
     res.writeHead(200, {
       'Content-Type': 'image/svg+xml; charset=utf-8',
-      'Cache-Control': 'no-store'
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+      Pragma: 'no-cache',
+      Expires: '0',
+      'X-Content-Type-Options': 'nosniff'
     });
     res.end(readTextDevOrCache(iconPath, cachedIconSvg));
     return;

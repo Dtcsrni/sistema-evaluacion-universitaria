@@ -15,8 +15,13 @@
   <title>Dashboard - Sistema de Evaluacion Universitaria</title>
   <style>
     :root {
+      color-scheme: light;
       --bg: #f5f7fb;
       --panel: #ffffff;
+      --surface: #f8fbff;
+      --surface-2: #eef3f9;
+      --surface-3: #f4f9ff;
+      --surface-4: #fbfdff;
       --ink: #182232;
       --ink-soft: #4b6278;
       --accent: #0b3a6b;
@@ -26,7 +31,29 @@
       --warn: #fff2f1;
       --ok: #e9f7ef;
       --border: #d5e2ef;
+      --btn-hover: #d9e9ff;
       --shadow: 0 10px 24px rgba(15, 23, 42, 0.1);
+    }
+
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #0b1220;
+      --panel: rgba(15, 23, 42, 0.90);
+      --surface: rgba(30, 41, 59, 0.62);
+      --surface-2: rgba(30, 41, 59, 0.80);
+      --surface-3: rgba(2, 6, 23, 0.55);
+      --surface-4: rgba(15, 23, 42, 0.62);
+      --ink: rgba(226, 232, 240, 0.96);
+      --ink-soft: rgba(148, 163, 184, 0.92);
+      --accent: #60a5fa;
+      --accent-2: #93c5fd;
+      --accent-3: #22c55e;
+      --accent-soft: rgba(59, 130, 246, 0.14);
+      --warn: rgba(245, 158, 11, 0.14);
+      --ok: rgba(34, 197, 94, 0.14);
+      --border: rgba(148, 163, 184, 0.22);
+      --btn-hover: rgba(59, 130, 246, 0.18);
+      --shadow: 0 18px 44px rgba(0, 0, 0, 0.42);
     }
 
     * { box-sizing: border-box; }
@@ -43,14 +70,20 @@
 
     body {
       margin: 0;
-      font-family: "Trebuchet MS", "Candara", sans-serif;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
       font-size: clamp(13px, 1.5vw, 15px);
-      background: radial-gradient(circle at 12% 18%, #eaf2ff, transparent 40%),
-                  radial-gradient(circle at 88% 12%, #eef9ff, transparent 30%),
-                  linear-gradient(180deg, #f7fbff 0%, #f5f7fb 100%);
+      background: radial-gradient(circle at 12% 18%, rgba(59, 130, 246, 0.12), transparent 40%),
+                  radial-gradient(circle at 88% 12%, rgba(34, 197, 94, 0.10), transparent 30%),
+                  linear-gradient(180deg, color-mix(in srgb, var(--bg) 75%, white 25%) 0%, var(--bg) 100%);
       color: var(--ink);
       min-height: 100vh;
       overflow-x: hidden;
+    }
+
+    :root[data-theme="dark"] body {
+      background: radial-gradient(circle at 12% 18%, rgba(59, 130, 246, 0.18), transparent 42%),
+                  radial-gradient(circle at 88% 12%, rgba(34, 197, 94, 0.14), transparent 34%),
+                  linear-gradient(180deg, rgba(2, 6, 23, 0.92) 0%, var(--bg) 100%);
     }
 
     header {
@@ -199,6 +232,21 @@
       text-shadow: 0 1px 1px rgba(0, 0, 0, 0.28);
     }
 
+    button.chip {
+      cursor: pointer;
+      -webkit-appearance: none;
+      appearance: none;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+    }
+
+    button.chip:hover {
+      background: rgba(0, 0, 0, 0.3);
+    }
+
+    button.chip:active {
+      transform: translateY(1px);
+    }
+
     .chip.ok {
       border-color: rgba(34, 197, 94, 0.7);
     }
@@ -264,7 +312,7 @@
     }
 
     .tab-btn {
-      background: #ffffff;
+      background: var(--panel);
       border: 1px solid var(--border);
       border-radius: 999px;
       padding: 10px 18px;
@@ -283,6 +331,10 @@
       background: linear-gradient(120deg, #0b3a6b, #1d6fb8);
       box-shadow: 0 8px 16px rgba(13, 58, 107, 0.3);
       transform: translateY(-1px);
+    }
+
+    .tab-btn.active .icon {
+      fill: rgba(255, 255, 255, 0.96);
     }
 
     .tab-panel {
@@ -392,7 +444,7 @@
     .alert-actions { display: flex; gap: 8px; align-items: center; }
     button.ghost-btn {
       border: 1px solid var(--border);
-      background: #ffffff;
+      background: var(--panel);
       color: var(--ink);
       border-radius: 999px;
       padding: 6px 12px;
@@ -413,6 +465,11 @@
       opacity: 0.88;
       box-shadow: 0 10px 22px rgba(15, 23, 42, 0.10);
       border-color: rgba(15, 23, 42, 0.12);
+    }
+
+    :root[data-theme="dark"] button.ghost-btn.pending {
+      border-color: rgba(148, 163, 184, 0.22);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.26);
     }
 
     button.ghost-btn[data-hold-ms] {
@@ -526,13 +583,18 @@
       font-size: 12px;
       font-weight: 700;
       color: var(--ink-soft);
-      background: #f8fbff;
+      background: var(--surface);
     }
     .signal-pill span { font-size: 16px; color: var(--ink); }
     .signal-pill.error { background: #fff1f2; border-color: #fecdd3; color: #b91c1c; }
     .signal-pill.warn { background: #fff7ed; border-color: #fed7aa; color: #9a3412; }
     .signal-pill.ok { background: #ecfdf3; border-color: #bbf7d0; color: #166534; }
     .signal-pill.info { background: #eef6ff; border-color: #c7ddf5; color: #1d4f91; }
+
+    :root[data-theme="dark"] .signal-pill.error { background: rgba(239, 68, 68, 0.12); border-color: rgba(239, 68, 68, 0.28); color: rgba(254, 202, 202, 0.95); }
+    :root[data-theme="dark"] .signal-pill.warn { background: rgba(245, 158, 11, 0.14); border-color: rgba(245, 158, 11, 0.28); color: rgba(253, 230, 138, 0.95); }
+    :root[data-theme="dark"] .signal-pill.ok { background: rgba(34, 197, 94, 0.12); border-color: rgba(34, 197, 94, 0.26); color: rgba(187, 247, 208, 0.95); }
+    :root[data-theme="dark"] .signal-pill.info { background: rgba(59, 130, 246, 0.14); border-color: rgba(59, 130, 246, 0.28); color: rgba(191, 219, 254, 0.95); }
 
     .event-feed { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
     .event-item {
@@ -542,7 +604,7 @@
       padding: 10px 12px;
       border-radius: 12px;
       border: 1px solid var(--border);
-      background: #ffffff;
+      background: var(--surface);
     }
     .event-dot {
       width: 10px;
@@ -593,10 +655,14 @@
       background:
         radial-gradient(circle at 10% 10%, rgba(47, 164, 221, 0.10), transparent 55%),
         radial-gradient(circle at 90% 0%, rgba(13, 58, 107, 0.06), transparent 60%),
-        #fbfdff;
+        var(--surface-4);
       box-shadow: 0 10px 24px rgba(13, 58, 107, 0.08);
       display: grid;
       gap: 10px;
+    }
+
+    :root[data-theme="dark"] .entornos-actions {
+      box-shadow: 0 16px 34px rgba(0, 0, 0, 0.26);
     }
 
     .entornos-actions-head {
@@ -662,6 +728,8 @@
     }
 
     button:hover { background: #d9e9ff; box-shadow: 0 8px 16px rgba(13, 58, 107, 0.15); }
+
+    button:hover { background: var(--btn-hover); }
     button:active { transform: translateY(1px); }
 
     button.danger { background: var(--warn); }
@@ -677,7 +745,7 @@
       padding: 10px 12px;
       border-radius: 14px;
       min-height: clamp(54px, 7vw, 64px);
-      background: #f4f9ff;
+      background: var(--surface-3);
     }
 
     .toggle-btn::after {
@@ -690,7 +758,7 @@
       transition: width 0.05s linear;
     }
 
-    .toggle-btn.active { background: #eef7ff; }
+    .toggle-btn.active { background: var(--surface-2); }
     .toggle-btn.pending { opacity: 0.85; }
 
     .toggle-meta {
@@ -726,7 +794,7 @@
       color: var(--ink-soft);
       padding: 5px 9px;
       border-radius: 999px;
-      background: #eef3f9;
+      background: var(--surface-2);
       border: 1px solid var(--border);
       z-index: 1;
       white-space: nowrap;
@@ -743,6 +811,18 @@
       background: #fff6e6;
       color: #8a5800;
       border-color: #ffd9a8;
+    }
+
+    :root[data-theme="dark"] .toggle-btn.active .toggle-state {
+      background: rgba(34, 197, 94, 0.14);
+      color: rgba(187, 247, 208, 0.96);
+      border-color: rgba(34, 197, 94, 0.32);
+    }
+
+    :root[data-theme="dark"] .toggle-btn.pending .toggle-state {
+      background: rgba(245, 158, 11, 0.14);
+      color: rgba(253, 230, 138, 0.96);
+      border-color: rgba(245, 158, 11, 0.32);
     }
 
     .status-dot {
@@ -768,11 +848,15 @@
     }
 
     .link-item {
-      background: #f8fbff;
+      background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 14px;
       padding: 10px 12px;
       box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+    }
+
+    :root[data-theme="dark"] .link-item {
+      box-shadow: inset 0 0 0 1px rgba(2, 6, 23, 0.55);
     }
 
     .link-item.inactive {
@@ -818,8 +902,26 @@
       letter-spacing: 0.4px;
       text-transform: uppercase;
       border: 1px solid var(--border);
-      background: #eef3f9;
+      background: var(--surface-2);
       color: var(--ink-soft);
+    }
+
+    :root[data-theme="dark"] .link-chip.dev {
+      background: rgba(59, 130, 246, 0.14);
+      color: rgba(191, 219, 254, 0.96);
+      border-color: rgba(59, 130, 246, 0.32);
+    }
+
+    :root[data-theme="dark"] .link-chip.prod {
+      background: rgba(34, 197, 94, 0.14);
+      color: rgba(187, 247, 208, 0.96);
+      border-color: rgba(34, 197, 94, 0.32);
+    }
+
+    :root[data-theme="dark"] .link-chip.api {
+      background: rgba(245, 158, 11, 0.14);
+      color: rgba(253, 230, 138, 0.96);
+      border-color: rgba(245, 158, 11, 0.32);
     }
 
     .link-chip.dev {
@@ -893,7 +995,7 @@
     }
 
     .metric {
-      background: #f7fafd;
+      background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 14px;
       padding: 12px;
@@ -939,6 +1041,10 @@
       padding: 14px;
       display: grid;
       gap: 6px;
+    }
+
+    :root[data-theme="dark"] .summary-card {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.14), rgba(15, 23, 42, 0.92));
     }
 
     .summary-card .label {
@@ -1004,7 +1110,7 @@
       padding: 10px 12px;
       border-radius: 12px;
       border: 1px solid var(--border);
-      background: #f8fbff;
+      background: var(--surface);
     }
 
     .activity-dot {
@@ -1049,7 +1155,7 @@
       text-align: center;
       border: 1px dashed var(--border);
       border-radius: 12px;
-      background: #f8fbff;
+      background: var(--surface);
     }
 
     .chart-empty {
@@ -1060,7 +1166,7 @@
       border-radius: 12px;
       width: 100%;
       text-align: center;
-      background: #f8fbff;
+      background: var(--surface);
     }
 
     .service-list {
@@ -1075,7 +1181,7 @@
       padding: 10px 12px;
       border-radius: 12px;
       border: 1px solid var(--border);
-      background: #f8fbff;
+      background: var(--surface);
     }
 
     .service-dot {
@@ -1121,8 +1227,20 @@
       letter-spacing: 0.4px;
       text-transform: uppercase;
       border: 1px solid var(--border);
-      background: #eef3f9;
+      background: var(--surface-2);
       color: var(--ink-soft);
+    }
+
+    :root[data-theme="dark"] .service-badge.ok {
+      background: rgba(34, 197, 94, 0.14);
+      color: rgba(187, 247, 208, 0.96);
+      border-color: rgba(34, 197, 94, 0.32);
+    }
+
+    :root[data-theme="dark"] .service-badge.down {
+      background: rgba(239, 68, 68, 0.12);
+      color: rgba(254, 202, 202, 0.96);
+      border-color: rgba(239, 68, 68, 0.32);
     }
 
     .service-badge.ok {
@@ -1179,6 +1297,11 @@
       gap: 8px;
       position: relative;
       overflow: hidden;
+    }
+
+    :root[data-theme="dark"] .quote {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.12), rgba(15, 23, 42, 0.92));
+      border-color: rgba(148, 163, 184, 0.22);
     }
 
     .quote-tag {
@@ -1249,10 +1372,14 @@
     .status-events {
       border: 1px solid var(--border);
       border-radius: 16px;
-      background: #ffffff;
+      background: var(--panel);
       padding: 12px;
       margin: 10px 0 12px;
       box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+    }
+
+    :root[data-theme="dark"] .status-events {
+      box-shadow: inset 0 0 0 1px rgba(2, 6, 23, 0.55);
     }
 
     .status-events-head {
@@ -1284,7 +1411,7 @@
       border: 1px solid var(--border);
       border-radius: 14px;
       padding: 10px 12px;
-      background: #f8fbff;
+      background: var(--surface);
       display: grid;
       gap: 4px;
     }
@@ -1308,13 +1435,17 @@
       padding: 3px 9px;
       border-radius: 999px;
       border: 1px solid var(--border);
-      background: #ffffff;
+      background: var(--panel);
       color: var(--ink-soft);
     }
 
     .status-event.error { border-color: rgba(239, 68, 68, 0.28); background: rgba(254, 226, 226, 0.40); }
     .status-event.warn { border-color: rgba(245, 158, 11, 0.28); background: rgba(255, 237, 213, 0.45); }
     .status-event.ok { border-color: rgba(34, 197, 94, 0.26); background: rgba(220, 252, 231, 0.45); }
+
+    :root[data-theme="dark"] .status-event.error { border-color: rgba(239, 68, 68, 0.28); background: rgba(239, 68, 68, 0.12); }
+    :root[data-theme="dark"] .status-event.warn { border-color: rgba(245, 158, 11, 0.28); background: rgba(245, 158, 11, 0.14); }
+    :root[data-theme="dark"] .status-event.ok { border-color: rgba(34, 197, 94, 0.26); background: rgba(34, 197, 94, 0.12); }
 
     .status-event .msg {
       font-size: 12px;
@@ -1470,6 +1601,12 @@
       font-size: 12px;
       min-width: 180px;
       flex: 999 1 320px;
+      background: var(--panel);
+      color: var(--ink);
+    }
+
+    .search::placeholder {
+      color: color-mix(in srgb, var(--ink-soft) 82%, transparent);
     }
 
     .pills { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -1478,7 +1615,7 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      background: #eef3f9;
+      background: var(--surface-2);
       border: 1px solid var(--border);
       border-radius: 999px;
       padding: 6px 12px;
@@ -1509,7 +1646,7 @@
     }
 
     .toast {
-      background: #ffffff;
+      background: var(--panel);
       color: var(--ink);
       border-radius: 12px;
       padding: 12px 12px;
@@ -1562,7 +1699,7 @@
 
     .toast-btn {
       border: 1px solid var(--border);
-      background: #ffffff;
+      background: var(--surface-2);
       color: var(--ink);
       border-radius: 10px;
       padding: 6px 10px;
@@ -1571,6 +1708,16 @@
       cursor: pointer;
       transition: transform 90ms ease, box-shadow 140ms ease, background 140ms ease, border-color 140ms ease;
     }
+
+    :root[data-theme="dark"] .toast-btn.action {
+      border-color: rgba(59, 130, 246, 0.28);
+      background: rgba(59, 130, 246, 0.12);
+    }
+
+    :root[data-theme="dark"] .toast.ok .toast-icon { color: rgba(187, 247, 208, 0.96); }
+    :root[data-theme="dark"] .toast.warn .toast-icon { color: rgba(253, 230, 138, 0.96); }
+    :root[data-theme="dark"] .toast.error .toast-icon { color: rgba(254, 202, 202, 0.96); }
+    :root[data-theme="dark"] .toast.info .toast-icon { color: rgba(191, 219, 254, 0.96); }
 
     .toast-btn:hover { box-shadow: 0 10px 18px rgba(15, 23, 42, 0.12); }
     .toast-btn:active { transform: translateY(1px); }
@@ -1776,11 +1923,13 @@
     </div>
     <div class="header-chips">
       <span class="chip" id="version-chip">Version: -</span>
+      <span class="chip" id="ui-chip">UI: -</span>
       <span class="chip" id="port-chip">Puerto: -</span>
       <span class="chip" id="mode-chip">Modo: -</span>
       <span class="chip" id="running-chip">Procesos: -</span>
       <span class="chip" id="paused-chip">Actualizacion: Activa</span>
       <span class="chip" id="connection-chip">Conexion: -</span>
+      <button class="chip" id="theme-toggle" type="button" title="Cambiar tema (claro/oscuro)">Tema</button>
     </div>
   </header>
 
@@ -2244,6 +2393,39 @@
       if (el) el.textContent = value;
     };
 
+    // Identificador de UI (útil para confirmar que el HTML recargó cambios).
+    // Nota: actualiza este valor cuando hagas cambios visibles al dashboard.
+    const UI_REV = '2026-01-17.2';
+
+    const THEME_STORAGE_KEY = 'seuDashboardTheme';
+
+    function applyTheme(theme) {
+      const t = theme === 'dark' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', t);
+      const btn = $('theme-toggle');
+      if (btn) btn.textContent = t === 'dark' ? 'Tema: Oscuro' : 'Tema: Claro';
+    }
+
+    function getPreferredTheme() {
+      try {
+        const stored = String(localStorage.getItem(THEME_STORAGE_KEY) || '').trim();
+        if (stored === 'dark' || stored === 'light') return stored;
+      } catch {}
+      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+
+    function initTheme() {
+      applyTheme(getPreferredTheme());
+      const btn = $('theme-toggle');
+      if (!btn) return;
+      btn.addEventListener('click', () => {
+        const current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+        const next = current === 'dark' ? 'light' : 'dark';
+        try { localStorage.setItem(THEME_STORAGE_KEY, next); } catch {}
+        applyTheme(next);
+      });
+    }
+
     function normalizeModeValue(value) {
       const v = String(value || '').toLowerCase();
       return v === 'dev' || v === 'prod' || v === 'none' ? v : 'none';
@@ -2431,6 +2613,8 @@
 
         const versionChip = $('version-chip');
         if (versionChip) versionChip.textContent = `Version: ${version !== '-' ? version : '-'}`;
+        const uiChip = $('ui-chip');
+        if (uiChip) uiChip.textContent = `UI: ${UI_REV}`;
         const portChip = $('port-chip');
         if (portChip) portChip.textContent = `Puerto: ${port || '-'}`;
       } catch (error) {
@@ -3769,6 +3953,8 @@
     }
 
     // Initial load and periodic refresh.
+    initTheme();
+    setText('ui-chip', `UI: ${UI_REV}`);
     setTab(state.activeTab);
     setPausedChip(false);
     setConnection('unknown');

@@ -460,7 +460,8 @@
       gap: 2px;
       flex-direction: column;
       border-radius: 16px;
-      min-width: 150px;
+      min-width: 0;
+      width: 100%;
     }
 
     button.ghost-btn.hold-btn .btn-row {
@@ -587,20 +588,21 @@
 
     .actions-grid {
       display: grid;
-      grid-template-columns: 1fr;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
       gap: 10px;
+      align-items: stretch;
     }
 
     .actions-grid .ghost-btn {
       width: 100%;
     }
 
-    @media (min-width: 360px) {
-      .actions-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    @media (max-width: 380px) {
+      .actions-grid { grid-template-columns: 1fr; }
     }
 
-    @media (min-width: 620px) {
-      .actions-grid.env { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .actions-grid.env {
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
     }
 
     .hint {

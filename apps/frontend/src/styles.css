@@ -355,6 +355,23 @@ p {
   gap: 0.5rem;
 }
 
+.tabs--scroll {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+.tabs--scroll::-webkit-scrollbar {
+  height: 8px;
+}
+
+.tabs--scroll::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.55);
+  border-radius: 999px;
+}
+
 @media (max-width: 520px) {
   .tabs {
     overflow-x: auto;

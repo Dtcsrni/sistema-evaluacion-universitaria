@@ -220,7 +220,7 @@ function AyudaFormulario({ titulo, children }: { titulo: string; children: React
 
 export function AppDocente() {
   const [docente, setDocente] = useState<Docente | null>(null);
-  const [vista, setVista] = useState('inicio');
+  const [vista, setVista] = useState('periodos');
   const [alumnos, setAlumnos] = useState<Alumno[]>([]);
   const [periodos, setPeriodos] = useState<Periodo[]>([]);
   const [periodosArchivados, setPeriodosArchivados] = useState<Periodo[]>([]);
@@ -253,9 +253,7 @@ export function AppDocente() {
   const itemsVista = useMemo(
     () =>
       [
-        { id: 'inicio', label: 'Inicio', icono: 'inicio' as const },
         { id: 'periodos', label: 'Materias', icono: 'periodos' as const },
-        { id: 'periodos_archivados', label: 'Archivadas', icono: 'periodos' as const },
         { id: 'alumnos', label: 'Alumnos', icono: 'alumnos' as const },
         { id: 'banco', label: 'Banco', icono: 'banco' as const },
         { id: 'plantillas', label: 'Plantillas', icono: 'plantillas' as const },
@@ -385,18 +383,21 @@ export function AppDocente() {
   const contenido = docente ? (
     <div className="panel">
       <nav
-        className="tabs"
+        className="tabs tabs--scroll"
         aria-label="Secciones del portal docente"
       >
         {itemsVista.map((item, idx) => (
+          (() => {
+            const activa = vista === item.id || (vista === 'periodos_archivados' && item.id === 'periodos');
+            return (
           <button
             key={item.id}
             ref={(el) => {
               tabsRef.current[idx] = el;
             }}
             type="button"
-            className={vista === item.id ? 'tab activa' : 'tab'}
-            aria-current={vista === item.id ? 'page' : undefined}
+            className={activa ? 'tab activa' : 'tab'}
+            aria-current={activa ? 'page' : undefined}
             onKeyDown={(event) => {
               if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight' && event.key !== 'Home' && event.key !== 'End') {
                 return;
@@ -421,35 +422,16 @@ export function AppDocente() {
             <Icono nombre={item.icono} />
             {item.label}
           </button>
+            );
+          })()
         ))}
       </nav>
 
-      <div className="panel" aria-live="polite">
-        {cargandoDatos && (
+      {cargandoDatos && (
+        <div className="panel" aria-live="polite">
           <InlineMensaje tipo="info" leading={<Spinner />}>
             Cargando datos…
           </InlineMensaje>
-        )}
-      </div>
-
-      {vista === 'inicio' && (
-        <div className="panel">
-          <p className="eyebrow">
-            <Icono nombre="docente" /> Panel Docente
-          </p>
-          <h1>Banco y Examenes</h1>
-          <p>Atajos</p>
-          <div className="meta" aria-label="Atajos rapidos">
-            <button type="button" className="chip" onClick={() => setVista('banco')}>
-              <Icono nombre="banco" /> Banco de preguntas
-            </button>
-            <button type="button" className="chip" onClick={() => setVista('plantillas')}>
-              <Icono nombre="plantillas" /> Generacion PDF
-            </button>
-            <button type="button" className="chip" onClick={() => setVista('escaneo')}>
-              <Icono nombre="escaneo" /> Escaneo y calificacion
-            </button>
-          </div>
         </div>
       )}
 

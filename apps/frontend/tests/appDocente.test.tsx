@@ -16,7 +16,7 @@ describe('AppDocente', () => {
     localStorage.setItem('tokenDocente', 'token-falso');
     render(<AppDocente />);
 
-    expect(await screen.findByText('Panel Docente')).toBeInTheDocument();
+    expect(await screen.findByRole('navigation', { name: 'Secciones del portal docente' })).toBeInTheDocument();
   });
 
   it('permite crear materia sin crashear el render', async () => {
@@ -24,7 +24,7 @@ describe('AppDocente', () => {
     const user = userEvent.setup();
     render(<AppDocente />);
 
-    expect(await screen.findByText('Panel Docente')).toBeInTheDocument();
+    expect(await screen.findByRole('navigation', { name: 'Secciones del portal docente' })).toBeInTheDocument();
 
     const nav = screen.getByRole('navigation', { name: 'Secciones del portal docente' });
     const tabsMaterias = within(nav).getAllByRole('button', { name: 'Materias' });

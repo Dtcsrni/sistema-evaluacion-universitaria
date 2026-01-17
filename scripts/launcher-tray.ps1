@@ -291,7 +291,7 @@ function Format-ApiException([object]$err) {
     if ($status) {
       return "$type (HTTP $status): $msg"
     }
-    return "$type: $msg"
+    return "${type}: $msg"
   } catch {
     return 'error (no se pudo formatear excepción)'
   }

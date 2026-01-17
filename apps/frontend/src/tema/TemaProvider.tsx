@@ -21,7 +21,7 @@ const ContextoTema = createContext<TemaContexto | null>(null);
 
 export function TemaProvider({ children }: { children: ReactNode }) {
   const [preferencia, setPreferenciaState] = useState<PreferenciaTema>(() => leerPreferenciaTema());
-  const [{ temaAplicado, bucketTiempo }, setAplicado] = useState(() => aplicarTemaDocumento(leerPreferenciaTema()));
+  const [{ tema: temaAplicado, bucket: bucketTiempo }, setAplicado] = useState(() => aplicarTemaDocumento(leerPreferenciaTema()));
 
   useEffect(() => {
     guardarPreferenciaTema(preferencia);

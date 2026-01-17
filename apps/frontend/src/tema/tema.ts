@@ -80,7 +80,6 @@ export function aplicarTemaDocumento(preferencia: PreferenciaTema): { tema: Tema
 
     // Ayuda a controles nativos (inputs, scrollbars, etc.)
     try {
-      // @ts-expect-error: `colorScheme` existe en CSSStyleDeclaration moderno.
       root.style.colorScheme = tema;
     } catch {
       // noop

@@ -24,13 +24,11 @@ export const CampoTexto = forwardRef<
   return (
     <label className="campo" htmlFor={inputId}>
       {etiqueta}
-      <input
-        {...props}
-        ref={ref}
-        id={inputId}
-        aria-invalid={invalid ? 'true' : undefined}
-        aria-describedby={describedBy}
-      />
+      {invalid ? (
+        <input {...props} ref={ref} id={inputId} aria-invalid="true" aria-describedby={describedBy} />
+      ) : (
+        <input {...props} ref={ref} id={inputId} aria-describedby={describedBy} />
+      )}
       {error ? (
         <small id={errorId} className="ayuda error">
           {error}

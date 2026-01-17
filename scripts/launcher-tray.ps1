@@ -268,11 +268,62 @@ function Get-ApiBase {
   return "http://127.0.0.1:$Port"
 }
 
+function Format-ApiException([object]$err) {
+  try {
+    $ex = $err.Exception
+    if (-not $ex) { return 'error desconocido' }
+
+    $type = $ex.GetType().FullName
+    $msg = ("$($ex.Message)").Trim()
+    if (-not $msg) { $msg = '<sin mensaje>' }
+
+    $status = $null
+    try {
+      if ($null -ne $ex.StatusCode) { $status = [string]$ex.StatusCode }
+    } catch {}
+
+    if (-not $status) {
+      try {
+        if ($ex.Response -and $ex.Response.StatusCode) { $status = [string]$ex.Response.StatusCode }
+      } catch {}
+    }
+
+    if ($status) {
+      return "$type (HTTP $status): $msg"
+    }
+    return "$type: $msg"
+  } catch {
+    return 'error (no se pudo formatear excepción)'
+  }
+}
+
+function Log-ApiFailure([string]$key, [string]$msg, [int]$minIntervalMs = 8000) {
+  try {
+    if (-not (Test-Path variable:script:ApiFailLog)) {
+      $script:ApiFailLog = @{}
+    }
+
+    $now = [Environment]::TickCount64
+    $last = 0
+    try {
+      if ($script:ApiFailLog.ContainsKey($key)) { $last = [int64]$script:ApiFailLog[$key] }
+    } catch { $last = 0 }
+
+    if (($now - $last) -ge $minIntervalMs) {
+      $script:ApiFailLog[$key] = $now
+      Log($msg)
+    }
+  } catch {
+    # ignore
+  }
+}
+
 function Get-JsonOrNull([string]$path) {
   try {
     return Invoke-RestMethod -Uri ((Get-ApiBase) + $path) -TimeoutSec 1
   } catch {
-    Log("GET $path failed")
+    $details = Format-ApiException $_
+    Log-ApiFailure "GET:$path" ("GET $path failed: $details")
     return $null
   }
 }
@@ -282,7 +333,8 @@ function Invoke-PostJsonOrNull([string]$path, [hashtable]$body) {
     $json = ($body | ConvertTo-Json -Depth 5)
     return Invoke-RestMethod -Method Post -Uri ((Get-ApiBase) + $path) -ContentType 'application/json' -Body $json -TimeoutSec 2
   } catch {
-    Log("POST $path failed")
+    $details = Format-ApiException $_
+    Log-ApiFailure "POST:$path" ("POST $path failed: $details")
     return $null
   }
 }
@@ -441,43 +493,58 @@ $timer.Interval = 1500
 $lastMood = 'info'
 
 $timer.add_Tick({
-  $st = Get-JsonOrNull '/api/status'
-  $hl = Get-JsonOrNull '/api/health'
+  # Durante el cierre del runspace/app, Windows Forms puede disparar un tick tardío.
+  # En ese escenario PowerShell aborta pipelines y lanza PipelineStoppedException.
+  try {
+    if (Test-Path variable:exiting) {
+      if ($exiting) { return }
+    }
 
-  $mood = Get-SystemMood $st $hl
-  if (-not $mood) { $mood = 'error' }
+    $st = Get-JsonOrNull '/api/status'
+    $hl = Get-JsonOrNull '/api/health'
 
-  if ($mood -ne $lastMood) {
-    $lastMood = $mood
-    $notify.Icon = (Get-MoodIcon $mood)
+    $mood = Get-SystemMood $st $hl
+    if (-not $mood) { $mood = 'error' }
+
+    if ($mood -ne $lastMood) {
+      $lastMood = $mood
+      $notify.Icon = (Get-MoodIcon $mood)
+    }
+
+    $runningCount = 0
+    try { $runningCount = @($st.running).Count } catch { $runningCount = 0 }
+    $mode = '-'
+    try { $mode = ("$($st.mode)").ToUpperInvariant() } catch { $mode = '-' }
+
+    $label = switch ($mood) {
+      'ok' { 'OK' }
+      'warn' { 'WARN' }
+      'error' { 'ERROR' }
+      default { 'INFO' }
+    }
+
+    $text = "SEU $label | $mode | proc:$runningCount"
+    $notify.Text = ConvertTo-ShortText $text 60
+
+    $dashPidText = '-'
+    $install = Get-JsonOrNull '/api/install'
+    try { if ($install.dashboard.pid) { $dashPidText = [string]$install.dashboard.pid } } catch { $dashPidText = '-' }
+    try { $miPid.Text = "PID: $dashPidText" } catch {}
+  } catch [System.Management.Automation.PipelineStoppedException] {
+    return
+  } catch [System.ObjectDisposedException] {
+    return
+  } catch {
+    Log("Tick error: $($_.Exception.GetType().FullName): $($_.Exception.Message)")
   }
-
-  $runningCount = 0
-  try { $runningCount = @($st.running).Count } catch { $runningCount = 0 }
-  $mode = '-'
-  try { $mode = ("$($st.mode)").ToUpperInvariant() } catch { $mode = '-' }
-
-  $label = switch ($mood) {
-    'ok' { 'OK' }
-    'warn' { 'WARN' }
-    'error' { 'ERROR' }
-    default { 'INFO' }
-  }
-
-  $text = "SEU $label | $mode | proc:$runningCount"
-  $notify.Text = ConvertTo-ShortText $text 60
-
-  $dashPidText = '-'
-  $install = Get-JsonOrNull '/api/install'
-  try { if ($install.dashboard.pid) { $dashPidText = [string]$install.dashboard.pid } } catch { $dashPidText = '-' }
-  $miPid.Text = "PID: $dashPidText"
 })
 
 $exiting = $false
 $miExit.add_Click({
   if ($exiting) { return }
   $exiting = $true
-  $timer.Stop()
+  try { $timer.Stop() } catch {}
+  try { $timer.Dispose() } catch {}
   $notify.Visible = $false
   $notify.Dispose()
 

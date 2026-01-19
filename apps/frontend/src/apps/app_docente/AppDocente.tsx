@@ -20,6 +20,26 @@ import { TemaBoton } from '../../tema/TemaBoton';
 import { tipoMensajeInline } from './mensajeInline';
 
 const clienteApi = crearClienteApi();
+
+const VISTAS_VALIDAS = new Set([
+  'periodos',
+  'periodos_archivados',
+  'alumnos',
+  'banco',
+  'plantillas',
+  'recepcion',
+  'escaneo',
+  'calificar',
+  'publicar',
+  'cuenta'
+]);
+
+function obtenerVistaInicial(): string {
+  if (typeof window === 'undefined') return 'periodos';
+  const params = new URLSearchParams(window.location.search);
+  const vista = String(params.get('vista') || '').trim();
+  return VISTAS_VALIDAS.has(vista) ? vista : 'periodos';
+}
 const patronNombreMateria = /^[\p{L}\p{N}][\p{L}\p{N}\s\-_.()#&/]*$/u;
 
 type Docente = {
@@ -261,7 +281,7 @@ function AyudaFormulario({ titulo, children }: { titulo: string; children: React
 
 export function AppDocente() {
   const [docente, setDocente] = useState<Docente | null>(null);
-  const [vista, setVista] = useState('periodos');
+  const [vista, setVista] = useState(obtenerVistaInicial());
   const [alumnos, setAlumnos] = useState<Alumno[]>([]);
   const [periodos, setPeriodos] = useState<Periodo[]>([]);
   const [periodosArchivados, setPeriodosArchivados] = useState<Periodo[]>([]);
@@ -4713,6 +4733,7 @@ function SeccionRecepcion({
           <span>Examen a folio a alumno</span>
         </div>
         <div className="guia-grid">
+          <QrAccesoMovil vista="recepcion" />
           <div className="item-glass guia-card">
             <div className="guia-card__header">
               <span className="chip chip-static" aria-hidden="true">
@@ -4798,6 +4819,89 @@ function SeccionRecepcion({
           {mensaje}
         </p>
       )}
+    </div>
+  );
+}
+
+function QrAccesoMovil({ vista }: { vista: 'recepcion' | 'escaneo' }) {
+  const [urlMovil, setUrlMovil] = useState('');
+  const [origenMostrado, setOrigenMostrado] = useState('');
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let activo = true;
+    const params = new URLSearchParams(window.location.search);
+    params.set('vista', vista);
+    const qs = params.toString();
+    const ruta = window.location.pathname || '/';
+    const puerto = window.location.port ? `:${window.location.port}` : '';
+    const construirUrl = (host: string) => `${window.location.protocol}//${host}${puerto}${ruta}${qs ? `?${qs}` : ''}`;
+    const hostname = window.location.hostname;
+
+    if (hostname && hostname !== 'localhost' && hostname !== '127.0.0.1') {
+      const url = `${window.location.protocol}//${window.location.host}${ruta}${qs ? `?${qs}` : ''}`;
+      const timer = window.setTimeout(() => {
+        if (!activo) return;
+        setUrlMovil(url);
+        setOrigenMostrado(window.location.host);
+        setCargando(false);
+      }, 0);
+      return () => {
+        activo = false;
+        window.clearTimeout(timer);
+      };
+    }
+
+    fetch(`${clienteApi.baseApi}/salud/ip-local`)
+      .then((resp) => (resp.ok ? resp.json() : Promise.reject(new Error('Respuesta invalida'))))
+      .then((data) => {
+        if (!activo) return;
+        const ip = String(data?.preferida || (Array.isArray(data?.ips) ? data.ips[0] : '')).trim();
+        if (!ip) throw new Error('Sin IP local');
+        setUrlMovil(construirUrl(ip));
+        setOrigenMostrado(ip);
+      })
+      .catch(() => {
+        if (!activo) return;
+        setError('No se pudo detectar la IP local. Usa la IP de tu PC en lugar de localhost.');
+        setUrlMovil(`${window.location.protocol}//${window.location.host}${ruta}${qs ? `?${qs}` : ''}`);
+        setOrigenMostrado(window.location.host);
+      })
+      .finally(() => {
+        if (!activo) return;
+        setCargando(false);
+      });
+
+    return () => {
+      activo = false;
+    };
+  }, [vista]);
+
+  const urlQr = urlMovil ? `${clienteApi.baseApi}/salud/qr?texto=${encodeURIComponent(urlMovil)}` : '';
+
+  return (
+    <div className="item-glass guia-card guia-card--qr">
+      <div className="guia-card__header">
+        <span className="chip chip-static" aria-hidden="true">
+          <Icono nombre="escaneo" /> QR movil
+        </span>
+      </div>
+      {cargando && (
+        <InlineMensaje tipo="info" leading={<Spinner />}>
+          Generando QR de acceso...
+        </InlineMensaje>
+      )}
+      {!cargando && urlQr && (
+        <div className="guia-qr">
+          <img className="guia-qr__img" src={urlQr} alt="QR para abrir en movil" />
+          <div className="nota">
+            Abre en el movil: <span className="guia-qr__url">{urlMovil}</span>
+          </div>
+          {origenMostrado && <div className="nota">Origen detectado: {origenMostrado}</div>}
+        </div>
+      )}
+      {error && <InlineMensaje tipo="warning">{error}</InlineMensaje>}
     </div>
   );
 }
@@ -4896,6 +5000,7 @@ function SeccionEscaneo({
           <span>Hoja a imagen a analisis a ajuste</span>
         </div>
         <div className="guia-grid">
+          <QrAccesoMovil vista="escaneo" />
           <div className="item-glass guia-card">
             <div className="guia-card__header">
               <span className="chip chip-static" aria-hidden="true">

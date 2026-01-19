@@ -299,6 +299,33 @@ button:hover svg[data-icono="ok"].icono,
   gap: 0.55rem;
 }
 
+.guia-card--qr {
+  align-items: center;
+  text-align: center;
+}
+
+.guia-qr {
+  display: grid;
+  gap: 0.45rem;
+  justify-items: center;
+}
+
+.guia-qr__img {
+  width: 180px;
+  height: 180px;
+  padding: 0.45rem;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.15);
+}
+
+.guia-qr__url {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  font-size: 0.8rem;
+  color: var(--texto);
+  word-break: break-all;
+}
+
 .guia-card__header {
   display: flex;
   align-items: center;

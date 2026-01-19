@@ -25,6 +25,8 @@ function esIpPrivada(ip: string) {
 }
 
 function obtenerIpsLocales() {
+  const hostEnv = String(process.env.HOST_IP || '').trim();
+  const hostIp = /^[0-9.]+$/.test(hostEnv) ? hostEnv : '';
   const redes = os.networkInterfaces();
   const ips: string[] = [];
   for (const entradas of Object.values(redes)) {
@@ -35,9 +37,12 @@ function obtenerIpsLocales() {
     }
   }
   const unicas = Array.from(new Set(ips));
+  if (hostIp && !unicas.includes(hostIp)) {
+    unicas.unshift(hostIp);
+  }
   const privadas = unicas.filter((ip) => esIpPrivada(ip));
   const publicas = unicas.filter((ip) => !esIpPrivada(ip));
-  const preferida = privadas[0] ?? publicas[0] ?? null;
+  const preferida = hostIp || privadas[0] ?? publicas[0] ?? null;
   return { ips: [...privadas, ...publicas], preferida };
 }
 

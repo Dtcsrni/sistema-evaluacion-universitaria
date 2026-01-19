@@ -26,9 +26,10 @@
   },
   "scripts": {
     "dev": "npm-run-all --parallel dev:backend dev:frontend",
-    "dev:backend": "docker compose --profile dev up --build --force-recreate mongo_local api_docente_local",
+    "dev:backend": "node scripts/detect-host-ip.mjs && docker compose --profile dev up --build --force-recreate mongo_local api_docente_local",
     "dev:frontend": "npm -C apps/frontend run dev",
     "dev:portal": "npm -C apps/portal_alumno_cloud run dev",
+    "stack:prod": "node scripts/detect-host-ip.mjs && docker compose --profile prod up --build --force-recreate mongo_local api_docente_prod web_docente_prod",
     "typecheck": "npm run --workspaces --if-present typecheck",
     "test": "npm -C apps/backend run test",
     "test:backend": "npm -C apps/backend run test",
@@ -50,7 +51,7 @@
     "build": "npm run --workspaces --if-present build",
     "lint": "npm run --workspaces --if-present lint",
     "verify:prod": "npm run test:backend:ci && npm run test:frontend:ci && npm run build",
-    "start:prod": "npm run verify:prod && docker compose --profile prod up --build --force-recreate mongo_local api_docente_prod web_docente_prod",
+    "start:prod": "npm run verify:prod && npm run stack:prod",
     "start": "npm run start:prod",
     "start:portal": "npm -C apps/portal_alumno_cloud run start",
     "status": "node scripts/dashboard.mjs",
@@ -77,4 +78,3 @@
     "vitest": "^4.0.17"
   }
 }
-

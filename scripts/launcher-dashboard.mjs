@@ -804,7 +804,7 @@ const commands = {
   'dev-frontend': 'npm run dev:frontend',
   'dev-backend': 'npm run dev:backend',
   // En dashboard, PROD debe levantar el stack rapidamente (sin correr verify/tests).
-  prod: 'docker compose --profile prod up --build --force-recreate mongo_local api_docente_prod web_docente_prod',
+  prod: 'npm run stack:prod',
   portal: 'npm run dev:portal',
   status: 'npm run status',
   'docker-ps': 'docker ps',

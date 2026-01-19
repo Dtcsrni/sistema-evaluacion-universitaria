@@ -42,7 +42,7 @@ function obtenerIpsLocales() {
   }
   const privadas = unicas.filter((ip) => esIpPrivada(ip));
   const publicas = unicas.filter((ip) => !esIpPrivada(ip));
-  const preferida = hostIp || privadas[0] ?? publicas[0] ?? null;
+  const preferida = hostIp || privadas[0] || publicas[0] || null;
   return { ips: [...privadas, ...publicas], preferida };
 }
 
@@ -65,6 +65,7 @@ router.get('/qr', async (req, res) => {
     });
     res.setHeader('Content-Type', 'image/png');
     res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     res.send(buffer);
   } catch (error) {
     res.status(500).json({ error: { codigo: 'QR_FALLO', mensaje: error instanceof Error ? error.message : 'Error' } });

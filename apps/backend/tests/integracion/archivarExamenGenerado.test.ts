@@ -3,7 +3,7 @@ import { afterAll, beforeAll, beforeEach, describe, it, expect } from 'vitest';
 import { crearApp } from '../../src/app';
 import { cerrarMongoTest, conectarMongoTest, limpiarMongoTest } from '../utils/mongo';
 
-describe('eliminar examen generado', () => {
+describe('archivar examen generado', () => {
   const app = crearApp();
 
   beforeAll(async () => {
@@ -30,7 +30,7 @@ describe('eliminar examen generado', () => {
     return respuesta.body.token as string;
   }
 
-  it('permite eliminar un examen en estado generado', async () => {
+  it('permite archivar un examen en estado generado', async () => {
     const token = await registrarDocente();
     const auth = { Authorization: `Bearer ${token}` };
 
@@ -87,9 +87,10 @@ describe('eliminar examen generado', () => {
     const examenId = examenResp.body.examenGenerado._id as string;
     const folio = examenResp.body.examenGenerado.folio as string;
 
-    await request(app).delete(`/api/examenes/generados/${examenId}`).set(auth).expect(200);
+    const archivarResp = await request(app).post(`/api/examenes/generados/${examenId}/archivar`).set(auth).expect(200);
+    expect(archivarResp.body?.examen?.archivadoEn).toBeTruthy();
 
-    await request(app).get(`/api/examenes/generados/folio/${folio}`).set(auth).expect(404);
+    await request(app).get(`/api/examenes/generados/folio/${folio}`).set(auth).expect(200);
 
     const listado = await request(app)
       .get(`/api/examenes/generados?plantillaId=${encodeURIComponent(plantillaId)}&limite=50`)
@@ -97,9 +98,16 @@ describe('eliminar examen generado', () => {
       .expect(200);
     expect(Array.isArray(listado.body?.examenes)).toBe(true);
     expect(listado.body.examenes.length).toBe(0);
+
+    const archivados = await request(app)
+      .get(`/api/examenes/generados?plantillaId=${encodeURIComponent(plantillaId)}&archivado=1&limite=50`)
+      .set(auth)
+      .expect(200);
+    expect(Array.isArray(archivados.body?.examenes)).toBe(true);
+    expect(archivados.body.examenes.length).toBe(1);
   });
 
-  it('bloquea eliminar un examen entregado', async () => {
+  it('permite archivar un examen entregado', async () => {
     const token = await registrarDocente();
     const auth = { Authorization: `Bearer ${token}` };
 
@@ -171,6 +179,7 @@ describe('eliminar examen generado', () => {
 
     await request(app).post('/api/entregas/vincular-folio').set(auth).send({ folio, alumnoId }).expect(201);
 
-    await request(app).delete(`/api/examenes/generados/${examenId}`).set(auth).expect(409);
+    const archivarResp = await request(app).post(`/api/examenes/generados/${examenId}/archivar`).set(auth).expect(200);
+    expect(archivarResp.body?.examen?.archivadoEn).toBeTruthy();
   });
 });

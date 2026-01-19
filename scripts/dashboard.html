@@ -1,9 +1,9 @@
 <!doctype html>
 <!--
-  Dashboard UI for local control.
-  - Talks to the local Node server on /api/*.
-  - Focuses on main functions, with detailed status in a separate tab.
-  - Uses large controls for laptop screens and safe hold-to-toggle actions.
+  UI del dashboard para control local.
+  - Se comunica con el servidor Node local en /api/*.
+  - Se enfoca en funciones principales con estado detallado en una pestaña aparte.
+  - Usa controles grandes para laptops y acciones seguras al mantener presionado.
 -->
 <html lang="es">
 <head>
@@ -18,7 +18,7 @@
     :root {
       color-scheme: light;
 
-      /* Motion (consistente y suave) */
+      /* Movimiento (consistente y suave) */
       --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
       --ease-in-out: cubic-bezier(0.45, 0, 0.55, 1);
       --dur-xxs: 90ms;
@@ -42,7 +42,7 @@
       --border: #d5e2ef;
       --shadow: 0 10px 24px rgba(15, 23, 42, 0.10);
 
-      /* Cyberpunk accents */
+      /* Acentos cyberpunk */
       --neon-cyan: #00d5ff;
       --neon-magenta: #ff2bd6;
       --neon-lime: #2dff8f;
@@ -50,22 +50,22 @@
       --neon-magenta-soft: rgba(255, 43, 214, 0.14);
       --neon-lime-soft: rgba(45, 255, 143, 0.14);
 
-      /* UI accents */
+      /* Acentos de UI */
       --accent: var(--neon-cyan);
       --accent-2: var(--neon-lime);
       --accent-3: var(--neon-magenta);
       --accent-soft: rgba(0, 213, 255, 0.12);
 
-      /* Status */
+      /* Estado */
       --warn: #fff2f1;
       --ok: #e9f7ef;
 
-      /* Effects */
+      /* Efectos */
       --btn-hover: #d9e9ff;
       --grid-alpha: 0.06;
       --scan-alpha: 0.035;
 
-      /* Header */
+      /* Encabezado */
       --header-grad: linear-gradient(120deg, rgba(2, 6, 23, 0.94), rgba(0, 213, 255, 0.16) 55%, rgba(255, 43, 214, 0.22));
       --header-chip-bg: rgba(0, 0, 0, 0.24);
       --header-chip-border: rgba(255, 255, 255, 0.22);
@@ -86,7 +86,7 @@
       --border: rgba(148, 163, 184, 0.18);
       --shadow: 0 22px 56px rgba(0, 0, 0, 0.58);
 
-      /* Cyberpunk accents */
+      /* Acentos cyberpunk */
       --neon-cyan: #22e8ff;
       --neon-magenta: #ff38da;
       --neon-lime: #35ff93;
@@ -94,7 +94,7 @@
       --neon-magenta-soft: rgba(255, 56, 218, 0.14);
       --neon-lime-soft: rgba(53, 255, 147, 0.14);
 
-      /* UI accents (menos azules) */
+      /* Acentos de UI (menos azules) */
       --accent: var(--neon-cyan);
       --accent-2: var(--neon-lime);
       --accent-3: var(--neon-magenta);
@@ -112,7 +112,7 @@
       --header-chip-border: rgba(148, 163, 184, 0.22);
     }
 
-    /* Estado del sistema (mood) -> afecta acentos y energía visual */
+    /* Estado del sistema (animo) -> afecta acentos y energía visual */
     :root[data-mood="ok"] {
       --accent: var(--neon-lime);
       --accent-3: var(--neon-cyan);
@@ -134,7 +134,7 @@
       --accent-soft: var(--neon-cyan-soft);
     }
 
-    /* Hora del día (day/night/dawn/dusk) -> sutil, sin bajar legibilidad */
+    /* Hora del día (día/noche/amanecer/atardecer) -> sutil, sin bajar legibilidad */
     :root[data-time="day"] { --grid-alpha: 0.055; --scan-alpha: 0.02; }
     :root[data-time="dawn"] { --grid-alpha: 0.06; --scan-alpha: 0.03; }
     :root[data-time="dusk"] { --grid-alpha: 0.07; --scan-alpha: 0.05; }
@@ -2479,7 +2479,7 @@
       </div>
     </div>
     <div class="header-chips">
-      <span class="chip" id="version-chip">Version: -</span>
+      <span class="chip" id="version-chip">Versión: -</span>
       <span class="chip" id="ui-chip">UI: -</span>
       <span class="chip" id="port-chip">Puerto: -</span>
       <span class="chip" id="mode-chip">Modo: -</span>
@@ -2715,8 +2715,8 @@
                 <div class="chart-title">Salud reciente (ultimos ciclos)</div>
                 <div class="health-stats">
                   <span class="health-chip ok" id="health-last-ok">OK -</span>
-                  <span class="health-chip down" id="health-last-down">Caidas -</span>
-                  <span class="health-chip time" id="health-last-time">Ultimo: --</span>
+                  <span class="health-chip down" id="health-last-down">Caídas -</span>
+                  <span class="health-chip time" id="health-last-time">Último: --</span>
                 </div>
               </div>
               <div class="mini-chart-wrap">
@@ -2729,9 +2729,9 @@
               </div>
               <div class="legend health-legend">
                 <span class="legend-item"><span class="legend-dot ok"></span>OK</span>
-                <span class="legend-item"><span class="legend-dot down"></span>Caida detectada</span>
+                <span class="legend-item"><span class="legend-dot down"></span>Caída detectada</span>
               </div>
-              <div class="hint health-hint">Cada barra representa un ciclo (~3s). Altura = % de servicios OK. Naranja = hubo caida.</div>
+              <div class="hint health-hint">Cada barra representa un ciclo (~3s). Altura = % de servicios OK. Naranja = hubo caída.</div>
               <div class="hint health-last-event" id="last-event">Sin actividad reciente.</div>
             </div>
           </div>
@@ -2842,7 +2842,7 @@
               <div>Proyecto: <span id="root-status">-</span></div>
               <div>Stack Docker: <span id="stack-state-status">-</span></div>
               <div>Conexión: <span id="connection-status">-</span></div>
-              <div>Ultimo error: <span id="connection-error">-</span></div>
+              <div>Último error: <span id="connection-error">-</span></div>
             </div>
           </div>
 
@@ -2854,7 +2854,7 @@
               Instalacion local
             </h2>
             <div class="install-grid" id="install-grid" aria-live="polite">
-              <div class="install-row"><div class="k">Version</div><div class="v mono" id="install-version">-</div></div>
+              <div class="install-row"><div class="k">Versión</div><div class="v mono" id="install-version">-</div></div>
               <div class="install-row"><div class="k">Dashboard</div><div class="v" id="install-dashboard">-</div></div>
               <div class="install-row"><div class="k">Ruta</div><div class="v mono" id="install-root">-</div></div>
               <div class="install-row"><div class="k">Logs</div><div class="v mono" id="install-logs">-</div></div>
@@ -2982,31 +2982,31 @@
   </main>
 
     <script>
-    // Small helper to access DOM elements.
+    // Ayudante breve para acceder a elementos del DOM.
     const $ = (id) => document.getElementById(id);
 
-    // Small helper to set text safely.
-    const establecerTexto = (id, value) => {
-      const el = $(id);
-      if (el) el.textContent = value;
+    // Ayudante breve para establecer texto de forma segura.
+    const establecerTexto = (id, valor) => {
+      const elemento = $(id);
+      if (elemento) elemento.textContent = valor;
     };
 
     // Identificador de UI (útil para confirmar que el HTML recargó cambios).
     // Nota: actualiza este valor cuando hagas cambios visibles al dashboard.
     const UI_REV = '2026-01-19.1';
 
-    const THEME_STORAGE_KEY = 'seuDashboardTheme';
+    const CLAVE_ALMACEN_TEMA = 'seuDashboardTheme';
 
     function establecerColorMetaTema(color) {
       const meta = document.querySelector('meta[name="theme-color"]');
       if (meta) meta.setAttribute('content', String(color || ''));
     }
 
-    function calcularBloqueTiempo(date = new Date()) {
-      const h = date.getHours();
-      if (h >= 6 && h < 10) return 'dawn';
-      if (h >= 10 && h < 17) return 'day';
-      if (h >= 17 && h < 21) return 'dusk';
+    function calcularBloqueTiempo(fecha = new Date()) {
+      const hora = fecha.getHours();
+      if (hora >= 6 && hora < 10) return 'dawn';
+      if (hora >= 10 && hora < 17) return 'day';
+      if (hora >= 17 && hora < 21) return 'dusk';
       return 'night';
     }
 
@@ -3016,53 +3016,53 @@
 
     function calcularAnimo() {
       if (state.conexion === 'error') return 'error';
-      const snapshot = obtenerSnapshotServicios();
-      const expectedTotal = snapshot.items.filter((item) => item.expected).length;
-      if (!expectedTotal) return 'info';
-      if (snapshot.downCount > 0) return 'error';
-      if (snapshot.okCount === expectedTotal) return 'ok';
+      const instantanea = obtenerSnapshotServicios();
+      const totalEsperado = instantanea.items.filter((elemento) => elemento.expected).length;
+      if (!totalEsperado) return 'info';
+      if (instantanea.downCount > 0) return 'error';
+      if (instantanea.okCount === totalEsperado) return 'ok';
       return 'warn';
     }
 
-    function actualizarIndicadorSistema(mood) {
-      const btn = $('system-indicator');
-      if (!btn) return;
+    function actualizarIndicadorSistema(animo) {
+      const boton = $('system-indicator');
+      if (!boton) return;
 
-      const map = {
-        ok: { label: 'Sistema: OK', hint: 'Todos los servicios esperados están activos.' },
-        warn: { label: 'Sistema: Atención', hint: 'Servicios sin comprobar o estado parcial.' },
-        error: { label: 'Sistema: Error', hint: 'Hay servicios esperados caídos o sin conexión.' },
-        info: { label: 'Sistema: Info', hint: 'No hay servicios esperados activos (stack detenido).' }
+      const mapa = {
+        ok: { etiqueta: 'Sistema: OK', pista: 'Todos los servicios esperados están activos.' },
+        warn: { etiqueta: 'Sistema: Atención', pista: 'Servicios sin comprobar o estado parcial.' },
+        error: { etiqueta: 'Sistema: Error', pista: 'Hay servicios esperados caídos o sin conexión.' },
+        info: { etiqueta: 'Sistema: Info', pista: 'No hay servicios esperados activos (stack detenido).' }
       };
-      const m = map[mood] ? mood : 'info';
-      const text = `${map[m].label} · Click para ver Status`;
-      btn.setAttribute('aria-label', text);
-      btn.setAttribute('title', `${map[m].label}. ${map[m].hint} Click para ir a Status.`);
+      const claveAnimo = mapa[animo] ? animo : 'info';
+      const texto = `${mapa[claveAnimo].etiqueta} · Da clic para ver Estado`;
+      boton.setAttribute('aria-label', texto);
+      boton.setAttribute('title', `${mapa[claveAnimo].etiqueta}. ${mapa[claveAnimo].pista} Da clic para ir a Estado.`);
     }
 
     function aplicarAnimo() {
-      const mood = calcularAnimo();
-      document.documentElement.dataset.mood = mood;
-      actualizarIndicadorSistema(mood);
+      const animo = calcularAnimo();
+      document.documentElement.dataset.mood = animo;
+      actualizarIndicadorSistema(animo);
     }
 
     function sincronizarMetaTemaActual() {
-      const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
-      establecerColorMetaTema(theme === 'dark' ? '#02030a' : '#f8fafc');
+      const tema = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+      establecerColorMetaTema(tema === 'dark' ? '#02030a' : '#f8fafc');
     }
 
-    function aplicarTema(theme) {
-      const t = theme === 'dark' ? 'dark' : 'light';
-      document.documentElement.setAttribute('data-theme', t);
+    function aplicarTema(tema) {
+      const temaAplicado = tema === 'dark' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', temaAplicado);
       sincronizarMetaTemaActual();
-      const btn = $('theme-toggle');
-      if (btn) btn.textContent = t === 'dark' ? 'Tema: Oscuro' : 'Tema: Claro';
+      const boton = $('theme-toggle');
+      if (boton) boton.textContent = temaAplicado === 'dark' ? 'Tema: Oscuro' : 'Tema: Claro';
     }
 
     function obtenerTemaPreferido() {
       try {
-        const stored = String(localStorage.getItem(THEME_STORAGE_KEY) || '').trim();
-        if (stored === 'dark' || stored === 'light') return stored;
+        const guardado = String(localStorage.getItem(CLAVE_ALMACEN_TEMA) || '').trim();
+        if (guardado === 'dark' || guardado === 'light') return guardado;
       } catch {}
       return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     }
@@ -3074,40 +3074,40 @@
 
       // Si no hay preferencia guardada, reaccionar a cambios del sistema.
       try {
-        const stored = String(localStorage.getItem(THEME_STORAGE_KEY) || '').trim();
-        if (!stored && window.matchMedia) {
-          const mq = window.matchMedia('(prefers-color-scheme: dark)');
-          const onChange = () => aplicarTema(obtenerTemaPreferido());
-          if (typeof mq.addEventListener === 'function') mq.addEventListener('change', onChange);
-          else if (typeof mq.addListener === 'function') mq.addListener(onChange);
+        const guardado = String(localStorage.getItem(CLAVE_ALMACEN_TEMA) || '').trim();
+        if (!guardado && window.matchMedia) {
+          const consultaMedios = window.matchMedia('(prefers-color-scheme: dark)');
+          const alCambiar = () => aplicarTema(obtenerTemaPreferido());
+          if (typeof consultaMedios.addEventListener === 'function') consultaMedios.addEventListener('change', alCambiar);
+          else if (typeof consultaMedios.addListener === 'function') consultaMedios.addListener(alCambiar);
         }
       } catch {}
 
-      const btn = $('theme-toggle');
-      if (!btn) return;
-      btn.addEventListener('click', () => {
-        const current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
-        const next = current === 'dark' ? 'light' : 'dark';
-        try { localStorage.setItem(THEME_STORAGE_KEY, next); } catch {}
-        aplicarTema(next);
+      const boton = $('theme-toggle');
+      if (!boton) return;
+      boton.addEventListener('click', () => {
+        const actual = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+        const siguiente = actual === 'dark' ? 'light' : 'dark';
+        try { localStorage.setItem(CLAVE_ALMACEN_TEMA, siguiente); } catch {}
+        aplicarTema(siguiente);
       });
     }
 
     function obtenerPestanaDesdeHash() {
-      const raw = String(location.hash || '').replace(/^#/, '').trim();
-      if (!raw) return null;
-      const params = new URLSearchParams(raw.includes('=') ? raw : `tab=${raw}`);
-      const tab = String(params.get('tab') || '').trim();
-      if (tab === 'main' || tab === 'status' || tab === 'db') return tab;
+      const crudo = String(location.hash || '').replace(/^#/, '').trim();
+      if (!crudo) return null;
+      const parametros = new URLSearchParams(crudo.includes('=') ? crudo : `tab=${crudo}`);
+      const pestana = String(parametros.get('tab') || '').trim();
+      if (pestana === 'main' || pestana === 'status' || pestana === 'db') return pestana;
       return null;
     }
 
-    function establecerHashPestana(tabId) {
+    function establecerHashPestana(idPestana) {
       try {
-        const next = `tab=${encodeURIComponent(String(tabId || ''))}`;
-        const current = String(location.hash || '').replace(/^#/, '');
-        if (current === next) return;
-        history.replaceState(null, '', `#${next}`);
+        const siguiente = `tab=${encodeURIComponent(String(idPestana || ''))}`;
+        const actual = String(location.hash || '').replace(/^#/, '');
+        if (actual === siguiente) return;
+        history.replaceState(null, '', `#${siguiente}`);
       } catch {}
     }
 
@@ -3115,27 +3115,27 @@
       if (!('serviceWorker' in navigator)) return;
       navigator.serviceWorker
         .register('/sw.js', { scope: '/' })
-        .then((reg) => {
-          const promptUpdate = () => {
-            if (!reg.waiting) return;
+        .then((registro) => {
+          const avisarActualizacion = () => {
+            if (!registro.waiting) return;
             mostrarToastAvanzado('Hay una actualización del dashboard lista.', 'info', {
               id: 'sw-update',
               title: 'Actualización',
               actionLabel: 'Actualizar',
-              onAction: () => reg.waiting && reg.waiting.postMessage({ type: 'SKIP_WAITING' }),
+              onAction: () => registro.waiting && registro.waiting.postMessage({ type: 'SKIP_WAITING' }),
               duration: 9000
             });
           };
 
-          reg.update().catch(() => undefined);
-          if (reg.waiting) promptUpdate();
+          registro.update().catch(() => undefined);
+          if (registro.waiting) avisarActualizacion();
 
-          reg.addEventListener('updatefound', () => {
-            const sw = reg.installing;
-            if (!sw) return;
-            sw.addEventListener('statechange', () => {
-              if (sw.state === 'installed' && navigator.serviceWorker.controller) {
-                promptUpdate();
+          registro.addEventListener('updatefound', () => {
+            const trabajador = registro.installing;
+            if (!trabajador) return;
+            trabajador.addEventListener('statechange', () => {
+              if (trabajador.state === 'installed' && navigator.serviceWorker.controller) {
+                avisarActualizacion();
               }
             });
           });
@@ -3148,8 +3148,8 @@
     }
 
     function normalizarValorModo(valor) {
-      const v = String(valor || '').toLowerCase();
-      return v === 'dev' || v === 'prod' || v === 'none' ? v : 'none';
+      const valorNormalizado = String(valor || '').toLowerCase();
+      return valorNormalizado === 'dev' || valorNormalizado === 'prod' || valorNormalizado === 'none' ? valorNormalizado : 'none';
     }
 
     function derivarModoVista(modoConfig, listaEjecucion) {
@@ -3158,18 +3158,18 @@
       const tieneDev = enEjecucion.has('dev');
       const tieneProd = enEjecucion.has('prod');
 
-      // Si config indica dev/prod explicitamente, respetarlo.
+      // Si config indica dev/prod explícitamente, respetarlo.
       if (modoConfigNormalizado === 'dev' || modoConfigNormalizado === 'prod') return modoConfigNormalizado;
 
-      // Si no, inferir segun lo que este en ejecucion.
+      // Si no, inferir según lo que esté en ejecución.
       if (tieneDev && !tieneProd) return 'dev';
       if (tieneProd && !tieneDev) return 'prod';
-      if (hasDev && hasProd) return 'dev';
+      if (tieneDev && tieneProd) return 'dev';
       return 'none';
     }
 
-    function formatearEtiquetaModo(modeValue) {
-      const m = normalizarValorModo(modeValue);
+    function formatearEtiquetaModo(valorModo) {
+      const m = normalizarValorModo(valorModo);
       if (m === 'none') return 'Sin modo';
       return m.toUpperCase();
     }
@@ -3236,19 +3236,19 @@
       return 'Sin respuesta';
     }
 
-    function establecerConexion(stateName, detail = '') {
-      state.conexion = stateName;
+    function establecerConexion(nombreEstado, detalle = '') {
+      state.conexion = nombreEstado;
       state.ultimaConexionEn = Date.now();
-      state.ultimoErrorConexion = stateName === 'error' ? String(detail || 'Sin respuesta') : '';
+      state.ultimoErrorConexion = nombreEstado === 'error' ? String(detalle || 'Sin respuesta') : '';
 
-      const chip = $('connection-chip');
-      if (chip) {
-        chip.className = `chip ${stateName === 'ok' ? 'ok' : stateName === 'error' ? 'error' : 'warn'}`;
-        chip.textContent = `Conexión: ${stateName === 'ok' ? 'OK' : stateName === 'error' ? 'Error' : '-'}`;
+      const pildora = $('connection-chip');
+      if (pildora) {
+        pildora.className = `chip ${nombreEstado === 'ok' ? 'ok' : nombreEstado === 'error' ? 'error' : 'warn'}`;
+        pildora.textContent = `Conexión: ${nombreEstado === 'ok' ? 'OK' : nombreEstado === 'error' ? 'Error' : '-'}`;
       }
 
-      establecerTexto('connection-status', stateName === 'ok' ? 'OK' : stateName === 'error' ? 'Error' : '-');
-      establecerTexto('connection-error', stateName === 'error'
+      establecerTexto('connection-status', nombreEstado === 'ok' ? 'OK' : nombreEstado === 'error' ? 'Error' : '-');
+      establecerTexto('connection-error', nombreEstado === 'error'
         ? recortarMensaje(state.ultimoErrorConexion, 90)
         : '-');
 
@@ -3256,27 +3256,27 @@
     }
 
     function establecerChipPausa(pausado) {
-      const chip = $('pausado-chip');
-      if (!chip) return;
-      chip.className = `chip ${pausado ? 'warn' : 'ok'}`;
-      chip.textContent = pausado ? 'Actualización: Pausada' : 'Actualización: Activa';
+      const pildora = $('pausado-chip');
+      if (!pildora) return;
+      pildora.className = `chip ${pausado ? 'warn' : 'ok'}`;
+      pildora.textContent = pausado ? 'Actualización: Pausada' : 'Actualización: Activa';
     }
 
-    function mostrarToastErrorSiAplica(text) {
-      const now = Date.now();
-      if (now - state.ultimoToastErrorEn < 9000) return;
-      state.ultimoToastErrorEn = now;
-      mostrarToast(text, 'error', { title: 'Error', id: 'error-generic', duration: 5200 });
+    function mostrarToastErrorSiAplica(texto) {
+      const ahora = Date.now();
+      if (ahora - state.ultimoToastErrorEn < 9000) return;
+      state.ultimoToastErrorEn = ahora;
+      mostrarToast(texto, 'error', { title: 'Error', id: 'error-generic', duration: 5200 });
     }
 
-    async function api(path, body) {
+    async function api(ruta, cuerpo) {
       try {
-        const res = await fetch(path, {
+        const respuesta = await fetch(ruta, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body || {})
+          body: JSON.stringify(cuerpo || {})
         });
-        return await res.json();
+        return await respuesta.json();
       } catch (error) {
         mostrarToastErrorSiAplica('No se pudo contactar al dashboard.');
         establecerConexion('error', normalizarMensajeError(error));
@@ -3284,62 +3284,64 @@
       }
     }
 
-    function formatearMs(ms) {
-      if (!Number.isFinite(ms)) return '-';
-      if (ms < 1000) return `${Math.round(ms)}ms`;
-      const s = Math.round(ms / 100) / 10;
-      if (s < 90) return `${s}s`;
-      const m = Math.round(s / 6) / 10;
-      return `${m}m`;
+    function formatearMs(milisegundos) {
+      if (!Number.isFinite(milisegundos)) return '-';
+      if (milisegundos < 1000) return `${Math.round(milisegundos)}ms`;
+      const segundos = Math.round(milisegundos / 100) / 10;
+      if (segundos < 90) return `${segundos}s`;
+      const minutos = Math.round(segundos / 6) / 10;
+      return `${minutos}m`;
     }
 
-    function recortarRuta(p, max = 88) {
-      const s = String(p || '');
-      if (!s) return '-';
-      if (s.length <= max) return s;
-      return s.slice(0, 22) + '…' + s.slice(-Math.max(10, max - 26));
+    function recortarRuta(ruta, maximo = 88) {
+      const texto = String(ruta || '');
+      if (!texto) return '-';
+      if (texto.length <= maximo) return texto;
+      return texto.slice(0, 22) + '.' + texto.slice(-Math.max(10, maximo - 26));
     }
 
     async function refrescarInfoInstalacion() {
       try {
-        const res = await fetch('/api/install');
-        if (!res.ok) throw new Error('No se pudo cargar /api/install');
-        const info = await res.json();
-        state.instalacion = info;
+        const respuesta = await fetch('/api/install');
+        if (!respuesta.ok) throw new Error('No se pudo cargar /api/install');
+        const infoInstalacion = await respuesta.json();
+        state.instalacion = infoInstalacion;
 
-        const version = (info && info.app && info.app.version) ? String(info.app.version) : '-';
-        const name = (info && info.app && info.app.name) ? String(info.app.name) : '';
-        const port = info && info.dashboard ? info.dashboard.port : 0;
-        const mode = info && info.dashboard ? String(info.dashboard.mode || '-') : '-';
-        const pid = info && info.dashboard ? String(info.dashboard.pid || '-') : '-';
-        const startedAt = info && info.dashboard ? Number(info.dashboard.startedAt || 0) : 0;
+        const version = (infoInstalacion && infoInstalacion.app && infoInstalacion.app.version) ? String(infoInstalacion.app.version) : '-';
+        const nombre = (infoInstalacion && infoInstalacion.app && infoInstalacion.app.name) ? String(infoInstalacion.app.name) : '';
+        const puerto = infoInstalacion && infoInstalacion.dashboard ? infoInstalacion.dashboard.port : 0;
+        const modo = infoInstalacion && infoInstalacion.dashboard ? String(infoInstalacion.dashboard.mode || '-') : '-';
+        const pid = infoInstalacion && infoInstalacion.dashboard ? String(infoInstalacion.dashboard.pid || '-') : '-';
+        const inicioEn = infoInstalacion && infoInstalacion.dashboard ? Number(infoInstalacion.dashboard.startedAt || 0) : 0;
 
-        const logs = info && info.paths ? String(info.paths.logFile || '') : '';
-        const root = info && info.paths ? String(info.paths.root || '') : '';
-        const runtime = info && info.runtime ? `${info.runtime.nodeVersion || ''} | ${info.runtime.platform || ''}/${info.runtime.arch || ''}` : '';
+        const logs = infoInstalacion && infoInstalacion.paths ? String(infoInstalacion.paths.logFile || '') : '';
+        const raiz = infoInstalacion && infoInstalacion.paths ? String(infoInstalacion.paths.root || '') : '';
+        const entornoEjecucion = infoInstalacion && infoInstalacion.runtime
+          ? `${infoInstalacion.runtime.nodeVersion || ''} | ${infoInstalacion.runtime.platform || ''}/${infoInstalacion.runtime.arch || ''}`
+          : '';
 
-        const logCfg = info && info.logs ? info.logs : null;
-        const persist = logCfg ? String(logCfg.persistMode || '-') : '-';
-        const flushMs = logCfg ? Number(logCfg.flushMs || 0) : 0;
-        const keep = logCfg ? Number(logCfg.keepFiles || 0) : 0;
-        const maxBytes = logCfg ? Number(logCfg.maxBytes || 0) : 0;
+        const configLogs = infoInstalacion && infoInstalacion.logs ? infoInstalacion.logs : null;
+        const persistencia = configLogs ? String(configLogs.persistMode || '-') : '-';
+        const vaciadoMs = configLogs ? Number(configLogs.flushMs || 0) : 0;
+        const retencion = configLogs ? Number(configLogs.keepFiles || 0) : 0;
+        const maximoBytes = configLogs ? Number(configLogs.maxBytes || 0) : 0;
 
-        const startedAgo = startedAt ? formatearMs(Date.now() - startedAt) : '-';
+        const inicioHace = inicioEn ? formatearMs(Date.now() - inicioEn) : '-';
 
-        const modeLabel = mode === '-' ? '-' : formatearEtiquetaModo(normalizarValorModo(mode));
+        const etiquetaModo = modo === '-' ? '-' : formatearEtiquetaModo(normalizarValorModo(modo));
 
-        establecerTexto('install-version', name && version !== '-' ? `${name} v${version}` : (version !== '-' ? `v${version}` : '-'));
-        establecerTexto('install-dashboard', `Modo: ${modeLabel} · Puerto: ${port || '-'} · PID: ${pid} · Inicio: hace ${startedAgo}`);
-        establecerTexto('install-root', recortarRuta(root, 96));
-        establecerTexto('install-logs', `${recortarRuta(logs, 96)}\nPersistencia: ${persist} · Vaciado: ${flushMs ? flushMs + 'ms' : '-'} · Rotación: ${maxBytes ? Math.round(maxBytes/1000) + 'KB' : '-'} · Retención: ${keep || '-'}`);
-        establecerTexto('install-runtime', recortarRuta(runtime, 110));
+        establecerTexto('install-version', nombre && version !== '-' ? `${nombre} v${version}` : (version !== '-' ? `v${version}` : '-'));
+        establecerTexto('install-dashboard', `Modo: ${etiquetaModo} · Puerto: ${puerto || '-'} · PID: ${pid} · Inicio: hace ${inicioHace}`);
+        establecerTexto('install-root', recortarRuta(raiz, 96));
+        establecerTexto('install-logs', `${recortarRuta(logs, 96)}\nPersistencia: ${persistencia} · Vaciado: ${vaciadoMs ? vaciadoMs + 'ms' : '-'} · Rotación: ${maximoBytes ? Math.round(maximoBytes / 1000) + 'KB' : '-'} · Retención: ${retencion || '-'}`);
+        establecerTexto('install-runtime', recortarRuta(entornoEjecucion, 110));
 
-        const versionChip = $('version-chip');
-        if (versionChip) versionChip.textContent = `Versión: ${version !== '-' ? version : '-'}`;
-        const uiChip = $('ui-chip');
-        if (uiChip) uiChip.textContent = `UI: ${UI_REV}`;
-        const portChip = $('port-chip');
-        if (portChip) portChip.textContent = `Puerto: ${port || '-'}`;
+        const chipVersion = $('version-chip');
+        if (chipVersion) chipVersion.textContent = `Versión: ${version !== '-' ? version : '-'}`;
+        const chipUi = $('ui-chip');
+        if (chipUi) chipUi.textContent = `UI: ${UI_REV}`;
+        const chipPuerto = $('port-chip');
+        if (chipPuerto) chipPuerto.textContent = `Puerto: ${puerto || '-'}`;
       } catch (error) {
         establecerTexto('install-version', '-');
         establecerTexto('install-dashboard', 'No se pudo cargar la info de instalación.');
@@ -3347,113 +3349,113 @@
       }
     }
 
-    function mostrarToast(text, type = 'info', options = {}) {
-      return mostrarToastAvanzado(String(text || ''), type, options || {});
+    function mostrarToast(texto, tipo = 'info', opciones = {}) {
+      return mostrarToastAvanzado(String(texto || ''), tipo, opciones || {});
     }
 
-    function iconoToast(type) {
-      if (type === 'ok') return 'OK';
-      if (type === 'warn') return '!';
-      if (type === 'error') return 'X';
+    function iconoToast(tipo) {
+      if (tipo === 'ok') return 'OK';
+      if (tipo === 'warn') return '!';
+      if (tipo === 'error') return 'X';
       return 'i';
     }
 
-    function escaparCss(value) {
-      if (typeof value !== 'string') return '';
-      if (window.CSS && typeof window.CSS.escape === 'function') return window.CSS.escape(value);
-      return value.replace(/"/g, '\\"');
+    function escaparCss(valor) {
+      if (typeof valor !== 'string') return '';
+      if (window.CSS && typeof window.CSS.escape === 'function') return window.CSS.escape(valor);
+      return valor.replace(/"/g, '\\"');
     }
 
-    function cerrarToast(toast) {
-      if (!toast || toast.classList.contains('out')) return;
-      toast.classList.add('out');
-      const remove = () => toast.remove();
-      toast.addEventListener('animationend', remove, { once: true });
+    function cerrarToast(notificacion) {
+      if (!notificacion || notificacion.classList.contains('out')) return;
+      notificacion.classList.add('out');
+      const remove = () => notificacion.remove();
+      notificacion.addEventListener('animationend', remove, { once: true });
       setTimeout(remove, 260);
     }
 
-    function mostrarToastAvanzado(text, type = 'info', options = {}) {
-      const wrap = $('toast-wrap');
-      if (!wrap) return;
+    function mostrarToastAvanzado(texto, tipo = 'info', opciones = {}) {
+      const contenedor = $('toast-wrap');
+      if (!contenedor) return;
 
-      const title = typeof options.title === 'string' ? options.title : null;
-      const id = typeof options.id === 'string' ? options.id : null;
-      const actionLabel = typeof options.actionLabel === 'string' ? options.actionLabel : null;
-      const onAction = typeof options.onAction === 'function' ? options.onAction : null;
-      const duration = Math.max(1200, Number(options.duration || 2800));
-      const maxToasts = 4;
+      const titulo = typeof opciones.title === 'string' ? opciones.title : null;
+      const id = typeof opciones.id === 'string' ? opciones.id : null;
+      const etiquetaAccion = typeof opciones.actionLabel === 'string' ? opciones.actionLabel : null;
+      const alAccionar = typeof opciones.onAction === 'function' ? opciones.onAction : null;
+      const duracion = Math.max(1200, Number(opciones.duration || 2800));
+      const maximoNotificaciones = 4;
 
       if (id) {
-        const existing = wrap.querySelector(`.toast[data-id="${escaparCss(id)}"]`);
-        if (existing) existing.remove();
+        const existente = contenedor.querySelector(`.toast[data-id="${escaparCss(id)}"]`);
+        if (existente) existente.remove();
       }
 
-      const toast = document.createElement('div');
-      toast.className = `toast ${type}`;
-      toast.style.setProperty('--toast-duration', `${duration}ms`);
-      if (id) toast.dataset.id = id;
+      const notificacion = document.createElement('div');
+      notificacion.className = `toast ${tipo}`;
+      notificacion.style.setProperty('--toast-duration', `${duracion}ms`);
+      if (id) notificacion.dataset.id = id;
 
-      const safeTitle = title || (type === 'error' ? 'Error' : type === 'warn' ? 'Atencion' : type === 'ok' ? 'Listo' : 'Info');
+      const tituloSeguro = titulo || (tipo === 'error' ? 'Error' : tipo === 'warn' ? 'Atención' : tipo === 'ok' ? 'Listo' : 'Info');
 
-      toast.innerHTML = `
-        <div class="toast-icon" aria-hidden="true">${iconoToast(type)}</div>
+      notificacion.innerHTML = `
+        <div class="toast-icon" aria-hidden="true">${iconoToast(tipo)}</div>
         <div class="toast-body">
-          <div class="toast-title">${safeTitle}</div>
+          <div class="toast-title">${tituloSeguro}</div>
           <div class="toast-text"></div>
         </div>
         <div class="toast-actions">
-          ${actionLabel ? '<button class="toast-btn action" type="button" data-toast-action></button>' : ''}
-          <button class="toast-btn close" type="button" aria-label="Cerrar" data-toast-close>×</button>
+          ${etiquetaAccion ? '<button class="toast-btn action" type="button" data-toast-action></button>' : ''}
+          <button class="toast-btn close" type="button" aria-label="Cerrar" data-toast-close>ž</button>
         </div>
       `.trim();
 
-      const textEl = toast.querySelector('.toast-text');
-      if (textEl) textEl.textContent = String(text || '').trim();
-      const actionBtn = toast.querySelector('[data-toast-action]');
-      if (actionBtn && actionLabel) actionBtn.textContent = actionLabel;
+      const textoElemento = notificacion.querySelector('.toast-text');
+      if (textoElemento) textoElemento.textContent = String(texto || '').trim();
+      const botonAccion = notificacion.querySelector('[data-toast-action]');
+      if (botonAccion && etiquetaAccion) botonAccion.textContent = etiquetaAccion;
 
-      const closeBtn = toast.querySelector('[data-toast-close]');
-      if (closeBtn) closeBtn.addEventListener('click', () => cerrarToast(toast));
-      if (actionBtn && onAction) {
-        actionBtn.addEventListener('click', () => {
-          try { onAction(); } finally { cerrarToast(toast); }
+      const botonCerrar = notificacion.querySelector('[data-toast-close]');
+      if (botonCerrar) botonCerrar.addEventListener('click', () => cerrarToast(notificacion));
+      if (botonAccion && alAccionar) {
+        botonAccion.addEventListener('click', () => {
+          try { alAccionar(); } finally { cerrarToast(notificacion); }
         });
       }
 
-      wrap.appendChild(toast);
-      while (wrap.children.length > maxToasts) {
-        const first = wrap.firstElementChild;
-        if (first) first.remove();
+      contenedor.appendChild(notificacion);
+      while (contenedor.children.length > maximoNotificaciones) {
+        const primero = contenedor.firstElementChild;
+        if (primero) primero.remove();
       }
 
-      let remaining = duration;
-      let startedAt = Date.now();
-      let timer = setTimeout(() => cerrarToast(toast), remaining);
+      let restante = duracion;
+      let inicioEn = Date.now();
+      let temporizador = setTimeout(() => cerrarToast(notificacion), restante);
 
-      const pause = () => {
-        if (!timer) return;
-        clearTimeout(timer);
-        timer = null;
-        remaining -= Date.now() - startedAt;
-        toast.classList.add('pausado');
+      const pausar = () => {
+        if (!temporizador) return;
+        clearTimeout(temporizador);
+        temporizador = null;
+        restante -= Date.now() - inicioEn;
+        notificacion.classList.add('pausado');
       };
 
-      const resume = () => {
-        if (timer) return;
-        remaining = Math.max(450, remaining);
-        startedAt = Date.now();
-        toast.classList.remove('pausado');
-        timer = setTimeout(() => cerrarToast(toast), remaining);
+      const reanudar = () => {
+        if (temporizador) return;
+        restante = Math.max(450, restante);
+        inicioEn = Date.now();
+        notificacion.classList.remove('pausado');
+        temporizador = setTimeout(() => cerrarToast(notificacion), restante);
       };
 
-      toast.addEventListener('pointerenter', pause);
-      toast.addEventListener('pointerleave', resume);
+      notificacion.addEventListener('pointerenter', pausar);
+      notificacion.addEventListener('pointerleave', reanudar);
 
-      return toast;
+      return notificacion;
     }
 
-    function mostrarEntradaToastAvanzado(text, type, options) {
-      return mostrarToastAvanzado(text, type, options);
+    function mostrarEntradaToastAvanzado(texto, tipo, opciones) {
+      return mostrarToastAvanzado(texto, tipo, opciones);
     }
 
     function refrescarTrasAccion({ forzarSalud = true } = {}) {
@@ -3471,140 +3473,140 @@
       setTimeout(() => refrescarTrasAccion({ forzarSalud: true }), 5200);
     }
 
-    function formatearHora(ts) {
-      return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    function formatearHora(marcaTiempo) {
+      return new Date(marcaTiempo).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
 
-    function normalizarNivel(level) {
-      return MAPA_NIVELES[level] || 'info';
+    function normalizarNivel(nivel) {
+      return MAPA_NIVELES[nivel] || 'info';
     }
 
-    function recortarMensaje(text, limit = 140) {
-      if (!text) return '';
-      if (text.length <= limit) return text;
-      return text.slice(0, limit).trim() + '...';
+    function recortarMensaje(texto, limite = 140) {
+      if (!texto) return '';
+      if (texto.length <= limite) return texto;
+      return texto.slice(0, limite).trim() + '...';
     }
 
-    function renderizarAlerta(entry) {
-      const card = $('alert-card');
-      if (!card) return;
-      const icon = $('alert-icon');
-      const title = $('alert-title');
-      const message = $('alert-message');
-      const source = $('alert-source');
-      const time = $('alert-time');
-      if (!icon || !title || !message || !source || !time) return;
+    function renderizarAlerta(entrada) {
+      const tarjeta = $('alert-card');
+      if (!tarjeta) return;
+      const icono = $('alert-icon');
+      const titulo = $('alert-title');
+      const mensaje = $('alert-message');
+      const origen = $('alert-source');
+      const hora = $('alert-time');
+      if (!icono || !titulo || !mensaje || !origen || !hora) return;
 
-      if (!entry) {
-        card.className = 'card wide alert-card ok';
-        icon.textContent = 'OK';
-        title.textContent = 'Sin alertas activas';
-        message.textContent = 'No hay errores recientes en los servicios monitoreados.';
-        source.textContent = 'Origen: -';
-        time.textContent = 'Hora: -';
+      if (!entrada) {
+        tarjeta.className = 'card wide alert-card ok';
+        icono.textContent = 'OK';
+        titulo.textContent = 'Sin alertas activas';
+        mensaje.textContent = 'No hay errores recientes en los servicios monitoreados.';
+        origen.textContent = 'Origen: -';
+        hora.textContent = 'Hora: -';
         return;
       }
 
-      const level = normalizarNivel(entry.level);
-      const isError = level === 'error';
-      card.className = `card wide alert-card ${isError ? 'error' : ''}`.trim();
-      icon.textContent = isError ? 'X' : '!';
-      title.textContent = isError ? 'Error detectado' : 'Advertencia detectada';
-      message.textContent = recortarMensaje(entry.text, 220);
-      source.textContent = `Origen: ${entry.source || '-'}`;
-      time.textContent = `Hora: ${entry.time || '-'}`;
+      const nivel = normalizarNivel(entrada.level);
+      const esError = nivel === 'error';
+      tarjeta.className = `card wide alert-card ${esError ? 'error' : ''}`.trim();
+      icono.textContent = esError ? 'X' : '!';
+      titulo.textContent = esError ? 'Error detectado' : 'Advertencia detectada';
+      mensaje.textContent = recortarMensaje(entrada.text, 220);
+      origen.textContent = `Origen: ${entrada.source || '-'}`;
+      hora.textContent = `Hora: ${entrada.time || '-'}`;
     }
 
-    function renderizarConteosSenales(counts) {
-      establecerTexto('signal-error', String(counts.error || 0));
-      establecerTexto('signal-warn', String(counts.warn || 0));
-      establecerTexto('signal-ok', String(counts.ok || 0));
-      establecerTexto('signal-info', String(counts.info || 0));
+    function renderizarConteosSenales(conteos) {
+      establecerTexto('signal-error', String(conteos.error || 0));
+      establecerTexto('signal-warn', String(conteos.warn || 0));
+      establecerTexto('signal-ok', String(conteos.ok || 0));
+      establecerTexto('signal-info', String(conteos.info || 0));
     }
 
-    function renderizarFeedEventos(entries) {
-      const feed = $('event-feed');
-      if (!feed) return;
-      feed.innerHTML = '';
+    function renderizarFeedEventos(entradas) {
+      const lista = $('event-feed');
+      if (!lista) return;
+      lista.innerHTML = '';
 
-      if (!entries.length) {
-        const empty = document.createElement('li');
-        empty.className = 'event-empty';
-        empty.textContent = 'Sin mensajes recientes.';
-        feed.appendChild(empty);
+      if (!entradas.length) {
+        const vacio = document.createElement('li');
+        vacio.className = 'event-empty';
+        vacio.textContent = 'Sin mensajes recientes.';
+        lista.appendChild(vacio);
         return;
       }
 
-      entries.forEach((entry) => {
-        const level = normalizarNivel(entry.level);
-        const item = document.createElement('li');
-        item.className = `event-item ${level}`.trim();
+      entradas.forEach((entrada) => {
+        const nivel = normalizarNivel(entrada.level);
+        const elemento = document.createElement('li');
+        elemento.className = `event-item ${nivel}`.trim();
 
-        const dot = document.createElement('span');
-        dot.className = 'event-dot';
+        const punto = document.createElement('span');
+        punto.className = 'event-dot';
 
-        const text = document.createElement('div');
-        text.className = 'event-text';
+        const texto = document.createElement('div');
+        texto.className = 'event-text';
 
-        const title = document.createElement('div');
-        title.textContent = recortarMensaje(entry.text, 160);
+        const titulo = document.createElement('div');
+        titulo.textContent = recortarMensaje(entrada.text, 160);
 
-        const meta = document.createElement('div');
-        meta.className = 'event-meta';
+        const metadatos = document.createElement('div');
+        metadatos.className = 'event-meta';
 
-        const metaLevel = document.createElement('span');
-        metaLevel.textContent = `Nivel: ${level.toUpperCase()}`;
-        const metaSource = document.createElement('span');
-        metaSource.textContent = `Origen: ${entry.source || '-'}`;
+        const metaNivel = document.createElement('span');
+        metaNivel.textContent = `Nivel: ${nivel.toUpperCase()}`;
+        const metaOrigen = document.createElement('span');
+        metaOrigen.textContent = `Origen: ${entrada.source || '-'}`;
 
-        meta.appendChild(metaLevel);
-        meta.appendChild(metaSource);
-        text.appendChild(title);
-        text.appendChild(meta);
+        metadatos.appendChild(metaNivel);
+        metadatos.appendChild(metaOrigen);
+        texto.appendChild(titulo);
+        texto.appendChild(metadatos);
 
-        const time = document.createElement('span');
-        time.className = 'event-time';
-        time.textContent = entry.time || '-';
+        const hora = document.createElement('span');
+        hora.className = 'event-time';
+        hora.textContent = entrada.time || '-';
 
-        item.appendChild(dot);
-        item.appendChild(text);
-        item.appendChild(time);
-        feed.appendChild(item);
+        elemento.appendChild(punto);
+        elemento.appendChild(texto);
+        elemento.appendChild(hora);
+        lista.appendChild(elemento);
       });
     }
 
-    function actualizarSenales(entries) {
-      const counts = { error: 0, warn: 0, ok: 0, info: 0 };
-      const safeEntries = Array.isArray(entries) ? entries : [];
+    function actualizarSenales(entradas) {
+      const conteos = { error: 0, warn: 0, ok: 0, info: 0 };
+      const entradasSeguras = Array.isArray(entradas) ? entradas : [];
 
-      safeEntries.forEach((entry) => {
-        const level = normalizarNivel(entry.level);
-        if (level === 'error') counts.error += 1;
-        else if (level === 'warn') counts.warn += 1;
-        else if (level === 'ok') counts.ok += 1;
-        else counts.info += 1;
+      entradasSeguras.forEach((entrada) => {
+        const nivel = normalizarNivel(entrada.level);
+        if (nivel === 'error') conteos.error += 1;
+        else if (nivel === 'warn') conteos.warn += 1;
+        else if (nivel === 'ok') conteos.ok += 1;
+        else conteos.info += 1;
       });
 
-      renderizarConteosSenales(counts);
+      renderizarConteosSenales(conteos);
 
-      const latestEntries = safeEntries.slice(-LIMITE_SENALES).reverse();
-      renderizarFeedEventos(latestEntries);
+      const entradasRecientes = entradasSeguras.slice(-LIMITE_SENALES).reverse();
+      renderizarFeedEventos(entradasRecientes);
 
-      const critical = [...safeEntries].reverse().find((entry) => {
-        const level = normalizarNivel(entry.level);
-        return level === 'error' || level === 'warn';
+      const critico = [...entradasSeguras].reverse().find((entrada) => {
+        const nivel = normalizarNivel(entrada.level);
+        return nivel === 'error' || nivel === 'warn';
       });
 
-      renderizarAlerta(critical || null);
+      renderizarAlerta(critico || null);
     }
 
     async function refrescarSenales() {
       try {
-        const res = await fetch('/api/logs');
-        const data = await res.json();
+        const respuesta = await fetch('/api/logs');
+        const datos = await respuesta.json();
         state.logsOkRecientes = true;
         state.ultimoErrorLogs = '';
-        actualizarSenales(data.entries || []);
+        actualizarSenales(datos.entries || []);
       } catch (error) {
         state.logsOkRecientes = false;
         state.ultimoErrorLogs = normalizarMensajeError(error);
@@ -3612,42 +3614,42 @@
       }
     }
 
-    function establecerPuntoEjecucion(active) {
-      const dot = $('running-dot');
-      if (!dot) return;
-      dot.classList.toggle('active', active);
+    function establecerPuntoEjecucion(activo) {
+      const punto = $('running-dot');
+      if (!punto) return;
+      punto.classList.toggle('active', activo);
     }
 
-    function establecerItemSalud(prefix, info, expected = true) {
-      const dot = $(`health-${prefix}-dot`);
-      const text = $(`health-${prefix}-text`);
-      const latency = $(`health-${prefix}-latency`);
-      if (!dot || !text || !latency) return;
+    function establecerItemSalud(prefijo, info, esperado = true) {
+      const punto = $(`health-${prefijo}-dot`);
+      const texto = $(`health-${prefijo}-text`);
+      const latencia = $(`health-${prefijo}-latency`);
+      if (!punto || !texto || !latencia) return;
 
-      if (!expected) {
-        dot.className = 'health-dot';
-        text.textContent = 'Detenido';
-        latency.textContent = '--';
+      if (!esperado) {
+        punto.className = 'health-dot';
+        texto.textContent = 'Detenido';
+        latencia.textContent = '--';
         return;
       }
 
       if (!info || typeof info.ok !== 'boolean') {
-        dot.className = 'health-dot';
-        text.textContent = 'Sin comprobar';
-        latency.textContent = '--';
+        punto.className = 'health-dot';
+        texto.textContent = 'Sin comprobar';
+        latencia.textContent = '--';
         return;
       }
 
-      const ok = info.ok;
-      const statusLabel = ok ? 'Activo' : (info.status ? `Caido (HTTP ${info.status})` : 'Sin respuesta');
-      dot.className = `health-dot ${ok ? 'ok' : 'down'}`;
-      text.textContent = statusLabel;
-      latency.textContent = typeof info.ms === 'number' ? `${info.ms} ms` : '--';
+      const estaOk = info.ok;
+      const etiquetaEstado = estaOk ? 'Activo' : (info.status ? `Caído (HTTP ${info.status})` : 'Sin respuesta');
+      punto.className = `health-dot ${estaOk ? 'ok' : 'down'}`;
+      texto.textContent = etiquetaEstado;
+      latencia.textContent = typeof info.ms === 'number' ? `${info.ms} ms` : '--';
     }
 
-    function renderizarEnEjecucion(list) {
-      if (!Array.isArray(list) || list.length === 0) return '-';
-      return list.map((item) => ETIQUETAS_ENTORNO[item] || item).join(', ');
+    function renderizarEnEjecucion(lista) {
+      if (!Array.isArray(lista) || lista.length === 0) return '-';
+      return lista.map((elemento) => ETIQUETAS_ENTORNO[elemento] || elemento).join(', ');
     }
 
     function resolverVistaDocker(datos) {
@@ -3699,14 +3701,14 @@
     }
 
     function registrarEvento(tipo, etiqueta) {
-      const entry = {
+      const entrada = {
         id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
         type: tipo,
         label: etiqueta,
         time: Date.now()
       };
 
-      state.eventos.unshift(entry);
+      state.eventos.unshift(entrada);
       if (state.eventos.length > MAX_EVENTOS) {
         state.eventos.splice(MAX_EVENTOS);
       }
@@ -3716,44 +3718,44 @@
     }
 
     function renderizarActividad() {
-      const list = $('activity-list');
-      if (!list) return;
+      const lista = $('activity-list');
+      if (!lista) return;
 
-      list.innerHTML = '';
+      lista.innerHTML = '';
 
       if (state.eventos.length === 0) {
-        const empty = document.createElement('li');
-        empty.className = 'activity-empty';
-        empty.textContent = 'Sin actividad reciente.';
-        list.appendChild(empty);
+        const vacio = document.createElement('li');
+        vacio.className = 'activity-empty';
+        vacio.textContent = 'Sin actividad reciente.';
+        lista.appendChild(vacio);
         establecerTexto('last-event', 'Sin actividad reciente.');
         return;
       }
 
-      state.eventos.forEach((entry) => {
-        const li = document.createElement('li');
-        li.className = 'activity-item';
+      state.eventos.forEach((entrada) => {
+        const elemento = document.createElement('li');
+        elemento.className = 'activity-item';
 
-        const dot = document.createElement('span');
-        dot.className = `activity-dot ${entry.type === 'start' ? 'ok' : 'down'}`;
+        const punto = document.createElement('span');
+        punto.className = `activity-dot ${entrada.type === 'start' ? 'ok' : 'down'}`;
 
-        const text = document.createElement('span');
-        text.className = 'activity-text';
-        text.textContent = `${entry.type === 'start' ? 'Inicio' : 'Detencion'}: ${entry.label}`;
+        const texto = document.createElement('span');
+        texto.className = 'activity-text';
+        texto.textContent = `${entrada.type === 'start' ? 'Inicio' : 'Detención'}: ${entrada.label}`;
 
-        const time = document.createElement('span');
-        time.className = 'activity-time';
-        time.textContent = formatearHora(entry.time);
+        const hora = document.createElement('span');
+        hora.className = 'activity-time';
+        hora.textContent = formatearHora(entrada.time);
 
-        li.appendChild(dot);
-        li.appendChild(text);
-        li.appendChild(time);
-        list.appendChild(li);
+        elemento.appendChild(punto);
+        elemento.appendChild(texto);
+        elemento.appendChild(hora);
+        lista.appendChild(elemento);
       });
 
-      const last = state.eventos[0];
-      if (last) {
-        establecerTexto('last-event', `Última acción: ${last.label} (${last.type === 'start' ? 'inicio' : 'detenido'})`);
+      const ultimo = state.eventos[0];
+      if (ultimo) {
+        establecerTexto('last-event', `Última acción: ${ultimo.label} (${ultimo.type === 'start' ? 'inicio' : 'detenido'})`);
       }
     }
 
@@ -3820,7 +3822,7 @@
         } else {
           dot.className = 'service-dot down';
           badge.className = 'service-badge down';
-          badge.textContent = 'Caido';
+          badge.textContent = 'Caído';
         }
       });
 
@@ -3843,8 +3845,8 @@
         empty.textContent = 'Sin historial de salud por ahora.';
         container.appendChild(empty);
         if (okChip) okChip.textContent = 'OK -';
-        if (downChip) downChip.textContent = 'Caidas -';
-        if (timeChip) timeChip.textContent = 'Ultimo: --';
+        if (downChip) downChip.textContent = 'Caídas -';
+        if (timeChip) timeChip.textContent = 'Último: --';
         if (okChip) okChip.className = 'health-chip ok';
         if (downChip) downChip.className = 'health-chip down';
         return;
@@ -3869,10 +3871,10 @@
         const ratioPct = Math.round(ratio * 100);
         if (okChip) okChip.textContent = `OK ${last.okCount}/${last.total} (${ratioPct}%)`;
         if (downChip) {
-          downChip.textContent = `Caidas ${last.downCount}`;
+          downChip.textContent = `Caídas ${last.downCount}`;
           downChip.className = `health-chip ${last.downCount > 0 ? 'down' : 'ok'}`;
         }
-        if (timeChip) timeChip.textContent = `Ultimo: ${formatearHora(last.ts)}`;
+        if (timeChip) timeChip.textContent = `Último: ${formatearHora(last.ts)}`;
       }
     }
 
@@ -4545,14 +4547,14 @@
     async function refrescarLogs() {
       if (!state.logsVisibles) return;
       try {
-        const query = state.mostrarCompleto ? '/api/logs?full=1' : '/api/logs';
-        const res = await fetch(query);
-        const data = await res.json();
-        const entries = data.entries || [];
+        const consulta = state.mostrarCompleto ? '/api/logs?full=1' : '/api/logs';
+        const respuesta = await fetch(consulta);
+        const datos = await respuesta.json();
+        const entradas = datos.entries || [];
         state.logsOkRecientes = true;
         state.ultimoErrorLogs = '';
-        renderizarLogs(entries);
-        actualizarSenales(entries);
+        renderizarLogs(entradas);
+        actualizarSenales(entradas);
       } catch (error) {
         state.logsOkRecientes = false;
         state.ultimoErrorLogs = normalizarMensajeError(error);
@@ -4562,27 +4564,27 @@
       }
     }
 
-    // Tab switching.
-    const tabButtons = Array.from(document.querySelectorAll('.tab-btn'));
-    tabButtons.forEach((button, index) => {
-      button.addEventListener('click', () => establecerPestana(button.dataset.tab));
-      button.addEventListener('keydown', (event) => {
-        const key = event.key;
-        if (!['ArrowLeft', 'ArrowRight', 'Home', 'End', 'Enter', ' '].includes(key)) return;
-        event.preventDefault();
+    // Cambio de pestañas.
+    const botonesPestana = Array.from(document.querySelectorAll('.tab-btn'));
+    botonesPestana.forEach((boton, indice) => {
+      boton.addEventListener('click', () => establecerPestana(boton.dataset.tab));
+      boton.addEventListener('keydown', (evento) => {
+        const tecla = evento.key;
+        if (!['ArrowLeft', 'ArrowRight', 'Home', 'End', 'Enter', ' '].includes(tecla)) return;
+        evento.preventDefault();
 
-        const last = tabButtons.length - 1;
-        const go = (nextIndex) => {
-          const next = tabButtons[nextIndex];
-          next.focus();
-          establecerPestana(next.dataset.tab);
+        const ultimo = botonesPestana.length - 1;
+        const ir = (indiceSiguiente) => {
+          const siguiente = botonesPestana[indiceSiguiente];
+          siguiente.focus();
+          establecerPestana(siguiente.dataset.tab);
         };
 
-        if (key === 'ArrowLeft') go(index === 0 ? last : index - 1);
-        if (key === 'ArrowRight') go(index === last ? 0 : index + 1);
-        if (key === 'Home') go(0);
-        if (key === 'End') go(last);
-        if (key === 'Enter' || key === ' ') establecerPestana(button.dataset.tab);
+        if (tecla === 'ArrowLeft') ir(indice === 0 ? ultimo : indice - 1);
+        if (tecla === 'ArrowRight') ir(indice === ultimo ? 0 : indice + 1);
+        if (tecla === 'Home') ir(0);
+        if (tecla === 'End') ir(ultimo);
+        if (tecla === 'Enter' || tecla === ' ') establecerPestana(boton.dataset.tab);
       });
     });
 
@@ -4612,7 +4614,7 @@
         const endpoint = enEjecucion ? '/api/stop' : '/api/start';
         api(endpoint, { task: entorno }).then((res) => {
           if (res && res.ok === false) {
-            mostrarToast(`No se pudo ejecutar la acciónón en ${entorno}.`, 'error', {
+            mostrarToast(`No se pudo ejecutar la acción en ${entorno}.`, 'error', {
               id: `env-${entorno}-error`,
               title: 'Error',
               duration: 5200
@@ -4903,6 +4905,8 @@
   </script>
 </body>
 </html>
+
+
 
 
 

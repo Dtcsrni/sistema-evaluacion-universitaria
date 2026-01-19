@@ -11,6 +11,7 @@ import { obtenerDocenteId } from '../modulo_autenticacion/middlewareAutenticacio
 import type { SolicitudDocente } from '../modulo_autenticacion/middlewareAutenticacion';
 import { Alumno } from './modeloAlumno';
 import { BancoPregunta } from '../modulo_banco_preguntas/modeloBancoPregunta';
+import { TemaBanco } from '../modulo_banco_preguntas/modeloTemaBanco';
 import { Calificacion } from '../modulo_calificacion/modeloCalificacion';
 import { ExamenGenerado } from '../modulo_generacion_pdf/modeloExamenGenerado';
 import { ExamenPlantilla } from '../modulo_generacion_pdf/modeloExamenPlantilla';
@@ -68,42 +69,6 @@ export async function crearPeriodo(req: SolicitudDocente, res: Response) {
 }
 
 /**
- * Borra un periodo (materia) y todos los recursos asociados del docente.
- */
-export async function borrarPeriodo(req: SolicitudDocente, res: Response) {
-  const docenteId = obtenerDocenteId(req);
-  const periodoId = String(req.params.periodoId ?? '').trim();
-
-  const periodo = await Periodo.findOne({ _id: periodoId, docenteId }).lean();
-  if (!periodo) {
-    throw new ErrorAplicacion('PERIODO_NO_ENCONTRADO', 'Materia no encontrada', 404);
-  }
-
-  await Periodo.deleteOne({ _id: periodoId, docenteId });
-
-  const [alumnos, bancoPreguntas, plantillas, generados, calificaciones, codigosAcceso] = await Promise.all([
-    Alumno.deleteMany({ docenteId, periodoId }),
-    BancoPregunta.deleteMany({ docenteId, periodoId }),
-    ExamenPlantilla.deleteMany({ docenteId, periodoId }),
-    ExamenGenerado.deleteMany({ docenteId, periodoId }),
-    Calificacion.deleteMany({ docenteId, periodoId }),
-    CodigoAcceso.deleteMany({ docenteId, periodoId })
-  ]);
-
-  res.json({
-    ok: true,
-    borrados: {
-      alumnos: alumnos.deletedCount,
-      bancoPreguntas: bancoPreguntas.deletedCount,
-      plantillas: plantillas.deletedCount,
-      examenesGenerados: generados.deletedCount,
-      calificaciones: calificaciones.deletedCount,
-      codigosAcceso: codigosAcceso.deletedCount
-    }
-  });
-}
-
-/**
  * Archiva un periodo (materia): lo marca como inactivo, registra timestamp y genera un resumen.
  * Nota: no borra datos; desactiva entidades asociadas que soportan `activo`.
  */
@@ -149,7 +114,10 @@ export async function archivarPeriodo(req: SolicitudDocente, res: Response) {
       }
     ),
     Alumno.updateMany({ docenteId, periodoId }, { $set: { activo: false } }),
-    BancoPregunta.updateMany({ docenteId, periodoId }, { $set: { activo: false } })
+    BancoPregunta.updateMany({ docenteId, periodoId }, { $set: { activo: false, archivadoEn: new Date() } }),
+    TemaBanco.updateMany({ docenteId, periodoId }, { $set: { activo: false, archivadoEn: new Date() } }),
+    ExamenPlantilla.updateMany({ docenteId, periodoId }, { $set: { archivadoEn: new Date() } }),
+    ExamenGenerado.updateMany({ docenteId, periodoId }, { $set: { archivadoEn: new Date() } })
   ]);
 
   const actualizado = await Periodo.findOne({ _id: periodoId, docenteId }).lean();

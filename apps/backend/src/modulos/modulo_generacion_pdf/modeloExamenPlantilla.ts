@@ -16,6 +16,7 @@ const ExamenPlantillaSchema = new Schema(
     totalReactivos: { type: Number },
     preguntasIds: [{ type: Schema.Types.ObjectId, ref: 'BancoPregunta' }],
     temas: [{ type: String }],
+    archivadoEn: { type: Date },
     configuracionPdf: {
       margenMm: { type: Number, default: 10 },
       layout: { type: String, default: 'parcial' }

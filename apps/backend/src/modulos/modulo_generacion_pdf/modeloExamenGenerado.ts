@@ -20,7 +20,8 @@ const ExamenGeneradoSchema = new Schema(
     paginas: [{ numero: Number, qrTexto: String, preguntasDel: Number, preguntasAl: Number }],
     rutaPdf: { type: String },
     generadoEn: { type: Date, default: Date.now },
-    descargadoEn: { type: Date }
+    descargadoEn: { type: Date },
+    archivadoEn: { type: Date }
   },
   { timestamps: true, collection: 'examenesGenerados' }
 );

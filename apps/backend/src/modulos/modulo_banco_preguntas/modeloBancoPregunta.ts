@@ -37,6 +37,7 @@ const BancoPreguntaSchema = new Schema(
     periodoId: { type: Schema.Types.ObjectId, ref: 'Periodo', required: true },
     tema: { type: String },
     activo: { type: Boolean, default: true },
+    archivadoEn: { type: Date },
     versionActual: { type: Number, default: 1 },
     versiones: { type: [VersionPreguntaSchema], required: true }
   },

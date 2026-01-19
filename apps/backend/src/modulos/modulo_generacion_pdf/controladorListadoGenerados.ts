@@ -16,8 +16,6 @@ import { generarPdfExamen } from './servicioGeneracionPdf';
 import { guardarPdfExamen } from '../../infraestructura/archivos/almacenLocal';
 import { Periodo } from '../modulo_alumnos/modeloPeriodo';
 import { normalizarParaNombreArchivo } from '../../compartido/utilidades/texto';
-import { Calificacion } from '../modulo_calificacion/modeloCalificacion';
-import { Entrega } from '../modulo_vinculacion_entrega/modeloEntrega';
 import { Docente } from '../modulo_autenticacion/modeloDocente';
 
 type BancoPreguntaLean = {
@@ -68,11 +66,18 @@ function construirNombrePdfExamen(parametros: {
  */
 export async function listarExamenesGenerados(req: SolicitudDocente, res: Response) {
   const docenteId = obtenerDocenteId(req);
-  const filtro: Record<string, string> = { docenteId };
+  const filtro: Record<string, unknown> = { docenteId };
   if (req.query.periodoId) filtro.periodoId = String(req.query.periodoId).trim();
   if (req.query.alumnoId) filtro.alumnoId = String(req.query.alumnoId).trim();
   if (req.query.plantillaId) filtro.plantillaId = String(req.query.plantillaId).trim();
   if (req.query.folio) filtro.folio = String(req.query.folio).trim().toUpperCase();
+  const queryArchivado = String(req.query.archivado ?? '').trim().toLowerCase();
+  const filtrarArchivadas = queryArchivado === '1' || queryArchivado === 'true' || queryArchivado === 'si' || queryArchivado === 's';
+  if (filtrarArchivadas) {
+    filtro.archivadoEn = { $exists: true };
+  } else {
+    filtro.archivadoEn = { $exists: false };
+  }
 
   const limite = Number(req.query.limite ?? 0);
   const consulta = ExamenGenerado.find(filtro).sort({ generadoEn: -1, _id: -1 });
@@ -304,15 +309,9 @@ export async function regenerarPdfExamen(req: SolicitudDocente, res: Response) {
 }
 
 /**
- * Elimina un examen generado.
- *
- * Regla de negocio:
- * - Solo se permite eliminar si el examen esta en estado `generado` (no entregado/calificado).
- * - Si existen registros de entrega o calificacion asociados, se bloquea.
- *
- * Nota: el borrado del archivo PDF es best-effort.
+ * Archiva un examen generado.
  */
-export async function eliminarExamenGenerado(req: SolicitudDocente, res: Response) {
+export async function archivarExamenGenerado(req: SolicitudDocente, res: Response) {
   const docenteId = obtenerDocenteId(req);
   const examenId = String(req.params.id || '').trim();
 
@@ -321,35 +320,15 @@ export async function eliminarExamenGenerado(req: SolicitudDocente, res: Respons
     throw new ErrorAplicacion('EXAMEN_NO_ENCONTRADO', 'Examen no encontrado', 404);
   }
 
-  const estado = String((examen as unknown as { estado?: unknown })?.estado ?? '');
-  if (estado && estado !== 'generado') {
-    throw new ErrorAplicacion('EXAMEN_NO_ELIMINABLE', 'No se puede eliminar un examen ya entregado o calificado', 409);
+  if ((examen as unknown as { archivadoEn?: unknown }).archivadoEn) {
+    return res.json({ ok: true, examen });
   }
 
-  const [tieneEntrega, tieneCalificacion] = await Promise.all([
-    Entrega.exists({ docenteId, examenGeneradoId: examenId }),
-    Calificacion.exists({ docenteId, examenGeneradoId: examenId })
-  ]);
+  const actualizado = await ExamenGenerado.findOneAndUpdate(
+    { _id: examenId, docenteId },
+    { $set: { archivadoEn: new Date() } },
+    { new: true }
+  ).lean();
 
-  if (tieneEntrega) {
-    throw new ErrorAplicacion('EXAMEN_CON_ENTREGA', 'No se puede eliminar: el examen ya fue vinculado/entregado', 409);
-  }
-  if (tieneCalificacion) {
-    throw new ErrorAplicacion('EXAMEN_CON_CALIFICACION', 'No se puede eliminar: el examen ya tiene calificacion', 409);
-  }
-
-  const rutaPdf = String((examen as unknown as { rutaPdf?: unknown })?.rutaPdf ?? '').trim();
-
-  await ExamenGenerado.deleteOne({ _id: examenId, docenteId });
-
-  if (rutaPdf) {
-    try {
-      await fs.unlink(rutaPdf);
-    } catch (error) {
-      // Si el archivo no existe (o falla el borrado), no bloquea la operacion.
-      void error;
-    }
-  }
-
-  res.json({ ok: true });
+  res.json({ ok: true, examen: actualizado });
 }

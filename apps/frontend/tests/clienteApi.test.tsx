@@ -53,14 +53,14 @@ describe('clienteApi', () => {
     vi.mocked(fetch).mockResolvedValueOnce({
       ok: false,
       status: 409,
-      json: async () => ({ error: { codigo: 'PLANTILLA_CON_EXAMENES', mensaje: 'No se puede eliminar: hay 2 examenes.' } })
+      json: async () => ({ error: { codigo: 'PLANTILLA_CON_EXAMENES', mensaje: 'No se puede archivar: hay 2 examenes.' } })
     } as unknown as Response);
 
     try {
-      await cliente.eliminar('/examenes/plantillas/123');
+      await cliente.enviar('/examenes/plantillas/123/archivar', {});
     } catch (error) {
-      const msg = mensajeUsuarioDeError(error, 'No se pudo eliminar');
-      expect(msg).toContain('No se puede eliminar');
+      const msg = mensajeUsuarioDeError(error, 'No se pudo archivar');
+      expect(msg).toContain('No se puede archivar');
       return;
     }
     throw new Error('Se esperaba excepcion');
@@ -73,9 +73,9 @@ describe('clienteApi', () => {
       ok: false,
       status: 409,
       clone: () => ({
-        text: async () => 'No se puede eliminar: el examen ya fue vinculado/entregado'
+        text: async () => 'No se puede archivar: el examen ya fue vinculado/entregado'
       }),
-      text: async () => 'No se puede eliminar: el examen ya fue vinculado/entregado',
+      text: async () => 'No se puede archivar: el examen ya fue vinculado/entregado',
       json: async () => {
         throw new Error('Invalid JSON');
       }
@@ -84,10 +84,10 @@ describe('clienteApi', () => {
     vi.mocked(fetch).mockResolvedValueOnce(respuesta);
 
     try {
-      await cliente.eliminar('/examenes/generados/123');
+      await cliente.enviar('/examenes/generados/123/archivar', {});
     } catch (error) {
-      const msg = mensajeUsuarioDeError(error, 'No se pudo eliminar');
-      expect(msg).toContain('No se puede eliminar');
+      const msg = mensajeUsuarioDeError(error, 'No se pudo archivar');
+      expect(msg).toContain('No se puede archivar');
       return;
     }
     throw new Error('Se esperaba excepcion');

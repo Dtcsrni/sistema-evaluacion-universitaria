@@ -13,7 +13,8 @@ const TemaBancoSchema = new Schema(
     periodoId: { type: Schema.Types.ObjectId, ref: 'Periodo', required: true },
     nombre: { type: String, required: true },
     clave: { type: String, required: true },
-    activo: { type: Boolean, default: true }
+    activo: { type: Boolean, default: true },
+    archivadoEn: { type: Date }
   },
   { timestamps: true, collection: 'bancoTemas' }
 );

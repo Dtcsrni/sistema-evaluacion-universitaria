@@ -1,4 +1,4 @@
-// Pruebas de periodos: deduplicacion y borrado en cascada.
+// Pruebas de periodos: deduplicacion y archivado.
 import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { crearApp } from '../../src/app';
@@ -110,7 +110,7 @@ describe('periodos (materias)', () => {
     expect(resp.body.error?.codigo ?? resp.body.codigo).toBe('PERIODO_DUPLICADO');
   });
 
-  it('borra una materia y todo lo asociado (cascada)', async () => {
+  it('archiva una materia y conserva lo asociado', async () => {
     const token = await registrar('docente-del@local.test');
 
     const periodoId = await crearPeriodo(token, 'Materia A');
@@ -124,12 +124,12 @@ describe('periodos (materias)', () => {
     const plantillaId = await crearPlantilla(token, periodoId, preguntasIds);
     await generarExamen(token, plantillaId);
 
-    const borrar = await request(app)
-      .delete(`/api/periodos/${periodoId}`)
+    const archivar = await request(app)
+      .post(`/api/periodos/${periodoId}/archivar`)
       .set({ Authorization: `Bearer ${token}` })
       .expect(200);
 
-    expect(borrar.body.ok).toBe(true);
+    expect(archivar.body.ok).toBe(true);
 
     const periodos = await request(app)
       .get('/api/periodos')
@@ -137,11 +137,18 @@ describe('periodos (materias)', () => {
       .expect(200);
     expect(periodos.body.periodos).toEqual([]);
 
+    const archivadas = await request(app)
+      .get('/api/periodos?activo=0')
+      .set({ Authorization: `Bearer ${token}` })
+      .expect(200);
+    expect(archivadas.body.periodos.length).toBe(1);
+
     const alumnos = await request(app)
       .get('/api/alumnos')
       .set({ Authorization: `Bearer ${token}` })
       .expect(200);
-    expect(alumnos.body.alumnos).toEqual([]);
+    expect(alumnos.body.alumnos.length).toBe(1);
+    expect(alumnos.body.alumnos[0].activo).toBe(false);
 
     const banco = await request(app)
       .get('/api/banco-preguntas')
@@ -149,17 +156,36 @@ describe('periodos (materias)', () => {
       .expect(200);
     expect(banco.body.preguntas).toEqual([]);
 
+    const bancoArchivado = await request(app)
+      .get(`/api/banco-preguntas?activo=0&periodoId=${periodoId}`)
+      .set({ Authorization: `Bearer ${token}` })
+      .expect(200);
+    expect(bancoArchivado.body.preguntas.length).toBe(60);
+    expect(bancoArchivado.body.preguntas[0].activo).toBe(false);
+
     const plantillas = await request(app)
       .get('/api/examenes/plantillas')
       .set({ Authorization: `Bearer ${token}` })
       .expect(200);
     expect(plantillas.body.plantillas).toEqual([]);
 
+    const plantillasArchivadas = await request(app)
+      .get('/api/examenes/plantillas?archivado=1')
+      .set({ Authorization: `Bearer ${token}` })
+      .expect(200);
+    expect(plantillasArchivadas.body.plantillas.length).toBe(1);
+
     const generados = await request(app)
       .get('/api/examenes/generados')
       .set({ Authorization: `Bearer ${token}` })
       .expect(200);
     expect(generados.body.examenes).toEqual([]);
+
+    const generadosArchivados = await request(app)
+      .get('/api/examenes/generados?archivado=1')
+      .set({ Authorization: `Bearer ${token}` })
+      .expect(200);
+    expect(generadosArchivados.body.examenes.length).toBe(1);
   });
 
   it('archiva una materia (la oculta de activas) y guarda resumen', async () => {

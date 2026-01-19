@@ -1595,7 +1595,7 @@ function SeccionBanco({
     { texto: '', esCorrecta: false }
   ]);
   const [editando, setEditando] = useState(false);
-  const [borrandoId, setBorrandoId] = useState<string | null>(null);
+  const [archivandoPreguntaId, setArchivandoPreguntaId] = useState<string | null>(null);
 
   const [temasBanco, setTemasBanco] = useState<TemaBanco[]>([]);
   const [cargandoTemas, setCargandoTemas] = useState(false);
@@ -1604,7 +1604,7 @@ function SeccionBanco({
   const [temaEditandoId, setTemaEditandoId] = useState<string | null>(null);
   const [temaEditandoNombre, setTemaEditandoNombre] = useState('');
   const [guardandoTema, setGuardandoTema] = useState(false);
-  const [borrandoTemaId, setBorrandoTemaId] = useState<string | null>(null);
+  const [archivandoTemaId, setArchivandoTemaId] = useState<string | null>(null);
   const [temasAbierto, setTemasAbierto] = useState(true);
   const temasPrevLenRef = useRef(0);
 
@@ -1986,23 +1986,23 @@ function SeccionBanco({
     }
   }
 
-  async function eliminarTemaBanco(item: TemaBanco) {
-    const ok = globalThis.confirm(`¿Eliminar el tema "${item.nombre}"? Se removera de plantillas y preguntas.`);
+  async function archivarTemaBanco(item: TemaBanco) {
+    const ok = globalThis.confirm(`¿Archivar el tema "${item.nombre}"? Se removera de plantillas y preguntas.`);
     if (!ok) return;
     try {
-      setBorrandoTemaId(item._id);
+      setArchivandoTemaId(item._id);
       setMensaje('');
-      await clienteApi.eliminar(`/banco-preguntas/temas/${item._id}`);
+      await clienteApi.enviar(`/banco-preguntas/temas/${item._id}/archivar`, {});
       if (tema.trim().toLowerCase() === item.nombre.trim().toLowerCase()) setTema('');
       if (editTema.trim().toLowerCase() === item.nombre.trim().toLowerCase()) setEditTema('');
       await Promise.all([refrescarTemas(), Promise.resolve().then(() => onRefrescar()), Promise.resolve().then(() => onRefrescarPlantillas())]);
-      emitToast({ level: 'ok', title: 'Temas', message: 'Tema eliminado', durationMs: 1800 });
+      emitToast({ level: 'ok', title: 'Temas', message: 'Tema archivado', durationMs: 1800 });
     } catch (error) {
-      const msg = mensajeDeError(error, 'No se pudo eliminar el tema');
+      const msg = mensajeDeError(error, 'No se pudo archivar el tema');
       setMensaje(msg);
-      emitToast({ level: 'error', title: 'No se pudo eliminar', message: msg, durationMs: 5200, action: accionToastSesionParaError(error, 'docente') });
+      emitToast({ level: 'error', title: 'No se pudo archivar', message: msg, durationMs: 5200, action: accionToastSesionParaError(error, 'docente') });
     } finally {
-      setBorrandoTemaId(null);
+      setArchivandoTemaId(null);
     }
   }
 
@@ -2091,32 +2091,32 @@ function SeccionBanco({
     }
   }
 
-  async function eliminar(preguntaId: string) {
-    const ok = globalThis.confirm('¿Eliminar esta pregunta? Se desactivará del banco.');
+  async function archivarPregunta(preguntaId: string) {
+    const ok = globalThis.confirm('¿¿Archivar esta pregunta? Se desactivara del banco.');
     if (!ok) return;
     try {
       const inicio = Date.now();
-      setBorrandoId(preguntaId);
+      setArchivandoPreguntaId(preguntaId);
       setMensaje('');
-      await clienteApi.eliminar(`/banco-preguntas/${preguntaId}`);
-      setMensaje('Pregunta eliminada');
-      emitToast({ level: 'ok', title: 'Banco', message: 'Pregunta eliminada', durationMs: 2200 });
-      registrarAccionDocente('eliminar_pregunta', true, Date.now() - inicio);
+      await clienteApi.enviar(`/banco-preguntas/${preguntaId}/archivar`, {});
+      setMensaje('Pregunta archivada');
+      emitToast({ level: 'ok', title: 'Banco', message: 'Pregunta archivada', durationMs: 2200 });
+      registrarAccionDocente('archivar_pregunta', true, Date.now() - inicio);
       if (editandoId === preguntaId) cancelarEdicion();
       onRefrescar();
     } catch (error) {
-      const msg = mensajeDeError(error, 'No se pudo eliminar');
+      const msg = mensajeDeError(error, 'No se pudo archivar');
       setMensaje(msg);
       emitToast({
         level: 'error',
-        title: 'No se pudo eliminar',
+        title: 'No se pudo archivar',
         message: msg,
         durationMs: 5200,
         action: accionToastSesionParaError(error, 'docente')
       });
-      registrarAccionDocente('eliminar_pregunta', false);
+      registrarAccionDocente('archivar_pregunta', false);
     } finally {
-      setBorrandoId(null);
+      setArchivandoPreguntaId(null);
     }
   }
 
@@ -2251,7 +2251,7 @@ function SeccionBanco({
                         <Boton type="button" variante="secundario" onClick={() => iniciarEdicionTema(t)}>
                           Renombrar
                         </Boton>
-                        <Boton type="button" cargando={borrandoTemaId === t._id} onClick={() => eliminarTemaBanco(t)}>
+                        <Boton type="button" cargando={archivandoTemaId === t._id} onClick={() => archivarTemaBanco(t)}>
                           Eliminar
                         </Boton>
                       </>
@@ -2620,7 +2620,7 @@ function SeccionBanco({
                         <Boton variante="secundario" type="button" onClick={() => iniciarEdicion(pregunta)}>
                           Editar
                         </Boton>
-                        <Boton type="button" cargando={borrandoId === pregunta._id} onClick={() => eliminar(pregunta._id)}>
+                        <Boton type="button" cargando={archivandoPreguntaId === pregunta._id} onClick={() => archivarPregunta(pregunta._id)}>
                           Eliminar
                         </Boton>
                       </div>
@@ -2660,7 +2660,6 @@ function SeccionPeriodos({
   const [mensaje, setMensaje] = useState('');
   const [creando, setCreando] = useState(false);
   const [archivandoId, setArchivandoId] = useState<string | null>(null);
-  const [borrandoId, setBorrandoId] = useState<string | null>(null);
 
   function formatearFecha(valor?: string) {
     if (!valor) return '-';
@@ -2723,42 +2722,6 @@ function SeccionPeriodos({
       setCreando(false);
     }
   }
-
-  async function borrarMateria(periodo: Periodo) {
-    const paso1 = globalThis.confirm(
-      `¿Borrar la materia "${etiquetaMateria(periodo)}"?\n\nSe borrara TODO lo asociado: alumnos, banco de preguntas, plantillas, examenes generados, calificaciones y codigos.`
-    );
-    if (!paso1) return;
-    const paso2 = globalThis.confirm(
-      `CONFIRMACION FINAL:\n\nEsta accion NO se puede deshacer.\n\n¿Seguro que deseas borrar definitivamente "${etiquetaMateria(periodo)}"?`
-    );
-    if (!paso2) return;
-
-    try {
-      const inicio = Date.now();
-      setBorrandoId(periodo._id);
-      setMensaje('');
-      await clienteApi.eliminar(`/periodos/${periodo._id}`);
-      setMensaje('Materia borrada');
-      emitToast({ level: 'ok', title: 'Materias', message: 'Materia borrada', durationMs: 2200 });
-      registrarAccionDocente('borrar_periodo', true, Date.now() - inicio);
-      onRefrescar();
-    } catch (error) {
-      const msg = mensajeDeError(error, 'No se pudo borrar la materia');
-      setMensaje(msg);
-      emitToast({
-        level: 'error',
-        title: 'No se pudo borrar',
-        message: msg,
-        durationMs: 5200,
-        action: accionToastSesionParaError(error, 'docente')
-      });
-      registrarAccionDocente('borrar_periodo', false);
-    } finally {
-      setBorrandoId(null);
-    }
-  }
-
   async function archivarMateria(periodo: Periodo) {
     const confirmado = globalThis.confirm(
       `¿Archivar la materia "${etiquetaMateria(periodo)}"?\n\nSe ocultara de la lista de activas, pero NO se borraran sus datos.`
@@ -2878,15 +2841,6 @@ function SeccionPeriodos({
                   >
                     Archivar
                   </Boton>
-                  <Boton
-                    variante="secundario"
-                    type="button"
-                    icono={<Icono nombre="alerta" />}
-                    cargando={borrandoId === periodo._id}
-                    onClick={() => borrarMateria(periodo)}
-                  >
-                    Borrar
-                  </Boton>
                 </div>
               </div>
             </div>
@@ -2907,7 +2861,6 @@ function SeccionPeriodosArchivados({
   onVerActivas: () => void;
 }) {
   const [mensaje, setMensaje] = useState('');
-  const [borrandoId, setBorrandoId] = useState<string | null>(null);
 
   function formatearFechaHora(valor?: string) {
     if (!valor) return '-';
@@ -2915,40 +2868,6 @@ function SeccionPeriodosArchivados({
     if (Number.isNaN(d.getTime())) return String(valor);
     return d.toLocaleString();
   }
-
-  async function borrarMateria(periodo: Periodo) {
-    const paso1 = globalThis.confirm(
-      `¿Borrar DEFINITIVAMENTE la materia archivada "${etiquetaMateria(periodo)}"?\n\nSe borrara TODO lo asociado: alumnos, banco de preguntas, plantillas, examenes generados, calificaciones y codigos.`
-    );
-    if (!paso1) return;
-    const paso2 = globalThis.confirm(
-      `CONFIRMACION FINAL:\n\nEsta accion NO se puede deshacer.\n\n¿Seguro que deseas borrar definitivamente "${etiquetaMateria(periodo)}"?`
-    );
-    if (!paso2) return;
-
-    try {
-      const inicio = Date.now();
-      setBorrandoId(periodo._id);
-      setMensaje('');
-      await clienteApi.eliminar(`/periodos/${periodo._id}`);
-      setMensaje('Materia borrada');
-      emitToast({ level: 'ok', title: 'Materias', message: 'Materia borrada', durationMs: 2200 });
-      registrarAccionDocente('borrar_periodo', true, Date.now() - inicio);
-      onRefrescar();
-    } catch (error) {
-      const msg = mensajeDeError(error, 'No se pudo borrar la materia');
-      setMensaje(msg);
-      emitToast({
-        level: 'error',
-        title: 'No se pudo borrar',
-        message: msg,
-        durationMs: 5200,
-        action: accionToastSesionParaError(error, 'docente')
-      });
-      registrarAccionDocente('borrar_periodo', false);
-    } finally {
-      setBorrandoId(null);
-    }
   }
 
   return (
@@ -3000,17 +2919,7 @@ function SeccionPeriodosArchivados({
                       </div>
                     )}
                   </div>
-                  <div className="item-actions">
-                    <Boton
-                      variante="secundario"
-                      type="button"
-                      icono={<Icono nombre="alerta" />}
-                      cargando={borrandoId === periodo._id}
-                      onClick={() => borrarMateria(periodo)}
-                    >
-                      Borrar definitivamente
-                    </Boton>
-                  </div>
+                  <div className="item-actions"></div>
                 </div>
               </div>
             </li>
@@ -3436,14 +3345,14 @@ function SeccionPlantillas({
   const [cargandoExamenesGenerados, setCargandoExamenesGenerados] = useState(false);
   const [descargandoExamenId, setDescargandoExamenId] = useState<string | null>(null);
   const [regenerandoExamenId, setRegenerandoExamenId] = useState<string | null>(null);
-  const [eliminandoExamenId, setEliminandoExamenId] = useState<string | null>(null);
+  const [archivandoExamenId, setArchivandoExamenId] = useState<string | null>(null);
   const [creando, setCreando] = useState(false);
   const [generando, setGenerando] = useState(false);
   const [generandoLote, setGenerandoLote] = useState(false);
   const [modoEdicion, setModoEdicion] = useState(false);
   const [plantillaEditandoId, setPlantillaEditandoId] = useState<string | null>(null);
   const [guardandoPlantilla, setGuardandoPlantilla] = useState(false);
-  const [eliminandoPlantillaId, setEliminandoPlantillaId] = useState<string | null>(null);
+  const [archivandoPlantillaId, setArchivandoPlantillaId] = useState<string | null>(null);
   const [filtroPlantillas, setFiltroPlantillas] = useState('');
 
   type PreviewPlantilla = {
@@ -3598,16 +3507,6 @@ function SeccionPlantillas({
         setRegenerandoExamenId(examen._id);
 
         const yaDescargado = Boolean(String(examen.descargadoEn || '').trim());
-        const estado = String(examen.estado || 'generado');
-        if (estado && estado !== 'generado') {
-          emitToast({
-            level: 'error',
-            title: 'No se puede regenerar',
-            message: 'El examen ya fue entregado o calificado.',
-            durationMs: 4200
-          });
-          return;
-        }
 
         let forzar = false;
         if (yaDescargado) {
@@ -3641,44 +3540,33 @@ function SeccionPlantillas({
     [cargarExamenesGenerados]
   );
 
-  const eliminarExamenGenerado = useCallback(
+  const archivarExamenGenerado = useCallback(
     async (examen: ExamenGeneradoResumen) => {
       try {
         setMensajeGeneracion('');
-        setEliminandoExamenId(examen._id);
-
-        const estado = String(examen.estado || 'generado');
-        if (estado && estado !== 'generado') {
-          emitToast({
-            level: 'error',
-            title: 'No se puede eliminar',
-            message: 'El examen ya fue entregado o calificado.',
-            durationMs: 4200
-          });
-          return;
-        }
+        setArchivandoExamenId(examen._id);
 
         const ok = globalThis.confirm(
-          `¿Eliminar el examen generado (folio: ${String(examen.folio || '').trim() || 'sin folio'})?\n\nSe borrara el registro y su PDF asociado.`
+          `¿EArchivar el examen generado (folio: ${String(examen.folio || '').trim() || 'sin folio'})?\n\nSe ocultara del listado activo, pero no se borraran sus datos.`
         );
         if (!ok) return;
 
-        await clienteApi.eliminar(`/examenes/generados/${encodeURIComponent(examen._id)}`);
+        await clienteApi.enviar(`/examenes/generados/${encodeURIComponent(examen._id)}/archivar`, {});
 
-        emitToast({ level: 'ok', title: 'Examen', message: 'Examen eliminado', durationMs: 2000 });
+        emitToast({ level: 'ok', title: 'Examen', message: 'Examen archivado', durationMs: 2000 });
         await cargarExamenesGenerados();
       } catch (error) {
-        const msg = mensajeDeError(error, 'No se pudo eliminar el examen');
+        const msg = mensajeDeError(error, 'No se pudo archivar el examen');
         setMensajeGeneracion(msg);
         emitToast({
           level: 'error',
-          title: 'No se pudo eliminar',
+          title: 'No se pudo archivar',
           message: msg,
           durationMs: 5200,
           action: accionToastSesionParaError(error, 'docente')
         });
       } finally {
-        setEliminandoExamenId(null);
+        setArchivandoExamenId(null);
       }
     },
     [cargarExamenesGenerados]
@@ -3819,24 +3707,24 @@ function SeccionPlantillas({
     }
   }
 
-  async function eliminarPlantilla(plantilla: Plantilla) {
+  async function archivarPlantilla(plantilla: Plantilla) {
     const ok = globalThis.confirm(
-      `¿Eliminar la plantilla "${String(plantilla.titulo || '').trim()}"?\n\nEsta accion no se puede deshacer.`
+      `¿Archivar la plantilla "${String(plantilla.titulo || '').trim()}"?\n\nSe ocultara del listado activo, pero no se borraran sus datos.`
     );
     if (!ok) return;
     try {
       const inicio = Date.now();
-      setEliminandoPlantillaId(plantilla._id);
+      setArchivandoPlantillaId(plantilla._id);
       setMensaje('');
-      await clienteApi.eliminar(`/examenes/plantillas/${encodeURIComponent(plantilla._id)}`);
-      emitToast({ level: 'ok', title: 'Plantillas', message: 'Plantilla eliminada', durationMs: 2200 });
-      registrarAccionDocente('eliminar_plantilla', true, Date.now() - inicio);
+      await clienteApi.enviar(`/examenes/plantillas/${encodeURIComponent(plantilla._id)}/archivar`, {});
+      emitToast({ level: 'ok', title: 'Plantillas', message: 'Plantilla archivada', durationMs: 2200 });
+      registrarAccionDocente('archivar_plantilla', true, Date.now() - inicio);
       if (plantillaId === plantilla._id) setPlantillaId('');
       if (plantillaEditandoId === plantilla._id) cancelarEdicion();
       if (plantillaPreviewId === plantilla._id) setPlantillaPreviewId(null);
       onRefrescar();
     } catch (error) {
-      const msg = mensajeDeError(error, 'No se pudo eliminar la plantilla');
+      const msg = mensajeDeError(error, 'No se pudo archivar la plantilla');
       setMensaje(msg);
 
       // Caso especial: plantilla con exámenes generados (409). Ofrecemos atajo a la lista.
@@ -3847,7 +3735,7 @@ function SeccionPlantillas({
           const total = Number(detalles?.totalGenerados ?? NaN);
           const totalOk = Number.isFinite(total) && total > 0;
           const msgDetallado = totalOk
-            ? `No se puede eliminar: hay ${total} examenes generados con esta plantilla. Eliminalos primero.`
+            ? `No se puede archivar: hay ${total} examenes generados con esta plantilla. Archivarlos primero.`
             : msg;
 
           emitToast({
@@ -3867,21 +3755,21 @@ function SeccionPlantillas({
             }
           });
 
-          registrarAccionDocente('eliminar_plantilla', false);
+          registrarAccionDocente('archivar_plantilla', false);
           return;
         }
       }
 
       emitToast({
         level: 'error',
-        title: 'No se pudo eliminar',
+        title: 'No se pudo archivar',
         message: msg,
         durationMs: 5200,
         action: accionToastSesionParaError(error, 'docente')
       });
-      registrarAccionDocente('eliminar_plantilla', false);
+      registrarAccionDocente('archivar_plantilla', false);
     } finally {
-      setEliminandoPlantillaId(null);
+      setArchivandoPlantillaId(null);
     }
   }
 
@@ -4343,8 +4231,8 @@ function SeccionPlantillas({
                     <Boton
                       type="button"
                       variante="secundario"
-                      cargando={eliminandoPlantillaId === plantilla._id}
-                      onClick={() => void eliminarPlantilla(plantilla)}
+                      cargando={archivandoPlantillaId === plantilla._id}
+                      onClick={() => void archivarPlantilla(plantilla)}
                     >
                       Eliminar
                     </Boton>
@@ -4623,7 +4511,7 @@ function SeccionPlantillas({
                             variante="secundario"
                             icono={<Icono nombre="recargar" />}
                             cargando={regenerandoExamenId === examen._id}
-                            disabled={descargandoExamenId === examen._id || eliminandoExamenId === examen._id}
+                            disabled={descargandoExamenId === examen._id || archivandoExamenId === examen._id}
                             onClick={() => void regenerarPdfExamen(examen)}
                           >
                             Regenerar
@@ -4634,7 +4522,7 @@ function SeccionPlantillas({
                           variante="secundario"
                           icono={<Icono nombre="pdf" />}
                           cargando={descargandoExamenId === examen._id}
-                          disabled={regenerandoExamenId === examen._id || eliminandoExamenId === examen._id}
+                          disabled={regenerandoExamenId === examen._id || archivandoExamenId === examen._id}
                           onClick={() => void descargarPdfExamen(examen)}
                         >
                           Descargar
@@ -4645,9 +4533,9 @@ function SeccionPlantillas({
                             variante="secundario"
                             className="peligro"
                             icono={<Icono nombre="alerta" />}
-                            cargando={eliminandoExamenId === examen._id}
+                            cargando={archivandoExamenId === examen._id}
                             disabled={descargandoExamenId === examen._id || regenerandoExamenId === examen._id}
-                            onClick={() => void eliminarExamenGenerado(examen)}
+                            onClick={() => void archivarExamenGenerado(examen)}
                           >
                             Eliminar
                           </Boton>
@@ -5431,3 +5319,17 @@ function SeccionSincronizacion({
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+

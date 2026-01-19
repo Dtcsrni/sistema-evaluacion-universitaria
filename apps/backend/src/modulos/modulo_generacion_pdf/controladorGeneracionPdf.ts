@@ -101,8 +101,15 @@ function formatearDocente(nombreCompleto: unknown): string {
  */
 export async function listarPlantillas(req: SolicitudDocente, res: Response) {
   const docenteId = obtenerDocenteId(req);
-  const filtro: Record<string, string> = { docenteId };
+  const filtro: Record<string, unknown> = { docenteId };
   if (req.query.periodoId) filtro.periodoId = String(req.query.periodoId);
+  const queryArchivado = String(req.query.archivado ?? '').trim().toLowerCase();
+  const filtrarArchivadas = queryArchivado === '1' || queryArchivado === 'true' || queryArchivado === 'si' || queryArchivado === 's';
+  if (filtrarArchivadas) {
+    filtro.archivadoEn = { $exists: true };
+  } else {
+    filtro.archivadoEn = { $exists: false };
+  }
 
   const limite = Number(req.query.limite ?? 0);
   const consulta = ExamenPlantilla.find(filtro);
@@ -251,7 +258,7 @@ export async function actualizarPlantilla(req: SolicitudDocente, res: Response) 
 /**
  * Elimina una plantilla si no tiene examenes generados asociados.
  */
-export async function eliminarPlantilla(req: SolicitudDocente, res: Response) {
+export async function archivarPlantilla(req: SolicitudDocente, res: Response) {
   const docenteId = obtenerDocenteId(req);
   const plantillaId = String(req.params.id || '').trim();
   const plantilla = await ExamenPlantilla.findById(plantillaId).lean();
@@ -262,18 +269,17 @@ export async function eliminarPlantilla(req: SolicitudDocente, res: Response) {
     throw new ErrorAplicacion('NO_AUTORIZADO', 'Sin acceso a la plantilla', 403);
   }
 
-  const totalGenerados = await ExamenGenerado.countDocuments({ docenteId, plantillaId });
-  if (totalGenerados > 0) {
-    throw new ErrorAplicacion(
-      'PLANTILLA_CON_EXAMENES',
-      `No se puede eliminar: hay ${totalGenerados} examenes generados con esta plantilla.`,
-      409,
-      { totalGenerados }
-    );
+  if ((plantilla as unknown as { archivadoEn?: unknown }).archivadoEn) {
+    return res.json({ ok: true, plantilla });
   }
 
-  await ExamenPlantilla.deleteOne({ _id: plantillaId, docenteId });
-  res.json({ ok: true });
+  const actualizado = await ExamenPlantilla.findOneAndUpdate(
+    { _id: plantillaId, docenteId },
+    { $set: { archivadoEn: new Date() } },
+    { new: true }
+  ).lean();
+
+  res.json({ ok: true, plantilla: actualizado });
 }
 
 /**
@@ -972,4 +978,3 @@ export async function generarExamenesLote(req: SolicitudDocente, res: Response) 
 
   res.status(201).json({ loteId, totalAlumnos, examenesGenerados });
 }
-

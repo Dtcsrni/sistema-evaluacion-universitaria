@@ -204,9 +204,9 @@ export async function actualizarPregunta(req: SolicitudDocente, res: Response) {
 }
 
 /**
- * Elimina (desactiva) una pregunta del banco.
+ * Archiva (desactiva) una pregunta del banco.
  */
-export async function eliminarPregunta(req: SolicitudDocente, res: Response) {
+export async function archivarPregunta(req: SolicitudDocente, res: Response) {
   const docenteId = obtenerDocenteId(req);
   const preguntaId = String(req.params.preguntaId ?? '').trim();
 
@@ -217,6 +217,7 @@ export async function eliminarPregunta(req: SolicitudDocente, res: Response) {
 
   const preguntaDoc = pregunta as unknown as BancoPreguntaDoc;
   preguntaDoc.activo = false;
+  (preguntaDoc as { archivadoEn?: Date }).archivadoEn = new Date();
   await pregunta.save();
   res.json({ pregunta });
 }
@@ -459,9 +460,9 @@ export async function actualizarTemaBanco(req: SolicitudDocente, res: Response) 
 }
 
 /**
- * Elimina (desactiva) un tema y remueve referencias en preguntas/plantillas.
+ * Archiva (desactiva) un tema y remueve referencias en preguntas/plantillas.
  */
-export async function eliminarTemaBanco(req: SolicitudDocente, res: Response) {
+export async function archivarTemaBanco(req: SolicitudDocente, res: Response) {
   const docenteId = obtenerDocenteId(req);
   const temaId = String(req.params.temaId ?? '').trim();
 
@@ -470,11 +471,12 @@ export async function eliminarTemaBanco(req: SolicitudDocente, res: Response) {
     throw new ErrorAplicacion('TEMA_NO_ENCONTRADO', 'Tema no encontrado', 404);
   }
 
-  const doc = tema as unknown as { periodoId: unknown; nombre: string; activo?: boolean };
+  const doc = tema as unknown as { periodoId: unknown; nombre: string; activo?: boolean; archivadoEn?: Date };
   const periodoId = String(doc.periodoId);
   const nombreTema = doc.nombre;
 
   doc.activo = false;
+  doc.archivadoEn = new Date();
   await tema.save();
 
   await Promise.all([

@@ -30,7 +30,7 @@ describe('plantillas CRUD + previsualizacion', () => {
     return respuesta.body.token as string;
   }
 
-  it('permite editar, previsualizar y eliminar una plantilla sin examenes generados', async () => {
+  it('permite editar, previsualizar y archivar una plantilla sin examenes generados', async () => {
     const token = await registrarDocente();
     const auth = { Authorization: `Bearer ${token}` };
 
@@ -103,10 +103,14 @@ describe('plantillas CRUD + previsualizacion', () => {
       .expect(200);
     expect(String(previewPdf.headers['content-type'] || '')).toContain('application/pdf');
 
-    await request(app).delete(`/api/examenes/plantillas/${plantillaId}`).set(auth).expect(200);
+    const archivarResp = await request(app).post(`/api/examenes/plantillas/${plantillaId}/archivar`).set(auth).expect(200);
+    expect(archivarResp.body?.plantilla?.archivadoEn).toBeTruthy();
+
+    const listResp = await request(app).get('/api/examenes/plantillas').set(auth).expect(200);
+    expect(listResp.body?.plantillas?.length ?? 0).toBe(0);
   });
 
-  it('bloquea eliminar una plantilla con examenes generados', async () => {
+  it('permite archivar una plantilla con examenes generados', async () => {
     const token = await registrarDocente();
     const auth = { Authorization: `Bearer ${token}` };
 
@@ -157,8 +161,7 @@ describe('plantillas CRUD + previsualizacion', () => {
 
     await request(app).post('/api/examenes/generados').set(auth).send({ plantillaId }).expect(201);
 
-    const delResp = await request(app).delete(`/api/examenes/plantillas/${plantillaId}`).set(auth).expect(409);
-    expect(delResp.body?.error?.codigo).toBe('PLANTILLA_CON_EXAMENES');
-    expect(delResp.body?.error?.detalles?.totalGenerados).toBe(1);
+    const archivarResp = await request(app).post(`/api/examenes/plantillas/${plantillaId}/archivar`).set(auth).expect(200);
+    expect(archivarResp.body?.plantilla?.archivadoEn).toBeTruthy();
   });
 });

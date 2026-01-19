@@ -2828,7 +2828,7 @@ function SeccionPeriodos({
         <input value={nombre} onChange={(event) => setNombre(event.target.value)} />
       </label>
       {nombre.trim() && !nombreValido && (
-        <InlineMensaje tipo="warning">El nombre debe tener entre 3 y 80 caracteres.</InlineMensaje>
+        <InlineMensaje tipo="warning">El nombre debe tener entre 3 y 80 caracteres para poder crear la materia.</InlineMensaje>
       )}
       {nombre.trim() && nombreDuplicado && (
         <InlineMensaje tipo="error">Ya existe una materia con ese nombre. Cambia el nombre para crearla.</InlineMensaje>
@@ -2849,9 +2849,9 @@ function SeccionPeriodos({
         <input value={grupos} onChange={(event) => setGrupos(event.target.value)} />
       </label>
       {!gruposValidos && grupos.trim() && (
-        <InlineMensaje tipo="warning">Revisa grupos: max 50 y hasta 40 caracteres por grupo.</InlineMensaje>
+        <InlineMensaje tipo="warning">Revisa grupos: máximo 50 y hasta 40 caracteres por grupo para poder crear la materia.</InlineMensaje>
       )}
-      {gruposDuplicados && <InlineMensaje tipo="warning">Hay grupos repetidos.</InlineMensaje>}
+      {gruposDuplicados && <InlineMensaje tipo="warning">Hay grupos repetidos; corrígelo para poder crear la materia.</InlineMensaje>}
       <Boton type="button" icono={<Icono nombre="nuevo" />} cargando={creando} disabled={!puedeCrear} onClick={crearPeriodo}>
         {creando ? 'Creando…' : 'Crear materia'}
       </Boton>

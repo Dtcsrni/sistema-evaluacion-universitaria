@@ -4882,17 +4882,17 @@ function QrAccesoMovil({ vista }: { vista: 'recepcion' | 'escaneo' }) {
     }
 
     if (hostname && hostname !== 'localhost' && hostname !== '127.0.0.1') {
-    const url = `${window.location.protocol}//${window.location.host}${ruta}${qs ? `?${qs}` : ''}`;
-    const timer = window.setTimeout(() => {
-      if (!activo) return;
-      setUrlMovil(url);
-      setCargando(false);
-    }, 0);
-    return () => {
-      activo = false;
-      window.clearTimeout(timer);
-    };
-  }
+      const url = `${window.location.protocol}//${window.location.host}${ruta}${qs ? `?${qs}` : ''}`;
+      const timer = window.setTimeout(() => {
+        if (!activo) return;
+        setUrlMovil(url);
+        setCargando(false);
+      }, 0);
+      return () => {
+        activo = false;
+        window.clearTimeout(timer);
+      };
+    }
 
     fetch(`${clienteApi.baseApi}/salud/ip-local`)
       .then((resp) => (resp.ok ? resp.json() : Promise.reject(new Error('Respuesta invalida'))))
@@ -4901,10 +4901,13 @@ function QrAccesoMovil({ vista }: { vista: 'recepcion' | 'escaneo' }) {
         const ips = Array.isArray(data?.ips) ? data.ips.map((ip: unknown) => String(ip || '').trim()).filter(Boolean) : [];
         const esPreferida = (ip: string) => ip.startsWith('192.168.') || ip.startsWith('10.');
         const esDocker = (ip: string) => /^172\.(1[6-9]|2\d|3[0-1])\./.test(ip);
-        const ip = String(ips.find(esPreferida) || ips.find((val) => !esDocker(val)) || data?.preferida || ips[0] || '').trim();
+        const ipPreferida = ips.find(esPreferida);
+        const ip = String(ipPreferida || ips.find((val) => !esDocker(val)) || data?.preferida || ips[0] || '').trim();
         if (!ip) throw new Error('Sin IP local');
-        if (esDocker(ip) && !ips.some(esPreferida)) {
+        if (esDocker(ip) && !ipPreferida) {
           setError('Detecte una IP de Docker. Escribe la IP de tu PC para generar el QR.');
+          setUrlMovil('');
+          return;
         }
         setUrlMovil(construirUrl(ip));
       })
@@ -4921,10 +4924,11 @@ function QrAccesoMovil({ vista }: { vista: 'recepcion' | 'escaneo' }) {
     return () => {
       activo = false;
     };
-  }, [vista]);
+  }, [vista, hostManual]);
 
   const urlQr = urlMovil ? `${clienteApi.baseApi}/salud/qr?texto=${encodeURIComponent(urlMovil)}` : '';
-  const mostrarFallback = Boolean(error || qrFallo);
+  const mostrarFallback = Boolean((error || qrFallo) && urlMovil);
+  const mostrarInput = Boolean(error || qrFallo || hostManual);
 
   return (
     <div className="item-glass guia-card guia-card--qr">
@@ -4953,6 +4957,10 @@ function QrAccesoMovil({ vista }: { vista: 'recepcion' | 'escaneo' }) {
           <InlineMensaje tipo="warning">
             {error || 'No se pudo generar el QR. Usa el enlace manual para abrir en el movil.'}
           </InlineMensaje>
+        </>
+      )}
+      {mostrarInput && (
+        <>
           <label className="campo">
             IP o host del PC para QR
             <input

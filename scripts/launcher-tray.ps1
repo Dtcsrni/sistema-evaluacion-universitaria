@@ -430,6 +430,83 @@ function Invoke-PostJsonOrNull([string]$path, [hashtable]$body) {
   }
 }
 
+function Wait-ForStatus([int]$timeoutMs = 5000) {
+  $deadline = [Environment]::TickCount64 + [Math]::Max(500, $timeoutMs)
+  do {
+    $status = Get-JsonOrNull '/api/status'
+    if ($status) { return $status }
+    Sync-PortFromLock -RequireReachable | Out-Null
+    Start-Sleep -Milliseconds 250
+  } while ([Environment]::TickCount64 -lt $deadline)
+  return $null
+}
+
+function Get-RunningTasksFromStatus($status) {
+  try { return @($status.running) } catch { return @() }
+}
+
+function Test-AnyStackTasksRunning($running) {
+  if (-not $running) { return $false }
+  $names = @('dev', 'prod', 'dev-backend', 'dev-frontend')
+  foreach ($name in $names) {
+    if ($running -contains $name) { return $true }
+  }
+  return $false
+}
+
+function Test-ComposeServiceRunning([string]$mode, [string]$service) {
+  $docker = Get-Command docker -ErrorAction SilentlyContinue
+  if (-not $docker) { return $false }
+  $composeFile = Join-Path $root 'docker-compose.yml'
+  if (-not (Test-Path $composeFile)) { return $false }
+
+  $args = @('compose', '-f', $composeFile)
+  if ($mode -eq 'prod') { $args += @('--profile', 'prod') }
+  $args += @('ps', '-q', $service)
+  try {
+    $out = & $docker.Source @args 2>$null
+    return ([string]$out).Trim().Length -gt 0
+  } catch {
+    return $false
+  }
+}
+
+function Test-StackRunning([string]$mode) {
+  if ($mode -eq 'prod') {
+    return (
+      (Test-ComposeServiceRunning 'prod' 'mongo_local') -and
+      (Test-ComposeServiceRunning 'prod' 'api_docente_prod') -and
+      (Test-ComposeServiceRunning 'prod' 'web_docente_prod')
+    )
+  }
+  return (
+    (Test-ComposeServiceRunning 'dev' 'mongo_local') -and
+    (Test-ComposeServiceRunning 'dev' 'api_docente_local')
+  )
+}
+
+function Test-AnyStackRunning {
+  if (Test-StackRunning 'prod') { return $true }
+  if (Test-StackRunning 'dev') { return $true }
+  return $false
+}
+
+function Ensure-StackOnLaunch {
+  if ($Attach) { return }
+  $desired = ("$Mode").ToLowerInvariant()
+  if ($desired -ne 'dev' -and $desired -ne 'prod') { return }
+
+  $status = Wait-ForStatus 6000
+  if (-not $status) { return }
+
+  $running = Get-RunningTasksFromStatus $status
+  if (Test-AnyStackTasksRunning $running) { return }
+  if (Test-AnyStackRunning) { return }
+
+  Log("Stack detenido. Solicitando inicio ($desired).")
+  Invoke-PostJsonOrNull '/api/start' @{ task = $desired } | Out-Null
+}
+
 function Start-DashboardIfNeeded {
   Log("Tray start. Mode=$Mode Port=$script:Port Attach=$Attach")
   Sync-PortFromLock -RequireReachable | Out-Null
@@ -573,6 +650,7 @@ function ConvertTo-ShortText([string]$s, [int]$max = 60) {
 }
 
 $launch = Start-DashboardIfNeeded
+Ensure-StackOnLaunch
 
 $notify = New-Object System.Windows.Forms.NotifyIcon
 $notify.Visible = $true

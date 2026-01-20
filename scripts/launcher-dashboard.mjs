@@ -6,10 +6,12 @@
   - Enforces a single running instance using a lock file.
 */
 import http from 'http';
+import https from 'node:https';
 import fs from 'fs';
 import path from 'path';
 import net from 'net';
 import process from 'node:process';
+import { X509Certificate } from 'node:crypto';
 import { spawn, execSync } from 'child_process';
 import { fileURLToPath } from 'url';
 
@@ -131,6 +133,97 @@ function readRootPackageInfo() {
   } catch {
     return { name: '', version: '' };
   }
+}
+
+function parseEnvContent(content) {
+  const result = {};
+  const lines = String(content || '').split(/\r?\n/);
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith('#')) continue;
+    const idx = line.indexOf('=');
+    if (idx <= 0) continue;
+    const key = line.slice(0, idx).trim();
+    let value = line.slice(idx + 1).trim();
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+    result[key] = value;
+  }
+  return result;
+}
+
+function readEnvFile() {
+  try {
+    const raw = fs.readFileSync(path.join(root, '.env'), 'utf8');
+    return parseEnvContent(raw);
+  } catch {
+    return {};
+  }
+}
+
+function parseBool(value) {
+  return /^(1|true|si|yes)$/i.test(String(value || '').trim());
+}
+
+function parseSubject(subject) {
+  const result = {};
+  String(subject || '').split(',').forEach((segment) => {
+    const parts = segment.split('=');
+    if (parts.length < 2) return;
+    const key = parts.shift().trim();
+    const value = parts.join('=').trim();
+    if (key) result[key] = value;
+  });
+  return { cn: result.CN || '', o: result.O || '' };
+}
+
+function readCertSubject(certPath) {
+  try {
+    const pem = fs.readFileSync(certPath);
+    const cert = new X509Certificate(pem);
+    return parseSubject(cert.subject);
+  } catch {
+    return { cn: '', o: '' };
+  }
+}
+
+function resolveHttpsState() {
+  const env = readEnvFile();
+  const enabled = parseBool(env.VITE_HTTPS);
+  const certPath = String(env.VITE_HTTPS_CERT_PATH || '').trim();
+  const keyPath = String(env.VITE_HTTPS_KEY_PATH || '').trim();
+  const certReady = Boolean(certPath && keyPath && fs.existsSync(certPath) && fs.existsSync(keyPath));
+  const ready = enabled && certReady;
+  const fallback = enabled && !certReady;
+  const mode = enabled ? (certReady ? 'https' : 'http-fallback') : 'http';
+
+  const hintedName = String(env.VITE_HTTPS_CERT_NAME || '').trim();
+  const hintedOrg = String(env.VITE_HTTPS_CERT_COMPANY || '').trim();
+  const subject = certReady ? readCertSubject(certPath) : { cn: '', o: '' };
+  const certName = subject.cn || hintedName;
+  const certOrg = subject.o || hintedOrg;
+
+  let display = enabled ? 'HTTP (fallback)' : 'HTTP';
+  if (enabled && certReady) {
+    const detail = [certName, certOrg].filter(Boolean).join(' - ');
+    display = detail ? `HTTPS (${detail})` : 'HTTPS';
+  }
+
+  return {
+    enabled,
+    ready,
+    fallback,
+    mode,
+    certPath: certPath || '',
+    keyPath: keyPath || '',
+    certName,
+    certOrg,
+    display
+  };
 }
 
 function writeConsole(line) {
@@ -615,25 +708,44 @@ function requestDockerAutostart(reason = 'startup') {
 
 // Check a local endpoint with a small timeout for health reporting.
 async function checkHealth(url, timeoutMs = 1500) {
-  const controller = new AbortController();
-  const started = Date.now();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const res = await fetch(url, { signal: controller.signal });
-    return { ok: res.ok, status: res.status, ms: Date.now() - started };
-  } catch (error) {
-    return { ok: false, error: error?.name || 'error', ms: Date.now() - started };
-  } finally {
-    clearTimeout(timer);
-  }
+  return new Promise((resolve) => {
+    const started = Date.now();
+    try {
+      const u = new URL(url);
+      const isHttps = u.protocol === 'https:';
+      const client = isHttps ? https : http;
+      const req = client.request({
+        hostname: u.hostname,
+        port: u.port ? Number(u.port) : (isHttps ? 443 : 80),
+        path: u.pathname + (u.search || ''),
+        method: 'GET',
+        timeout: timeoutMs,
+        rejectUnauthorized: false
+      }, (res) => {
+        res.resume();
+        const ok = res.statusCode >= 200 && res.statusCode < 400;
+        resolve({ ok, status: res.statusCode || 0, ms: Date.now() - started });
+      });
+      req.on('error', (error) => resolve({ ok: false, error: error?.name || 'error', ms: Date.now() - started }));
+      req.on('timeout', () => {
+        try { req.destroy(); } catch {}
+        resolve({ ok: false, error: 'timeout', ms: Date.now() - started });
+      });
+      req.end();
+    } catch (error) {
+      resolve({ ok: false, error: error?.name || 'error', ms: Date.now() - started });
+    }
+  });
 }
 
 // Aggregate health checks for the main services used by the dashboard.
 async function collectHealth() {
+  const httpsState = resolveHttpsState();
+  const devScheme = httpsState.mode === 'https' ? 'https' : 'http';
   const targets = {
     apiDocente: 'http://localhost:4000/api/salud',
     apiPortal: 'http://localhost:8080/api/portal/salud',
-    webDocenteDev: 'http://localhost:5173',
+    webDocenteDev: `${devScheme}://localhost:5173`,
     webDocenteProd: 'http://localhost:4173'
   };
 
@@ -1166,6 +1278,7 @@ const server = http.createServer(async (req, res) => {
     const running = runningTasks();
     const dockerDisplay = dockerDisplayString();
     const stackDisplay = stackDisplayString(running);
+    const httpsState = resolveHttpsState();
 
     const hasDev = running.includes('dev');
     const hasProd = running.includes('prod');
@@ -1187,6 +1300,7 @@ const server = http.createServer(async (req, res) => {
       docker: dockerDisplay,
       dockerDisplay,
       stackDisplay,
+      https: httpsState,
       dockerState: {
         state: dockerAutostart.state,
         ready: dockerAutostart.ready,

@@ -98,6 +98,18 @@
     h1{margin:0;color:rgba(15,23,42,0.94);font-size:17px;font-weight:900;letter-spacing:0.01em;}
     p{margin:6px 0 0;color:var(--muted);font-size:12px;line-height:1.35;}
 
+    .noticeBox{
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(37,99,235,0.18);
+      background: rgba(255,255,255,0.86);
+      display:none;
+      box-shadow: inset 0 0 0 1px rgba(37,99,235,0.08);
+    }
+    .noticeTitle{color:rgba(15,23,42,0.92);font-weight:900;font-size:12px;margin:0 0 6px;}
+    .noticeText{color:rgba(30,41,59,0.88);font-size:12px;line-height:1.35;margin:0;}
+
     .errorBox{
       margin-top: 12px;
       padding: 10px 12px;
@@ -230,6 +242,11 @@
         <span class="pill" id="metaTime">0.0s</span>
       </div>
 
+      <div class="noticeBox" id="noticeBox" role="status" aria-live="polite">
+        <p class="noticeTitle" id="noticeTitle">Confirmar certificado HTTPS</p>
+        <p class="noticeText" id="noticeText"></p>
+      </div>
+
       <div class="errorBox" id="errorBox" role="status" aria-live="polite">
         <p class="errorTitle" id="errorTitle">No se pudo conectar</p>
         <p class="errorText" id="errorText"></p>
@@ -245,10 +262,10 @@
   </div>
 
   <script>
-    window.resizeTo(600, 330);
+    window.resizeTo(600, 370);
     try {
       var x = (screen.availWidth - 600) / 2;
-      var y = (screen.availHeight - 330) / 2;
+      var y = (screen.availHeight - 370) / 2;
       window.moveTo(x, y);
     } catch (e) {}
 
@@ -341,6 +358,9 @@
     var errorTitle = document.getElementById('errorTitle');
     var errorText = document.getElementById('errorText');
     var subtitle = document.getElementById('subtitle');
+    var noticeBox = document.getElementById('noticeBox');
+    var noticeTitle = document.getElementById('noticeTitle');
+    var noticeText = document.getElementById('noticeText');
 
     function setMeta() {
       try {
@@ -436,6 +456,101 @@
       }
     };
 
+    function readTextFile(path) {
+      try {
+        var fso = new ActiveXObject('Scripting.FileSystemObject');
+        if (!fso.FileExists(path)) return '';
+        var file = fso.OpenTextFile(path, 1, false);
+        var content = file.ReadAll();
+        file.Close();
+        return content;
+      } catch (e) {
+        return '';
+      }
+    }
+
+    function parseEnv(content) {
+      var env = {};
+      if (!content) return env;
+      var lines = content.split(/\r?\n/);
+      for (var i = 0; i < lines.length; i++) {
+        var line = String(lines[i] || '').trim();
+        if (!line || line.indexOf('#') === 0) continue;
+        var idx = line.indexOf('=');
+        if (idx <= 0) continue;
+        var key = line.substring(0, idx).trim();
+        var value = line.substring(idx + 1).trim();
+        if (
+          (value.charAt(0) === '"' && value.charAt(value.length - 1) === '"') ||
+          (value.charAt(0) === "'" && value.charAt(value.length - 1) === "'")
+        ) {
+          value = value.substring(1, value.length - 1);
+        }
+        env[key] = value;
+      }
+      return env;
+    }
+
+    function isTruthy(value) {
+      try {
+        return (/^(1|true|si|yes)$/i).test(String(value || '').trim());
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function runCmd(command) {
+      try {
+        var sh = new ActiveXObject('WScript.Shell');
+        var exec = sh.Exec(command);
+        var output = '';
+        if (!exec.StdOut.AtEndOfStream) output += exec.StdOut.ReadAll();
+        if (!exec.StdErr.AtEndOfStream) output += exec.StdErr.ReadAll();
+        return output;
+      } catch (e) {
+        return '';
+      }
+    }
+
+    function detectCertState() {
+      try {
+        var cmd = 'powershell -NoProfile -Command "Get-ChildItem Cert:\\\\CurrentUser\\\\Root | Where-Object { $_.Subject -eq \\'CN=EvaluaPro, O=Cybersys Tech\\' } | Select-Object -First 1 | ForEach-Object { $_.Thumbprint }"';
+        var output = runCmd(cmd);
+        if (output && String(output).replace(/\s+/g, '').length > 0) return 'installed';
+        return 'missing';
+      } catch (e) {
+        return 'unknown';
+      }
+    }
+
+    function showCertNotice(kind) {
+      if (!noticeBox || !noticeText || !noticeTitle) return;
+      var title = 'Confirmar certificado HTTPS';
+      var body = 'Windows puede mostrar una advertencia para instalar el certificado de confianza "EvaluaPro" (Cybersys Tech). ';
+      if (kind === 'missing') {
+        body += 'Si aparece, elige "Si" para habilitar HTTPS local. ';
+      } else {
+        body += 'Si aparece, acepta para habilitar HTTPS local. ';
+      }
+      body += 'Si no aceptas, el sistema usara HTTP como fallback.';
+      noticeTitle.textContent = title;
+      noticeText.textContent = body;
+      noticeBox.style.display = 'block';
+    }
+
+    function maybeWarnCertificate() {
+      try {
+        if (String(mode || '').toLowerCase() !== 'dev') return;
+        var root = getRootDir();
+        var envText = readTextFile(root + '\\.env');
+        var env = parseEnv(envText);
+        if (!isTruthy(env.VITE_HTTPS)) return;
+        var state = detectCertState();
+        if (state === 'installed') return;
+        showCertNotice(state);
+      } catch (e) {}
+    }
+
     function poll() {
       var now = new Date().getTime();
       attempts = attempts + 1;
@@ -463,6 +578,7 @@
     // Start polling immediately.
     setMeta();
     renderStatus();
+    setTimeout(maybeWarnCertificate, 250);
     poll();
   </script>
 </body>

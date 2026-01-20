@@ -61,7 +61,7 @@ Endpoints comunes:
 
 Si prefieres levantar todo con Docker Compose directamente:
 ```bash
-docker compose --profile dev up --build
+npm run stack:dev
 ```
 
 ## Variables de entorno

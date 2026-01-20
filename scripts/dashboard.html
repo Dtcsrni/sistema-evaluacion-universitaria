@@ -2633,6 +2633,7 @@
             <div class="status-grid">
               <div>Docker: <span id="docker-state-main">-</span></div>
               <div>Stack Docker: <span id="stack-state-main">-</span></div>
+              <div>HTTPS local: <span id="https-state-main">-</span></div>
               <div>Proyecto: <span id="root">-</span></div>
             </div>
           </div>
@@ -2841,6 +2842,7 @@
               <div>Modo: <span id="mode-status">-</span></div>
               <div>Proyecto: <span id="root-status">-</span></div>
               <div>Stack Docker: <span id="stack-state-status">-</span></div>
+              <div>HTTPS local: <span id="https-status">-</span></div>
               <div>Conexión: <span id="connection-status">-</span></div>
               <div>Último error: <span id="connection-error">-</span></div>
             </div>
@@ -3181,33 +3183,34 @@
       portal: 'Portal alumno'
     };
 
-    const state = {
-      mostrarCompleto: false,
-      autoDesplazamiento: true,
-      pausado: false,
-      filtro: '',
-      enEjecucion: new Set(),
-      logsVisibles: false,
-      pestanaActiva: 'main',
-      modo: 'none',
-      salud: {},
-      ultimaSaludEn: 0,
-      eventos: [],
-      historialSalud: [],
-      sesionIniciadaEn: Date.now(),
-      haCargado: false,
-      claveInfoWebDocente: 'webDocenteDev',
-      conexion: 'unknown',
-      ultimaConexionEn: 0,
-      ultimoErrorConexion: '',
-      ultimoToastErrorEn: 0,
-      eventosOkRecientes: true,
-      ultimoErrorEventos: '',
-      logsOkRecientes: true,
-      ultimoErrorLogs: '',
-      autoReinicio: false,
-      instalacion: null,
-      mongoExpress: {
+      const state = {
+        mostrarCompleto: false,
+        autoDesplazamiento: true,
+        pausado: false,
+        filtro: '',
+        enEjecucion: new Set(),
+        logsVisibles: false,
+        pestanaActiva: 'main',
+        modo: 'none',
+        salud: {},
+        ultimaSaludEn: 0,
+        eventos: [],
+        historialSalud: [],
+        sesionIniciadaEn: Date.now(),
+        haCargado: false,
+        claveInfoWebDocente: 'webDocenteDev',
+        conexion: 'unknown',
+        ultimaConexionEn: 0,
+        ultimoErrorConexion: '',
+        ultimoToastErrorEn: 0,
+        eventosOkRecientes: true,
+        ultimoErrorEventos: '',
+        logsOkRecientes: true,
+        ultimoErrorLogs: '',
+        autoReinicio: false,
+        https: null,
+        instalacion: null,
+        mongoExpress: {
         url: 'http://127.0.0.1:8081/',
         alcanzable: false,
         estado: 0,
@@ -3673,8 +3676,17 @@
       if (estadoStack === 'checking') return 'Comprobando stack Docker...';
       if (estadoStack === 'skipped') return 'Stack Docker ya está activo.';
       if (stackEnEjecucion) return 'Stack activo (procesos en ejecución).';
-      return 'Stack detenido.';
-    }
+        return 'Stack detenido.';
+      }
+
+      function resolverEstadoHttps(info) {
+        if (info && typeof info.display === 'string' && info.display.trim()) return info.display;
+        const modo = info && typeof info.mode === 'string' ? info.mode : '';
+        if (modo === 'https') return 'HTTPS';
+        if (modo === 'http-fallback') return 'HTTP (fallback)';
+        if (modo === 'http') return 'HTTP';
+        return '-';
+      }
 
     function actualizarBotonEntorno(boton, enEjecucion) {
       if (!boton) return;
@@ -3926,23 +3938,29 @@
       else target = normalized === 'prod' ? 'prod' : 'dev';
 
       const isProd = target === 'prod';
-      link.href = isProd ? 'http://localhost:4173' : 'http://localhost:5173';
+      const httpsActive = !isProd && state.https && state.https.mode === 'https';
+      const httpsFallback = !isProd && state.https && state.https.mode === 'http-fallback';
+      const devScheme = httpsActive ? 'https' : 'http';
+      link.href = isProd ? 'http://localhost:4173' : `${devScheme}://localhost:5173`;
       meta.textContent = isProd
         ? 'Prod local (Docker + serve) - 4173'
-        : 'Dev local (Vite) - 5173';
+        : `Dev local (Vite) - 5173 (${httpsActive ? 'HTTPS' : 'HTTP'})`;
       chip.textContent = isProd ? 'PROD' : 'DEV';
       chip.className = `link-chip ${isProd ? 'prod' : 'dev'}`;
 
       const any = runningDev || runningProd;
       item.classList.toggle('inactive', !any);
 
+      let noteBase = '';
       if (!any) {
-        note.textContent = 'No hay UI web activa. Inicia dev (5173) o prod (4173).';
+        noteBase = 'No hay UI web activa. Inicia dev (5173) o prod (4173).';
       } else if (runningDev && runningProd) {
-        note.textContent = `Dev y prod activos. Mostrando ${isProd ? 'prod' : 'dev'} según el modo actual.`;
+        noteBase = `Dev y prod activos. Mostrando ${isProd ? 'prod' : 'dev'} segun el modo actual.`;
       } else {
-        note.textContent = `Detectado ${isProd ? 'prod' : 'dev'} activo. Acceso listo.`;
+        noteBase = `Detectado ${isProd ? 'prod' : 'dev'} activo. Acceso listo.`;
       }
+      const fallbackNote = httpsFallback ? ' HTTPS no disponible, usando HTTP como fallback.' : '';
+      note.textContent = `${noteBase}${fallbackNote}`;
 
       const infoKey = isProd ? 'webDocenteProd' : 'webDocenteDev';
       state.claveInfoWebDocente = infoKey;
@@ -4364,9 +4382,11 @@
       const ejecucionPrevia = new Set(state.enEjecucion);
       const vistaDocker = resolverVistaDocker(datos);
       const vistaStack = resolverVistaStack(datos, listaEjecucion);
+      const vistaHttps = resolverEstadoHttps(datos.https);
 
       const modoMostrar = derivarModoVista(datos.mode, listaEjecucion);
       state.modo = modoMostrar;
+      state.https = datos.https || null;
       state.enEjecucion = new Set(listaEjecucion);
 
       establecerTexto('root', datos.root);
@@ -4384,6 +4404,8 @@
       establecerTexto('docker-state-main', vistaDocker);
       establecerTexto('stack-state-main', vistaStack);
       establecerTexto('stack-state-status', vistaStack);
+      establecerTexto('https-state-main', vistaHttps);
+      establecerTexto('https-status', vistaHttps);
       establecerTexto('mode-chip', `Modo: ${formatearEtiquetaModo(modoMostrar)}`);
       establecerTexto('running-chip', `Procesos: ${conteoEjecucion}`);
       establecerTexto('port-chip', `Puerto: ${datos.port || '-'}`);
@@ -4423,6 +4445,7 @@
 
         state.enEjecucion = new Set();
         state.modo = 'none';
+        state.https = null;
         state.salud = {};
 
         establecerTexto('root', '-');
@@ -4440,6 +4463,8 @@
         establecerTexto('docker-state-main', '-');
         establecerTexto('stack-state-main', '-');
         establecerTexto('stack-state-status', '-');
+        establecerTexto('https-state-main', '-');
+        establecerTexto('https-status', '-');
         establecerTexto('mode-chip', 'Modo: -');
         establecerTexto('running-chip', 'Procesos: -');
 

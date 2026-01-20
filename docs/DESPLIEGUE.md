@@ -3,7 +3,7 @@
 ## Local (docente)
 - Usa Docker Compose con perfil dev:
   ```bash
-  docker compose --profile dev up --build
+  npm run stack:dev
   ```
 - El backend local siempre corre en Docker (API + Mongo).
 - Servicios:
@@ -20,7 +20,7 @@
 ## Producción local (perfil prod)
 - Usa el perfil prod para probar build optimizado:
   ```bash
-  docker compose --profile prod up --build
+  npm run stack:prod
   ```
 
 ## Cloud Run (portal alumno)

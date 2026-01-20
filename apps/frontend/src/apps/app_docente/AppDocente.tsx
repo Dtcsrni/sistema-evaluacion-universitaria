@@ -4681,8 +4681,208 @@ function SeccionRecepcion({
   const [alumnoId, setAlumnoId] = useState('');
   const [mensaje, setMensaje] = useState('');
   const [vinculando, setVinculando] = useState(false);
+  const [scanError, setScanError] = useState('');
+  const [escaneando, setEscaneando] = useState(false);
+  const inputCamRef = useRef<HTMLInputElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const rafRef = useRef<number | null>(null);
+  const jsQrRef = useRef<((data: Uint8ClampedArray, width: number, height: number, options?: { inversionAttempts?: 'dontInvert' | 'onlyInvert' | 'attemptBoth' | 'invertFirst' }) => { data: string } | null) | null>(null);
+  type BarcodeDetectorCtor = new (opts: { formats: string[] }) => {
+    detect: (img: ImageBitmapSource) => Promise<Array<{ rawValue?: string }>>;
+  };
 
   const puedeVincular = Boolean(folio.trim() && alumnoId);
+
+  function extraerFolioDesdeQr(texto: string) {
+    const limpio = String(texto ?? '').trim();
+    if (!limpio) return '';
+    const upper = limpio.toUpperCase();
+    const matchExamen = upper.match(/EXAMEN:([^:\s]+)(:P\d+)?/);
+    if (matchExamen?.[1]) return String(matchExamen[1] ?? '').trim();
+    const matchFolio = upper.match(/\bFOLIO[-_ ]?[A-Z0-9]+\b/);
+    if (matchFolio?.[0]) return matchFolio[0].replace(/\s+/g, '').trim();
+    if (/^https?:\/\//i.test(upper)) return '';
+    if (upper.startsWith('EXAMEN:')) {
+      const partes = upper.split(':');
+      return String(partes[1] ?? '').trim();
+    }
+    return upper;
+  }
+
+  async function cargarImagen(file: File): Promise<HTMLImageElement> {
+    return await new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        resolve(img);
+      };
+      img.onerror = (err) => {
+        URL.revokeObjectURL(url);
+        reject(err);
+      };
+      img.src = url;
+    });
+  }
+
+  async function leerQrConBarcodeDetector(file: File) {
+    if (typeof window === 'undefined') return '';
+    const Detector = (window as unknown as { BarcodeDetector?: BarcodeDetectorCtor }).BarcodeDetector;
+    if (!Detector || typeof createImageBitmap !== 'function') return '';
+    try {
+      const detector = new Detector({ formats: ['qr_code'] });
+      const bitmap = await createImageBitmap(file);
+      const codigos = await detector.detect(bitmap);
+      if (typeof bitmap.close === 'function') bitmap.close();
+      return String(codigos?.[0]?.rawValue ?? '').trim();
+    } catch {
+      return '';
+    }
+  }
+
+  async function leerQrConJsQr(file: File) {
+    if (typeof window === 'undefined') return '';
+    const { default: jsQR } = await import('jsqr');
+    const source = typeof createImageBitmap === 'function' ? await createImageBitmap(file) : await cargarImagen(file);
+    const width = 'width' in source ? Number(source.width) : Number((source as HTMLImageElement).naturalWidth);
+    const height = 'height' in source ? Number(source.height) : Number((source as HTMLImageElement).naturalHeight);
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return '';
+    ctx.drawImage(source, 0, 0, width, height);
+    if ('close' in source && typeof source.close === 'function') source.close();
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const resultado = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'attemptBoth' });
+    return String(resultado?.data ?? '').trim();
+  }
+
+  async function asegurarJsQr() {
+    if (jsQrRef.current) return jsQrRef.current;
+    const { default: jsQR } = await import('jsqr');
+    jsQrRef.current = jsQR;
+    return jsQR;
+  }
+
+  function detenerCamara() {
+    if (rafRef.current !== null) {
+      window.cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+    if (mediaStreamRef.current) {
+      for (const track of mediaStreamRef.current.getTracks()) {
+        track.stop();
+      }
+      mediaStreamRef.current = null;
+    }
+    setEscaneando(false);
+  }
+
+  async function iniciarCamara() {
+    setScanError('');
+    if (!navigator?.mediaDevices?.getUserMedia) {
+      setScanError('Este navegador no permite camara en vivo. Usa foto.');
+      inputCamRef.current?.click();
+      return;
+    }
+    if (typeof window !== 'undefined' && !window.isSecureContext) {
+      setScanError('La camara en vivo suele requerir HTTPS. Si falla, usa foto.');
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      mediaStreamRef.current = stream;
+      setEscaneando(true);
+      const video = videoRef.current;
+      if (!video) return;
+      video.srcObject = stream;
+      await video.play();
+      const jsQR = await asegurarJsQr();
+      const scan = () => {
+        const currentVideo = videoRef.current;
+        if (!currentVideo || !mediaStreamRef.current) return;
+        if (currentVideo.readyState < 2) {
+          rafRef.current = window.requestAnimationFrame(scan);
+          return;
+        }
+        const width = currentVideo.videoWidth || 0;
+        const height = currentVideo.videoHeight || 0;
+        if (!width || !height) {
+          rafRef.current = window.requestAnimationFrame(scan);
+          return;
+        }
+        const canvas = canvasRef.current ?? document.createElement('canvas');
+        canvasRef.current = canvas;
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          rafRef.current = window.requestAnimationFrame(scan);
+          return;
+        }
+        ctx.drawImage(currentVideo, 0, 0, width, height);
+        const imageData = ctx.getImageData(0, 0, width, height);
+        const resultado = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'attemptBoth' });
+        const valor = String(resultado?.data ?? '').trim();
+        const folioDetectado = extraerFolioDesdeQr(valor);
+        if (folioDetectado) {
+          setScanError('');
+          setFolio(folioDetectado);
+          emitToast({ level: 'ok', title: 'QR', message: 'Folio capturado', durationMs: 2000 });
+          detenerCamara();
+          return;
+        }
+        rafRef.current = window.requestAnimationFrame(scan);
+      };
+      rafRef.current = window.requestAnimationFrame(scan);
+    } catch (error) {
+      detenerCamara();
+      const msg = mensajeUsuarioDeErrorConSugerencia(error, 'No se pudo abrir la camara. Usa foto.');
+      setScanError(msg);
+      inputCamRef.current?.click();
+    }
+  }
+
+  async function analizarQrDesdeImagen(file: File) {
+    if (typeof window === 'undefined') return;
+    try {
+      let valor = await leerQrConBarcodeDetector(file);
+      if (!valor) {
+        valor = await leerQrConJsQr(file);
+      }
+      if (!valor) {
+        setScanError('No se detecto ningun QR. Intenta de nuevo con buena luz.');
+        return;
+      }
+      const folioDetectado = extraerFolioDesdeQr(valor);
+      if (!folioDetectado) {
+        const esUrl = /^https?:\/\//i.test(valor);
+        setScanError(esUrl
+          ? 'Se detecto un enlace (QR de acceso). Escanea el QR del examen.'
+          : 'No se detecto un folio valido. Escanea el QR del examen.');
+        return;
+      }
+      setScanError('');
+      setFolio(folioDetectado);
+      emitToast({ level: 'ok', title: 'QR', message: 'Folio capturado', durationMs: 2000 });
+    } catch (error) {
+      const msg = mensajeUsuarioDeErrorConSugerencia(error, 'No se pudo leer el QR. Intenta de nuevo o captura el folio manualmente.');
+      setScanError(msg);
+    }
+  }
+
+  function abrirCamara() {
+    setScanError('');
+    void iniciarCamara();
+  }
+
+  useEffect(() => {
+    return () => {
+      detenerCamara();
+    };
+  }, []);
 
   async function vincular() {
     try {
@@ -4810,6 +5010,49 @@ function SeccionRecepcion({
           </div>
         </div>
       </div>
+      <div className="subpanel">
+        <Boton type="button" icono={<Icono nombre="escaneo" />} onClick={abrirCamara}>
+          Escanear QR del examen
+        </Boton>
+        {escaneando && (
+          <div className="item-glass guia-card">
+            <div className="guia-card__header">
+              <span className="chip chip-static" aria-hidden="true">
+                <Icono nombre="escaneo" /> Camara activa
+              </span>
+              <Boton type="button" variante="secundario" onClick={detenerCamara}>
+                Cerrar camara
+              </Boton>
+            </div>
+            <video
+              ref={videoRef}
+              autoPlay
+              muted
+              playsInline
+              style={{ width: '100%', maxWidth: '320px', borderRadius: '16px', background: '#000' }}
+            />
+            <div className="nota">Apunta al QR del examen para capturar el folio.</div>
+          </div>
+        )}
+        <input
+          ref={inputCamRef}
+          className="input-file-oculto"
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            if (!file) return;
+            void analizarQrDesdeImagen(file);
+            event.currentTarget.value = '';
+          }}
+        />
+        {scanError && (
+          <InlineMensaje tipo="warning">
+            {scanError}
+          </InlineMensaje>
+        )}
+      </div>
       <label className="campo">
         Folio
         <input value={folio} onChange={(event) => setFolio(event.target.value)} />
@@ -4837,11 +5080,22 @@ function SeccionRecepcion({
   );
 }
 
+function detectarModoMovil() {
+  if (typeof window === 'undefined') return false;
+  const ua = String(navigator?.userAgent ?? '');
+  const esUa = /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
+  const coarse = typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches;
+  const narrow = window.innerWidth <= 900;
+  return esUa || (coarse && narrow);
+}
+
 function QrAccesoMovil({ vista }: { vista: 'recepcion' | 'escaneo' }) {
   const [urlMovil, setUrlMovil] = useState('');
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
   const [qrFallo, setQrFallo] = useState(false);
+  const [esMovil, setEsMovil] = useState(() => detectarModoMovil());
+  const usarHttps = /^(1|true|si|yes)$/i.test(String(import.meta.env.VITE_HTTPS || '').trim());
   const [hostManual, setHostManual] = useState(() => {
     if (typeof window === 'undefined') return '';
     return localStorage.getItem('qrHostDocente') ?? '';
@@ -4852,6 +5106,23 @@ function QrAccesoMovil({ vista }: { vista: 'recepcion' | 'escaneo' }) {
   }
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const refrescar = () => setEsMovil(detectarModoMovil());
+    window.addEventListener('resize', refrescar);
+    window.addEventListener('orientationchange', refrescar);
+    return () => {
+      window.removeEventListener('resize', refrescar);
+      window.removeEventListener('orientationchange', refrescar);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (esMovil) {
+      setUrlMovil('');
+      setCargando(false);
+      setError('');
+      return;
+    }
     let activo = true;
     setQrFallo(false);
     setError('');
@@ -4861,13 +5132,14 @@ function QrAccesoMovil({ vista }: { vista: 'recepcion' | 'escaneo' }) {
     const qs = params.toString();
     const ruta = window.location.pathname || '/';
     const puerto = window.location.port ? `:${window.location.port}` : '';
-    const construirUrl = (host: string) => `${window.location.protocol}//${host}${puerto}${ruta}${qs ? `?${qs}` : ''}`;
+    const protocolo = usarHttps ? 'https:' : window.location.protocol;
+    const construirUrl = (host: string) => `${protocolo}//${host}${puerto}${ruta}${qs ? `?${qs}` : ''}`;
     const construirUrlDesdeHost = (host: string) => {
       const limpio = normalizarHostManual(host);
       if (!limpio) return '';
       const tienePuerto = limpio.includes(':');
       const hostFinal = tienePuerto ? limpio : `${limpio}${puerto}`;
-      return `${window.location.protocol}//${hostFinal}${ruta}${qs ? `?${qs}` : ''}`;
+      return `${protocolo}//${hostFinal}${ruta}${qs ? `?${qs}` : ''}`;
     };
     const hostManualLimpio = normalizarHostManual(hostManual);
     const hostname = window.location.hostname;
@@ -4886,10 +5158,10 @@ function QrAccesoMovil({ vista }: { vista: 'recepcion' | 'escaneo' }) {
     }
 
     if (hostname && hostname !== 'localhost' && hostname !== '127.0.0.1') {
-      const url = `${window.location.protocol}//${window.location.host}${ruta}${qs ? `?${qs}` : ''}`;
-      const timer = window.setTimeout(() => {
-        if (!activo) return;
-        setUrlMovil(url);
+    const url = `${protocolo}//${window.location.host}${ruta}${qs ? `?${qs}` : ''}`;
+    const timer = window.setTimeout(() => {
+      if (!activo) return;
+      setUrlMovil(url);
         setCargando(false);
       }, 0);
       return () => {
@@ -4902,7 +5174,9 @@ function QrAccesoMovil({ vista }: { vista: 'recepcion' | 'escaneo' }) {
       .then((resp) => (resp.ok ? resp.json() : Promise.reject(new Error('Respuesta invalida'))))
       .then((data) => {
         if (!activo) return;
-        const ips = Array.isArray(data?.ips) ? data.ips.map((ip: unknown) => String(ip || '').trim()).filter(Boolean) : [];
+        const ips: string[] = Array.isArray(data?.ips)
+          ? (data.ips as unknown[]).map((ip) => String(ip || '').trim()).filter(Boolean)
+          : [];
         const esPreferida = (ip: string) => ip.startsWith('192.168.') || ip.startsWith('10.');
         const esDocker = (ip: string) => /^172\.(1[6-9]|2\d|3[0-1])\./.test(ip);
         const ipPreferida = ips.find(esPreferida);
@@ -4918,7 +5192,7 @@ function QrAccesoMovil({ vista }: { vista: 'recepcion' | 'escaneo' }) {
       .catch(() => {
         if (!activo) return;
         setError('No se pudo detectar la IP local. Usa la IP de tu PC en lugar de localhost.');
-        setUrlMovil(`${window.location.protocol}//${window.location.host}${ruta}${qs ? `?${qs}` : ''}`);
+        setUrlMovil(`${protocolo}//${window.location.host}${ruta}${qs ? `?${qs}` : ''}`);
       })
       .finally(() => {
         if (!activo) return;
@@ -4928,7 +5202,9 @@ function QrAccesoMovil({ vista }: { vista: 'recepcion' | 'escaneo' }) {
     return () => {
       activo = false;
     };
-  }, [vista, hostManual]);
+  }, [vista, hostManual, esMovil]);
+
+  if (esMovil) return null;
 
   const urlQr = urlMovil ? `${clienteApi.baseApi}/salud/qr?texto=${encodeURIComponent(urlMovil)}` : '';
   const mostrarFallback = Boolean((error || qrFallo) && urlMovil);

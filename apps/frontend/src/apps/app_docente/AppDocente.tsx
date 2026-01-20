@@ -4754,15 +4754,19 @@ function SeccionRecepcion({
               <li className="guia-paso">
                 <span className="paso-num">1</span>
                 <div>
-                  <div className="paso-titulo">Escanea el QR</div>
-                  <p className="nota">Usa la camara del celular y enfoca el QR completo.</p>
+                  <div className="paso-titulo">Abre la vista en el movil</div>
+                  <p className="nota">
+                    Si ya estas en movil, el QR no se muestra. Si estas en PC, escanea el QR para abrir esta vista en el telefono.
+                  </p>
                 </div>
               </li>
               <li className="guia-paso">
                 <span className="paso-num">2</span>
                 <div>
-                  <div className="paso-titulo">Copia el folio</div>
-                  <p className="nota">El folio aparece debajo del QR o en la hoja.</p>
+                  <div className="paso-titulo">Escanea el QR del examen</div>
+                  <p className="nota">
+                    Usa la camara del celular (desde la app o la camara del sistema) para leer el folio.
+                  </p>
                 </div>
               </li>
               <li className="guia-paso">

@@ -25,7 +25,7 @@
     "node": ">=24"
   },
   "scripts": {
-    "dev": "npm-run-all --parallel dev:backend dev:frontend",
+    "dev": "node scripts/detect-host-ip.mjs && npm-run-all --parallel dev:backend dev:frontend",
     "dev:backend": "node scripts/detect-host-ip.mjs && docker compose --profile dev up --build --force-recreate mongo_local api_docente_local",
     "dev:frontend": "npm -C apps/frontend run dev",
     "dev:portal": "npm -C apps/portal_alumno_cloud run dev",

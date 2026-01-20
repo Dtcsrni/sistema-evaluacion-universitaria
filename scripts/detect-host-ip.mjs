@@ -8,6 +8,10 @@ const __dirname = path.dirname(__filename);
 const root = path.resolve(__dirname, '..');
 const envPath = path.join(root, '.env');
 
+function escapeRegex(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function isValidIpv4(ip) {
   const parts = ip.split('.');
   if (parts.length !== 4) return false;
@@ -63,17 +67,34 @@ function detectarHostIp() {
   return candidatos[0]?.ip || '';
 }
 
+function setEnvValue(content, key, value) {
+  const line = `${key}=${value}`;
+  const re = new RegExp(`^${escapeRegex(key)}=.*$`, 'm');
+  if (re.test(content)) return content.replace(re, line);
+  const base = content.trimEnd();
+  return `${base}${base ? '\n' : ''}${line}\n`;
+}
+
 function actualizarEnv(hostIp) {
-  const contenido = fs.existsSync(envPath) ? fs.readFileSync(envPath, 'utf8') : '';
-  const linea = `HOST_IP=${hostIp}`;
-  if (/^HOST_IP=.*$/m.test(contenido)) {
-    const actualizado = contenido.replace(/^HOST_IP=.*$/m, linea);
-    if (actualizado !== contenido) fs.writeFileSync(envPath, actualizado, 'utf8');
-    return;
-  }
-  const base = contenido.trimEnd();
-  const salida = `${base}${base ? '\n' : ''}${linea}\n`;
-  fs.writeFileSync(envPath, salida, 'utf8');
+  let content = fs.existsSync(envPath) ? fs.readFileSync(envPath, 'utf8') : '';
+
+  const apiBase = `http://${hostIp}:4000/api`;
+  const portalBase = `http://${hostIp}:8080/api/portal`;
+  const cors = [
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    'http://localhost:4173',
+    'http://127.0.0.1:4173',
+    `http://${hostIp}:5173`,
+    `http://${hostIp}:4173`
+  ].join(',');
+
+  content = setEnvValue(content, 'HOST_IP', hostIp);
+  content = setEnvValue(content, 'VITE_API_BASE_URL', apiBase);
+  content = setEnvValue(content, 'VITE_PORTAL_BASE_URL', portalBase);
+  content = setEnvValue(content, 'CORS_ORIGENES', cors);
+
+  fs.writeFileSync(envPath, content, 'utf8');
 }
 
 try {

@@ -8,7 +8,7 @@
 .panel-separacion {
    margin-top: 16px;
 }
-textarea {
+textarea, input {
    width: 100%;
    margin-top: 6px;
    padding: 10px;
@@ -79,9 +79,30 @@ button[disabled] {
    font-size: 1.5em;
    color: white;
 }
+.texto-chico {
+   font-size: 0.5em;
+}
 .canvas {
    display: flex;
    flex-direction: row;
    justify-content: center;
    width: 100%;   
+}
+
+.boton-peligro{
+   border-color: red;
+   color: red;
+}
+.boton-chico{
+   padding: 8px 10px;
+   border-radius: 10px;
+   border: 1px solid #333;
+   background: #fff;
+   cursor: pointer;
+}
+.fila-acciones{
+   margin-top: 8px;
+   display: flex;
+   gap: 8px;
+   flex-wrap: wrap;
 }

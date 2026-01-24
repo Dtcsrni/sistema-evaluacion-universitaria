@@ -5545,6 +5545,7 @@ function SeccionEscaneo({
   const [imagenBase64, setImagenBase64] = useState('');
   const [mensaje, setMensaje] = useState('');
   const [analizando, setAnalizando] = useState(false);
+  const [bloqueoManual, setBloqueoManual] = useState(false);
   const [procesandoLote, setProcesandoLote] = useState(false);
   const [lote, setLote] = useState<
     Array<{
@@ -5602,7 +5603,12 @@ function SeccionEscaneo({
       const inicio = Date.now();
       setAnalizando(true);
       setMensaje('');
-      await onAnalizar(folio.trim(), paginaManual > 0 ? paginaManual : 0, imagenBase64);
+      const respuesta = await onAnalizar(folio.trim(), paginaManual > 0 ? paginaManual : 0, imagenBase64);
+      if (respuesta.resultado.qrTexto) {
+        setBloqueoManual(true);
+        setFolio(respuesta.folio);
+        setNumeroPagina(respuesta.numeroPagina);
+      }
       setMensaje('Analisis completado');
       emitToast({ level: 'ok', title: 'Escaneo', message: 'Analisis completado', durationMs: 2200 });
       registrarAccionDocente('analizar_omr', true, Date.now() - inicio);
@@ -5763,7 +5769,12 @@ function SeccionEscaneo({
       </div>
       <label className="campo">
         Folio
-        <input value={folio} onChange={(event) => setFolio(event.target.value)} placeholder="Si se deja vacio, se lee del QR" />
+        <input
+          value={folio}
+          onChange={(event) => setFolio(event.target.value)}
+          placeholder="Si se deja vacio, se lee del QR"
+          disabled={bloqueoManual}
+        />
       </label>
       <label className="campo">
         Pagina
@@ -5773,8 +5784,17 @@ function SeccionEscaneo({
           value={numeroPagina}
           onChange={(event) => setNumeroPagina(Number(event.target.value))}
           placeholder="0 = detectar por QR"
+          disabled={bloqueoManual}
         />
       </label>
+      {bloqueoManual && (
+        <InlineMensaje tipo="info">
+          QR detectado: se bloqueo el folio/pagina para evitar errores manuales.
+          <button type="button" className="link" onClick={() => setBloqueoManual(false)}>
+            Editar manualmente
+          </button>
+        </InlineMensaje>
+      )}
       <label className="campo">
         Imagen
         <input type="file" accept="image/*" capture="environment" onChange={cargarArchivo} />

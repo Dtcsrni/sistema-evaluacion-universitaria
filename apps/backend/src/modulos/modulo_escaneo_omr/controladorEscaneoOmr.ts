@@ -6,6 +6,9 @@
  * - Se valida que exista el mapa OMR para la pagina solicitada.
  */
 import type { Response } from 'express';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import sharp from 'sharp';
 import { ErrorAplicacion } from '../../compartido/errores/errorAplicacion';
 import { obtenerDocenteId, type SolicitudDocente } from '../modulo_autenticacion/middlewareAutenticacion';
 import { ExamenGenerado } from '../modulo_generacion_pdf/modeloExamenGenerado';
@@ -44,6 +47,11 @@ export async function analizarImagen(req: SolicitudDocente, res: Response) {
   const qrEsperado = [`EXAMEN:${String(examen.folio ?? '')}:P${pagina}`];
   const margenMm = examen.mapaOmr?.margenMm ?? 10;
   const resultado = await analizarOmr(imagenBase64 ?? '', mapaOmr, qrEsperado, margenMm);
+  await guardarImagenReferencia({
+    base64: imagenBase64 ?? '',
+    folio: folioNormalizado,
+    numeroPagina: pagina
+  });
   res.json({
     resultado,
     examenId: examen._id,
@@ -51,4 +59,31 @@ export async function analizarImagen(req: SolicitudDocente, res: Response) {
     numeroPagina: pagina,
     alumnoId: examen.alumnoId ?? null
   });
+}
+
+async function guardarImagenReferencia({
+  base64,
+  folio,
+  numeroPagina
+}: {
+  base64: string;
+  folio: string;
+  numeroPagina: number;
+}) {
+  const limpio = String(base64 || '').replace(/^data:image\/[a-zA-Z]+;base64,/, '');
+  if (!limpio) return;
+  const buffer = Buffer.from(limpio, 'base64');
+  const dirBase = path.resolve(process.cwd(), 'storage', 'omr_scans', folio);
+  await fs.mkdir(dirBase, { recursive: true });
+  const salida = path.join(dirBase, `P${numeroPagina}.jpg`);
+  const yaExiste = await fs
+    .access(salida)
+    .then(() => true)
+    .catch(() => false);
+  if (yaExiste) return;
+  await sharp(buffer)
+    .rotate()
+    .resize({ width: 1400, withoutEnlargement: true })
+    .jpeg({ quality: 45, mozjpeg: true })
+    .toFile(salida);
 }

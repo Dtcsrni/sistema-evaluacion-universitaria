@@ -928,7 +928,7 @@ export async function generarPdfExamen({
     const fraccionVacia = Math.max(0, Math.min(1, alturaRestante / alturaUtil));
     metricasPaginas.push({ numero: numeroPagina, fraccionVacia, preguntas: mapaPagina.length });
 
-    paginasMeta.push({ numero: numeroPagina, qrTexto, preguntasDel, preguntasAl });
+    paginasMeta.push({ numero: numeroPagina, qrTexto: qrTextoPagina, preguntasDel, preguntasAl });
 
     paginasOmr.push({ numeroPagina, preguntas: mapaPagina });
     numeroPagina += 1;

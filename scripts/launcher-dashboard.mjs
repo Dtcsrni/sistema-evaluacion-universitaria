@@ -889,8 +889,72 @@ function stopTask(name) {
 }
 
 // Open the dashboard URL in the default browser.
+function findBrowserExecutable() {
+  const candidates = [
+    [process.env.ProgramFiles, 'Microsoft', 'Edge', 'Application', 'msedge.exe'],
+    [process.env['ProgramFiles(x86)'], 'Microsoft', 'Edge', 'Application', 'msedge.exe'],
+    [process.env.LOCALAPPDATA, 'Microsoft', 'Edge', 'Application', 'msedge.exe'],
+    [process.env.ProgramFiles, 'Google', 'Chrome', 'Application', 'chrome.exe'],
+    [process.env['ProgramFiles(x86)'], 'Google', 'Chrome', 'Application', 'chrome.exe'],
+    [process.env.LOCALAPPDATA, 'Google', 'Chrome', 'Application', 'chrome.exe']
+  ];
+
+  for (const parts of candidates) {
+    if (!parts[0]) continue;
+    const exe = path.join(...parts);
+    try {
+      if (fs.existsSync(exe)) return exe;
+    } catch {
+      // ignore
+    }
+  }
+  return '';
+}
+
 function openBrowser(url) {
+  const browserExe = findBrowserExecutable();
+  if (browserExe) {
+    const child = spawn(browserExe, [url], { detached: true, stdio: 'ignore', windowsHide: true });
+    child.unref();
+    return;
+  }
   spawn('cmd.exe', ['/c', 'start', '', url], { windowsHide: true });
+}
+
+function shouldAutostartTray() {
+  return !/^(0|false|no)$/i.test(String(process.env.DASHBOARD_TRAY_AUTOSTART || '').trim());
+}
+
+function startTrayIfNeeded(activeMode, port) {
+  if (process.platform !== 'win32') return;
+  if (!shouldAutostartTray()) return;
+  if (activeMode !== 'dev' && activeMode !== 'prod') return;
+
+  const psPath = path.join(process.env.WINDIR || 'C:\\Windows', 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
+  const trayScript = path.join(root, 'scripts', 'launcher-tray.ps1');
+  const args = [
+    '-NoProfile',
+    '-ExecutionPolicy',
+    'Bypass',
+    '-STA',
+    '-WindowStyle',
+    'Hidden',
+    '-File',
+    trayScript,
+    '-Mode',
+    activeMode,
+    '-Port',
+    String(port),
+    '-NoOpen',
+    '-Attach'
+  ];
+
+  try {
+    const child = spawn(psPath, args, { detached: true, stdio: 'ignore', windowsHide: true });
+    child.unref();
+  } catch (err) {
+    logSystem(`No se pudo iniciar tray: ${err.message}`, 'warn');
+  }
 }
 
 // List running task names for the status panel.
@@ -1565,6 +1629,7 @@ const server = http.createServer(async (req, res) => {
     if (!noOpen) openBrowser(url);
     // En accesos directos/tray: primero confirma Docker y luego inicia el stack.
     if (mode === 'dev' || mode === 'prod') requestDockerAutostart('startup');
+    startTrayIfNeeded(mode, port);
 
     setupDevWatchers();
   });

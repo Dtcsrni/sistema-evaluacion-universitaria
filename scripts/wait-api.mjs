@@ -1,14 +1,59 @@
 import http from 'node:http';
 import https from 'node:https';
+import fs from 'node:fs';
+import path from 'node:path';
+import process from 'node:process';
+
+// Carga variables desde el .env del root sin depender de dotenv.
+// - Soporta valores con comillas simples/dobles y comentarios finales.
+// - No pisa variables ya definidas en el proceso.
+function cargarEnvLocal() {
+  const rutaEnv = path.resolve(process.cwd(), '.env');
+  if (!fs.existsSync(rutaEnv)) return;
+  const contenido = fs.readFileSync(rutaEnv, 'utf8');
+  for (const linea of contenido.split(/\r?\n/)) {
+    const entry = parseEnvLine(linea);
+    if (!entry) continue;
+    const { key, value } = entry;
+    if (Object.prototype.hasOwnProperty.call(process.env, key)) continue;
+    process.env[key] = value;
+  }
+}
+
+function parseEnvLine(line) {
+  const raw = String(line ?? '').trim();
+  if (!raw || raw.startsWith('#')) return null;
+  const idx = raw.indexOf('=');
+  if (idx < 0) return null;
+
+  const key = raw.slice(0, idx).trim();
+  if (!key) return null;
+  let value = raw.slice(idx + 1).trim();
+
+  // Elimina comentarios finales cuando el valor no está entrecomillado.
+  if (value && !/^['"]/.test(value)) {
+    const hash = value.indexOf(' #');
+    if (hash >= 0) value = value.slice(0, hash).trim();
+  }
+
+  if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+    value = value.slice(1, -1);
+  }
+
+  return { key, value };
+}
+
+cargarEnvLocal();
 
 const base = String(process.env.VITE_API_PROXY_TARGET || 'http://localhost:4000').trim();
-const path = String(process.env.API_HEALTHCHECK_PATH || '/api/salud').trim() || '/api/salud';
-const timeoutMs = Number(process.env.API_HEALTHCHECK_TIMEOUT_MS || 15_000);
-const intervalMs = Number(process.env.API_HEALTHCHECK_INTERVAL_MS || 500);
+const healthPath = String(process.env.API_HEALTHCHECK_PATH || '/api/salud').trim() || '/api/salud';
+const timeoutMs = clampNumber(process.env.API_HEALTHCHECK_TIMEOUT_MS, 120_000, 5_000, 10 * 60_000);
+const intervalMs = clampNumber(process.env.API_HEALTHCHECK_INTERVAL_MS, 500, 150, 10_000);
+const strict = /^(1|true|si|yes)$/i.test(String(process.env.API_HEALTHCHECK_STRICT || '').trim());
 
 function crearUrl() {
   try {
-    return new URL(path, base).toString();
+    return new URL(healthPath, base).toString();
   } catch {
     return 'http://localhost:4000/api/salud';
   }
@@ -66,7 +111,17 @@ async function esperarApi() {
     await new Promise((resolve) => setTimeout(resolve, intervalMs));
   }
   console.error(`[wait-api] Timeout esperando ${url}`);
-  process.exitCode = 1;
+  if (strict) {
+    process.exitCode = 1;
+    return;
+  }
+  console.warn('[wait-api] Continuando sin backend listo (modo no estricto).');
 }
 
 await esperarApi();
+
+function clampNumber(value, fallback, min, max) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return fallback;
+  return Math.min(Math.max(num, min), max);
+}

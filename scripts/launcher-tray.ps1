@@ -23,6 +23,27 @@ if (-not (Test-Path $logDir)) {
 $logFile = Join-Path $logDir 'tray.log'
 $lockPath = Join-Path $logDir 'dashboard.lock.json'
 $script:Port = $Port
+$script:AutoExit = $true
+$script:AutoExitGraceMs = 20000
+$script:NoStackSince = $null
+
+function Parse-Bool([string]$value) {
+  if (-not $value) { return $false }
+  return $value.Trim() -match '^(1|true|si|yes)$'
+}
+
+try {
+  $envAutoExit = [string]$env:TRAY_AUTO_EXIT
+  if ($envAutoExit) { $script:AutoExit = Parse-Bool $envAutoExit }
+} catch {}
+
+try {
+  $envGrace = [string]$env:TRAY_AUTO_EXIT_GRACE_MS
+  if ($envGrace) {
+    $parsed = [int]$envGrace
+    if ($parsed -ge 1000 -and $parsed -le 300000) { $script:AutoExitGraceMs = $parsed }
+  }
+} catch {}
 
 function Log([string]$msg) {
   try {
@@ -72,6 +93,45 @@ function Sync-PortFromLock {
 
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
+
+# Intentar recuperar el icono si Explorer se reinicia (TaskbarCreated).
+try {
+  Add-Type -TypeDefinition @"
+using System;
+using System.Runtime.InteropServices;
+using System.Windows.Forms;
+
+public class TrayRecovery : NativeWindow, IDisposable
+{
+  public event Action TaskbarCreated;
+  private static readonly uint WM_TASKBARCREATED = RegisterWindowMessage("TaskbarCreated");
+
+  public TrayRecovery()
+  {
+    CreateHandle(new CreateParams());
+  }
+
+  protected override void WndProc(ref Message m)
+  {
+    if (m.Msg == WM_TASKBARCREATED)
+    {
+      if (TaskbarCreated != null) TaskbarCreated();
+    }
+    base.WndProc(ref m);
+  }
+
+  public void Dispose()
+  {
+    try { DestroyHandle(); } catch { }
+  }
+
+  [DllImport("user32.dll", CharSet = CharSet.Auto)]
+  private static extern uint RegisterWindowMessage(string lpString);
+}
+"@ -ReferencedAssemblies 'System.Windows.Forms'
+} catch {
+  Log("TrayRecovery Add-Type failed: $($_.Exception.Message)")
+}
 
 # Evita cuadros JIT por excepciones no controladas en eventos WinForms (Timer/Clicks).
 # En vez de crashear el tray (y dejar íconos duplicados/fantasma), registramos y continuamos.
@@ -649,14 +709,52 @@ function ConvertTo-ShortText([string]$s, [int]$max = 60) {
   return $t.Substring(0, [Math]::Max(0, $max - 1)) + '…'
 }
 
-$launch = Start-DashboardIfNeeded
-Ensure-StackOnLaunch
+$launch = $null
+try {
+  $launch = Start-DashboardIfNeeded
+} catch {
+  Log("Start-DashboardIfNeeded failed: $($_.Exception.GetType().FullName): $($_.Exception.Message)")
+}
+try {
+  Ensure-StackOnLaunch
+} catch {
+  Log("Ensure-StackOnLaunch failed: $($_.Exception.GetType().FullName): $($_.Exception.Message)")
+}
 
-$notify = New-Object System.Windows.Forms.NotifyIcon
-$notify.Visible = $true
-$notify.Text = 'EP: iniciando…'
-$notify.Icon = (Get-MoodIcon 'info')
-Log('NotifyIcon visible')
+$notify = $null
+try {
+  $notify = New-Object System.Windows.Forms.NotifyIcon
+  $notify.Visible = $true
+  $notify.Text = 'EP: iniciando…'
+  $notify.Icon = (Get-MoodIcon 'info')
+  Log('NotifyIcon visible')
+} catch {
+  Log("NotifyIcon init failed: $($_.Exception.GetType().FullName): $($_.Exception.Message)")
+}
+
+$trayRecovery = $null
+try {
+  if ([System.Management.Automation.PSTypeName]'TrayRecovery'.Type) {
+    $trayRecovery = New-Object TrayRecovery
+    $trayRecovery.add_TaskbarCreated({
+      try {
+        $notify.Visible = $false
+        $notify.Icon = (Get-MoodIcon $lastMood)
+        $notify.Visible = $true
+        Log('TaskbarCreated: re-mostrando icono en bandeja')
+      } catch {
+        Log("TaskbarCreated handler error: $($_.Exception.Message)")
+      }
+    })
+  }
+} catch {
+  Log("TrayRecovery init failed: $($_.Exception.Message)")
+}
+
+if (-not $notify) {
+  Log('NotifyIcon no disponible; saliendo.')
+  return
+}
 
 $menu = New-Object System.Windows.Forms.ContextMenuStrip
 
@@ -749,9 +847,12 @@ $timer.add_Tick({
       $lastMood = $mood
       $notify.Icon = (Get-MoodIcon $mood)
     }
+    if (-not $notify.Visible) { $notify.Visible = $true }
+    if (-not $notify.Icon) { $notify.Icon = (Get-MoodIcon $lastMood) }
 
-    $runningCount = 0
-    try { $runningCount = @($st.running).Count } catch { $runningCount = 0 }
+    $running = @()
+    try { $running = @($st.running) } catch { $running = @() }
+    $runningCount = $running.Count
     $mode = '-'
     try { $mode = ("$($st.mode)").ToUpperInvariant() } catch { $mode = '-' }
 
@@ -764,6 +865,26 @@ $timer.add_Tick({
 
     $text = "EP $label | $mode | proc:$runningCount"
     $notify.Text = ConvertTo-ShortText $text 60
+
+    if ($script:AutoExit) {
+      $hasStack = $false
+      try { $hasStack = Test-AnyStackTasksRunning $running } catch { $hasStack = $false }
+      if (-not $hasStack) {
+        try { $hasStack = Test-AnyStackRunning } catch { $hasStack = $false }
+      }
+
+      if ($hasStack) {
+        $script:NoStackSince = $null
+      } else {
+        if (-not $script:NoStackSince) { $script:NoStackSince = [Environment]::TickCount64 }
+        $elapsed = [Environment]::TickCount64 - [int64]$script:NoStackSince
+        if ($elapsed -ge $script:AutoExitGraceMs) {
+          Log('AutoExit: stack inactivo; cerrando tray.')
+          Exit-Tray
+          return
+        }
+      }
+    }
 
     $dashPidText = '-'
     $install = Get-JsonOrNull '/api/install'
@@ -778,14 +899,14 @@ $timer.add_Tick({
   }
 })
 
-$exiting = $false
-$miExit.add_Click({
-  if ($exiting) { return }
-  $exiting = $true
+function Exit-Tray {
+  if ($script:exiting) { return }
+  $script:exiting = $true
   try { $timer.Stop() } catch {}
   try { $timer.Dispose() } catch {}
   $notify.Visible = $false
   $notify.Dispose()
+  try { if ($trayRecovery) { $trayRecovery.Dispose() } } catch {}
 
   # Disponer íconos custom (si fueron cargados).
   try {
@@ -808,6 +929,11 @@ $miExit.add_Click({
   }
 
   [System.Windows.Forms.Application]::Exit()
+}
+
+$script:exiting = $false
+$miExit.add_Click({
+  Exit-Tray
 })
 
 $timer.Start()

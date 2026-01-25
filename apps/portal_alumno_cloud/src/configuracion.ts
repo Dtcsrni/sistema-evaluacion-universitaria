@@ -2,10 +2,14 @@
  * Configuracion del portal alumno cloud.
  */
 import dotenv from 'dotenv';
+import path from 'node:path';
 
 // Dotenv v17 puede emitir logs informativos; se silencian para mantener
 // pruebas y consola limpias.
-dotenv.config({ quiet: true });
+dotenv.config({
+  quiet: true,
+  path: path.resolve(__dirname, '..', '..', '..', '.env')
+});
 
 const puerto = Number(process.env.PUERTO_PORTAL ?? process.env.PORT ?? 8080);
 const mongoUri = process.env.MONGODB_URI ?? '';

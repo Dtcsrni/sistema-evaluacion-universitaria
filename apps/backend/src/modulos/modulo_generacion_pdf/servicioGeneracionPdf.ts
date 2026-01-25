@@ -518,24 +518,12 @@ export async function generarPdfExamen({
   const alumnoGrupo = String(encabezado?.alumno?.grupo ?? '').trim();
   const instrucciones = String(encabezado?.instrucciones ?? '').trim() || INSTRUCCIONES_DEFAULT;
 
-  // Defaults apuntan a archivos reales del repo (carpeta logos/).
-  const logoIzqSrc = encabezado?.logos?.izquierdaPath ?? process.env.EXAMEN_LOGO_IZQ_PATH ?? 'logos/logo_cuh.png';
-  const logoDerSrc = encabezado?.logos?.derechaPath ?? process.env.EXAMEN_LOGO_DER_PATH ?? 'logos/logo_sys.png';
+  // Solo muestra logos si se proporcionan explicitamente (o via env).
+  const logoIzqSrc = encabezado?.logos?.izquierdaPath ?? process.env.EXAMEN_LOGO_IZQ_PATH ?? '';
+  const logoDerSrc = encabezado?.logos?.derechaPath ?? process.env.EXAMEN_LOGO_DER_PATH ?? '';
 
-  const izquierda =
-    (await intentarEmbedImagen(pdfDoc, logoIzqSrc)) ??
-    (await intentarEmbedImagen(pdfDoc, 'logos/logo_cuh.jpg')) ??
-    (await intentarEmbedImagen(pdfDoc, 'logos/logo_cuh.jpeg')) ??
-    (await intentarEmbedImagen(pdfDoc, 'logos/cuh.png')) ??
-    (await intentarEmbedImagen(pdfDoc, 'logos/cuh.jpg')) ??
-    (await intentarEmbedImagen(pdfDoc, 'logos/cuh.jpeg'));
-  const derecha =
-    (await intentarEmbedImagen(pdfDoc, logoDerSrc)) ??
-    (await intentarEmbedImagen(pdfDoc, 'logos/logo_sys.jpg')) ??
-    (await intentarEmbedImagen(pdfDoc, 'logos/logo_sys.jpeg')) ??
-    (await intentarEmbedImagen(pdfDoc, 'logos/isc.png')) ??
-    (await intentarEmbedImagen(pdfDoc, 'logos/isc.jpg')) ??
-    (await intentarEmbedImagen(pdfDoc, 'logos/isc.jpeg'));
+  const izquierda = await intentarEmbedImagen(pdfDoc, logoIzqSrc);
+  const derecha = await intentarEmbedImagen(pdfDoc, logoDerSrc);
 
   const logos = { izquierda, derecha };
 

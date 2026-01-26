@@ -2023,27 +2023,29 @@ function SeccionBanco({
     const mmAPuntos = (mm: number) => mm * (72 / 25.4);
     const margen = mmAPuntos(10);
     const ANCHO_CARTA = 612;
+    const GRID_STEP = 4;
+    const snapToGrid = (y: number) => Math.floor(y / GRID_STEP) * GRID_STEP;
 
     // Mantiene consistencia con el algoritmo del PDF.
-    const anchoColRespuesta = 120;
-    const gutterRespuesta = 10;
+    const anchoColRespuesta = 86;
+    const gutterRespuesta = 18;
     const xColRespuesta = ANCHO_CARTA - margen - anchoColRespuesta;
     const xDerechaTexto = xColRespuesta - gutterRespuesta;
     const xTextoPregunta = margen + 22;
     const anchoTextoPregunta = Math.max(60, xDerechaTexto - xTextoPregunta);
 
-    const cursorInicial = ALTO_CARTA - margen - 112;
+    const cursorInicial = snapToGrid(ALTO_CARTA - margen - 114);
     const limiteInferior = margen + 32;
 
-    const sizePregunta = 10;
-    const sizeOpcion = 9;
-    const lineaPregunta = 12;
-    const lineaOpcion = 11;
+    const sizePregunta = 9.2;
+    const sizeOpcion = 8.2;
+    const lineaPregunta = 10.2;
+    const lineaOpcion = 9.2;
     const separacionPregunta = 1;
 
-    const omrPasoY = 11;
-    const omrPadding = 4;
-    const omrExtraTitulo = 16;
+    const omrPasoY = 10.2;
+    const omrPadding = 2.5;
+    const omrExtraTitulo = 17;
     const omrTotalLetras = 5;
 
     function estimarLineasPorAncho(texto: string, maxWidthPts: number, fontSize: number): number {
@@ -2106,22 +2108,23 @@ function SeccionBanco({
       const alturasCols = [0, 0];
 
       opciones.slice(0, mitad).forEach((op) => {
-        alturasCols[0] += estimarLineasPorAncho(String(op?.texto ?? ''), maxTextWidth, sizeOpcion) * lineaOpcion + 2;
+        alturasCols[0] += estimarLineasPorAncho(String(op?.texto ?? ''), maxTextWidth, sizeOpcion) * lineaOpcion + 0.5;
       });
       opciones.slice(mitad).forEach((op) => {
-        alturasCols[1] += estimarLineasPorAncho(String(op?.texto ?? ''), maxTextWidth, sizeOpcion) * lineaOpcion + 2;
+        alturasCols[1] += estimarLineasPorAncho(String(op?.texto ?? ''), maxTextWidth, sizeOpcion) * lineaOpcion + 0.5;
       });
       const altoOpciones = Math.max(alturasCols[0], alturasCols[1]);
       const altoOmrMin = (omrTotalLetras - 1) * omrPasoY + (omrExtraTitulo + omrPadding);
       altoNecesario += Math.max(altoOpciones, altoOmrMin);
       altoNecesario += separacionPregunta + 4;
+      altoNecesario = snapToGrid(altoNecesario);
 
       if (cursorY - altoNecesario < limiteInferior) {
         paginas += 1;
         cursorY = cursorInicial;
       }
 
-      cursorY -= altoNecesario;
+      cursorY = snapToGrid(cursorY - altoNecesario);
     }
 
     return paginas;
@@ -2278,24 +2281,26 @@ function SeccionBanco({
     const mmAPuntos = (mm: number) => mm * (72 / 25.4);
     const margen = mmAPuntos(10);
     const ANCHO_CARTA = 612;
+    const GRID_STEP = 4;
+    const snapToGrid = (y: number) => Math.floor(y / GRID_STEP) * GRID_STEP;
 
-    const anchoColRespuesta = 120;
-    const gutterRespuesta = 10;
+    const anchoColRespuesta = 78;
+    const gutterRespuesta = 20;
     const xColRespuesta = ANCHO_CARTA - margen - anchoColRespuesta;
     const xDerechaTexto = xColRespuesta - gutterRespuesta;
     const xTextoPregunta = margen + 22;
     const anchoTextoPregunta = Math.max(60, xDerechaTexto - xTextoPregunta);
 
-    const sizePregunta = 10;
-    const sizeOpcion = 9;
+    const sizePregunta = 9.5;
+    const sizeOpcion = 8.5;
     const sizeNota = 8.5;
-    const lineaPregunta = 12;
-    const lineaOpcion = 11;
+    const lineaPregunta = 11;
+    const lineaOpcion = 10;
     const separacionPregunta = 1;
 
-    const omrPasoY = 11;
-    const omrPadding = 4;
-    const omrExtraTitulo = 16;
+    const omrPasoY = 10.2;
+    const omrPadding = 2.5;
+    const omrExtraTitulo = 17;
     const omrTotalLetras = 5;
 
     function estimarLineasPorAncho(texto: string, maxWidthPts: number, fontSize: number): number {
@@ -2329,7 +2334,7 @@ function SeccionBanco({
     const tieneImagen = Boolean(String(version?.imagenUrl ?? '').trim());
     const lineasEnunciado = estimarLineasPorAncho(String(version?.enunciado ?? ''), anchoTextoPregunta, sizePregunta);
     let altoNecesario = lineasEnunciado * lineaPregunta;
-    if (tieneImagen) altoNecesario += 120;
+    if (tieneImagen) altoNecesario += 110;
 
     const opcionesActuales = Array.isArray(version?.opciones) ? version!.opciones : [];
     const opciones = opcionesActuales.length === 5 ? opcionesActuales : [];
@@ -2343,15 +2348,16 @@ function SeccionBanco({
     const alturasCols = [0, 0];
 
     opciones.slice(0, mitad).forEach((op) => {
-      alturasCols[0] += estimarLineasPorAncho(String(op?.texto ?? ''), maxTextWidth, sizeOpcion) * lineaOpcion + 2;
+      alturasCols[0] += estimarLineasPorAncho(String(op?.texto ?? ''), maxTextWidth, sizeOpcion) * lineaOpcion + 0.5;
     });
     opciones.slice(mitad).forEach((op) => {
-      alturasCols[1] += estimarLineasPorAncho(String(op?.texto ?? ''), maxTextWidth, sizeOpcion) * lineaOpcion + 2;
+      alturasCols[1] += estimarLineasPorAncho(String(op?.texto ?? ''), maxTextWidth, sizeOpcion) * lineaOpcion + 0.5;
     });
     const altoOpciones = Math.max(alturasCols[0], alturasCols[1]);
     const altoOmrMin = (omrTotalLetras - 1) * omrPasoY + (omrExtraTitulo + omrPadding);
     altoNecesario += Math.max(altoOpciones, altoOmrMin);
     altoNecesario += separacionPregunta + 4;
+    altoNecesario = snapToGrid(altoNecesario);
 
     // Evitar alturas absurdamente chicas
     return Math.max(sizeNota + 10, altoNecesario);

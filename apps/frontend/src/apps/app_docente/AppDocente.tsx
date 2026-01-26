@@ -2024,20 +2024,27 @@ function SeccionBanco({
     const margen = mmAPuntos(10);
     const ANCHO_CARTA = 612;
 
-    const cursorInicial = ALTO_CARTA - margen - 70;
-    const limiteInferior = margen + 60;
+    // Mantiene consistencia con el algoritmo del PDF.
+    const anchoColRespuesta = 120;
+    const gutterRespuesta = 10;
+    const xColRespuesta = ANCHO_CARTA - margen - anchoColRespuesta;
+    const xDerechaTexto = xColRespuesta - gutterRespuesta;
+    const xTextoPregunta = margen + 22;
+    const anchoTextoPregunta = Math.max(60, xDerechaTexto - xTextoPregunta);
 
-    const sizePregunta = 11;
-    const sizeOpcion = 10;
-    const lineaPregunta = 13;
-    const lineaOpcion = 12;
-    const lineaNota = 12;
-    const separacionPregunta = 6;
+    const cursorInicial = ALTO_CARTA - margen - 112;
+    const limiteInferior = margen + 32;
 
-    const xTextoPregunta = margen + 18;
-    const xTextoOpcion = margen + 32;
-    const anchoTextoPregunta = ANCHO_CARTA - margen - xTextoPregunta;
-    const anchoTextoOpcion = ANCHO_CARTA - margen - xTextoOpcion;
+    const sizePregunta = 10;
+    const sizeOpcion = 9;
+    const lineaPregunta = 12;
+    const lineaOpcion = 11;
+    const separacionPregunta = 1;
+
+    const omrPasoY = 11;
+    const omrPadding = 4;
+    const omrExtraTitulo = 16;
+    const omrTotalLetras = 5;
 
     function estimarLineasPorAncho(texto: string, maxWidthPts: number, fontSize: number): number {
       const limpio = String(texto ?? '').trim().replace(/\s+/g, ' ');
@@ -2084,13 +2091,29 @@ function SeccionBanco({
 
       const lineasEnunciado = estimarLineasPorAncho(String(version?.enunciado ?? ''), anchoTextoPregunta, sizePregunta);
       let altoNecesario = lineasEnunciado * lineaPregunta;
-      if (tieneImagen) altoNecesario += lineaNota;
+      if (tieneImagen) altoNecesario += 120;
 
       const opcionesActuales = Array.isArray(version?.opciones) ? version!.opciones : [];
       const opciones = opcionesActuales.length === 5 ? opcionesActuales : [];
-      for (const opcion of opciones) {
-        altoNecesario += estimarLineasPorAncho(String(opcion?.texto ?? ''), anchoTextoOpcion, sizeOpcion) * lineaOpcion;
-      }
+
+      const totalOpciones = opciones.length;
+      const mitad = Math.ceil(totalOpciones / 2);
+      const anchoOpcionesTotal = Math.max(80, xDerechaTexto - xTextoPregunta);
+      const gutterCols = 10;
+      const colWidth = totalOpciones > 1 ? (anchoOpcionesTotal - gutterCols) / 2 : anchoOpcionesTotal;
+      const prefixWidth = sizeOpcion * 1.4;
+      const maxTextWidth = Math.max(30, colWidth - prefixWidth);
+      const alturasCols = [0, 0];
+
+      opciones.slice(0, mitad).forEach((op) => {
+        alturasCols[0] += estimarLineasPorAncho(String(op?.texto ?? ''), maxTextWidth, sizeOpcion) * lineaOpcion + 2;
+      });
+      opciones.slice(mitad).forEach((op) => {
+        alturasCols[1] += estimarLineasPorAncho(String(op?.texto ?? ''), maxTextWidth, sizeOpcion) * lineaOpcion + 2;
+      });
+      const altoOpciones = Math.max(alturasCols[0], alturasCols[1]);
+      const altoOmrMin = (omrTotalLetras - 1) * omrPasoY + (omrExtraTitulo + omrPadding);
+      altoNecesario += Math.max(altoOpciones, altoOmrMin);
       altoNecesario += separacionPregunta + 4;
 
       if (cursorY - altoNecesario < limiteInferior) {
@@ -2256,18 +2279,24 @@ function SeccionBanco({
     const margen = mmAPuntos(10);
     const ANCHO_CARTA = 612;
 
-    const sizePregunta = 11;
-    const sizeOpcion = 10;
-    const sizeNota = 9;
-    const lineaPregunta = 13;
-    const lineaOpcion = 12;
-    const lineaNota = 12;
-    const separacionPregunta = 6;
+    const anchoColRespuesta = 120;
+    const gutterRespuesta = 10;
+    const xColRespuesta = ANCHO_CARTA - margen - anchoColRespuesta;
+    const xDerechaTexto = xColRespuesta - gutterRespuesta;
+    const xTextoPregunta = margen + 22;
+    const anchoTextoPregunta = Math.max(60, xDerechaTexto - xTextoPregunta);
 
-    const xTextoPregunta = margen + 18;
-    const xTextoOpcion = margen + 32;
-    const anchoTextoPregunta = ANCHO_CARTA - margen - xTextoPregunta;
-    const anchoTextoOpcion = ANCHO_CARTA - margen - xTextoOpcion;
+    const sizePregunta = 10;
+    const sizeOpcion = 9;
+    const sizeNota = 8.5;
+    const lineaPregunta = 12;
+    const lineaOpcion = 11;
+    const separacionPregunta = 1;
+
+    const omrPasoY = 11;
+    const omrPadding = 4;
+    const omrExtraTitulo = 16;
+    const omrTotalLetras = 5;
 
     function estimarLineasPorAncho(texto: string, maxWidthPts: number, fontSize: number): number {
       const limpio = String(texto ?? '').trim().replace(/\s+/g, ' ');
@@ -2300,13 +2329,28 @@ function SeccionBanco({
     const tieneImagen = Boolean(String(version?.imagenUrl ?? '').trim());
     const lineasEnunciado = estimarLineasPorAncho(String(version?.enunciado ?? ''), anchoTextoPregunta, sizePregunta);
     let altoNecesario = lineasEnunciado * lineaPregunta;
-    if (tieneImagen) altoNecesario += lineaNota;
+    if (tieneImagen) altoNecesario += 120;
 
     const opcionesActuales = Array.isArray(version?.opciones) ? version!.opciones : [];
     const opciones = opcionesActuales.length === 5 ? opcionesActuales : [];
-    for (const opcion of opciones) {
-      altoNecesario += estimarLineasPorAncho(String(opcion?.texto ?? ''), anchoTextoOpcion, sizeOpcion) * lineaOpcion;
-    }
+    const totalOpciones = opciones.length;
+    const mitad = Math.ceil(totalOpciones / 2);
+    const anchoOpcionesTotal = Math.max(80, xDerechaTexto - xTextoPregunta);
+    const gutterCols = 10;
+    const colWidth = totalOpciones > 1 ? (anchoOpcionesTotal - gutterCols) / 2 : anchoOpcionesTotal;
+    const prefixWidth = sizeOpcion * 1.4;
+    const maxTextWidth = Math.max(30, colWidth - prefixWidth);
+    const alturasCols = [0, 0];
+
+    opciones.slice(0, mitad).forEach((op) => {
+      alturasCols[0] += estimarLineasPorAncho(String(op?.texto ?? ''), maxTextWidth, sizeOpcion) * lineaOpcion + 2;
+    });
+    opciones.slice(mitad).forEach((op) => {
+      alturasCols[1] += estimarLineasPorAncho(String(op?.texto ?? ''), maxTextWidth, sizeOpcion) * lineaOpcion + 2;
+    });
+    const altoOpciones = Math.max(alturasCols[0], alturasCols[1]);
+    const altoOmrMin = (omrTotalLetras - 1) * omrPasoY + (omrExtraTitulo + omrPadding);
+    altoNecesario += Math.max(altoOpciones, altoOmrMin);
     altoNecesario += separacionPregunta + 4;
 
     // Evitar alturas absurdamente chicas
@@ -2956,6 +3000,7 @@ function SeccionBanco({
                       const restantes = preguntasTema.filter((p) => !seleccion.has(p._id));
                       const paginasRestantes = restantes.length ? estimarPaginasParaPreguntas(restantes) : 0;
                       const altoSeleccion = seleccionadas.reduce((acc, p) => acc + estimarAltoPregunta(p), 0);
+                      const paginasSeleccion = seleccionadas.length ? estimarPaginasParaPreguntas(seleccionadas) : 0;
                       const texto =
                         actuales && objetivo
                           ? `Actual: ${actuales} pag. | Objetivo: ${objetivo} pag. | Quedaria: ${paginasRestantes} pag.`
@@ -2966,7 +3011,7 @@ function SeccionBanco({
                           <div className="item-meta ajuste-meta">
                             <span>{texto}</span>
                             <span>
-                              Seleccionadas: {seleccionadas.length} (peso aprox: {Math.round(altoSeleccion)}pt)
+                              Seleccionadas: {seleccionadas.length} (peso aprox: {paginasSeleccion} pag, {Math.round(altoSeleccion)}pt)
                             </span>
                           </div>
                           <div className="ayuda ajuste-ayuda">
@@ -7428,6 +7473,7 @@ function SeccionPaqueteSincronizacion({
   const [ultimoExportEn, setUltimoExportEn] = useState<string | null>(null);
   const [ultimoArchivoExportado, setUltimoArchivoExportado] = useState<string | null>(null);
   const [ultimoArchivoImportado, setUltimoArchivoImportado] = useState<string | null>(null);
+  const [ultimoChecksum, setUltimoChecksum] = useState<string | null>(null);
 
   function descargarJson(nombreArchivo: string, data: unknown) {
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -7457,6 +7503,7 @@ function SeccionPaqueteSincronizacion({
       const resp = await onExportar(payload);
       setUltimoResumen(resp.conteos);
       setUltimoExportEn(resp.exportadoEn);
+      setUltimoChecksum(resp.checksumSha256 || null);
 
       const nombre = `sincronizacion_${(resp.exportadoEn || new Date().toISOString()).replace(/[:.]/g, '-')}.ep-sync.json`;
       descargarJson(nombre, {
@@ -7588,7 +7635,31 @@ function SeccionPaqueteSincronizacion({
             <b>Conflictos:</b> se conserva el registro mas nuevo (por fecha de actualizacion).
           </li>
         </ul>
+        <p className="nota">
+          Sugerencia: conserva al menos 2 backups recientes. Esta funcion es compatible con el flujo de recuperacion y la papeleria (dev).
+        </p>
       </AyudaFormulario>
+
+      {(ultimoExportEn || ultimoArchivoExportado || ultimoArchivoImportado) && (
+        <div className="subpanel">
+          <h3>Resumen de backup</h3>
+          <div className="item-glass">
+            <div className="item-row">
+              <div>
+                <div className="item-title">Ultima actividad</div>
+                <div className="item-meta">
+                  <span>Exportado: {ultimoExportEn ? new Date(ultimoExportEn).toLocaleString() : '-'}</span>
+                  <span>Archivo exportado: {ultimoArchivoExportado || '-'}</span>
+                  <span>Archivo importado: {ultimoArchivoImportado || '-'}</span>
+                </div>
+                <div className="item-sub">
+                  {ultimoChecksum ? `Checksum: ${ultimoChecksum.slice(0, 12)}…` : 'Checksum: -'}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <label className="campo">
         Materia (opcional)
@@ -7742,6 +7813,9 @@ function SeccionSincronizacionEquipos({
         <p className="nota">
           Usa un servidor intermedio para mantener una sola fuente de verdad por docente, sin requerir que los equipos esten en linea al mismo tiempo.
         </p>
+        <InlineMensaje tipo="info">
+          Esta funcion no reemplaza los backups locales: exporta un respaldo antes de cambios grandes.
+        </InlineMensaje>
         <label className="campo campo--checkbox">
           <input type="checkbox" checked={incluyePdfs} onChange={(e) => setIncluyePdfs(e.target.checked)} />
           Incluir PDFs en el envio (mas pesado)
@@ -7899,10 +7973,10 @@ function SeccionSincronizacion({
     <div className="panel">
       <div className="panel">
         <h2>
-          <Icono nombre="publicar" /> Sincronización y estado de datos
+          <Icono nombre="publicar" /> Sincronización, backups y estado de datos
         </h2>
         <p className="nota">
-          Esta pantalla concentra la sincronización con el portal y el intercambio de paquetes entre equipos.
+          Esta pantalla concentra la sincronización con el portal y el flujo de backups/exportaciones entre equipos.
         </p>
         <div className="estado-datos-grid">
           <div className="item-glass estado-datos-card">

@@ -44,8 +44,8 @@ async function agregarQr(pdfDoc: PDFDocument, page: PDFPage, qrTexto: string, ma
   const base64 = qrDataUrl.replace(/^data:image\/png;base64,/, '');
   const qrBytes = Uint8Array.from(Buffer.from(base64, 'base64'));
   const qrImage = await pdfDoc.embedPng(qrBytes);
-  const qrSize = 96;
-  const padding = 6;
+  const qrSize = 84;
+  const padding = 4;
   const boxW = qrSize + padding * 2;
   const boxH = qrSize + padding * 2;
 
@@ -481,16 +481,16 @@ export async function generarPdfExamen({
   const lineaOpcion = 11;
   const lineaNota = 11;
   // Reduce el “aire” entre preguntas para compactar.
-  const separacionPregunta = 1;
+  const separacionPregunta = 0;
 
   const lineaCodigoBloque = 10;
 
   // OMR: burbujas A–E con espaciado fijo para evitar superposiciones.
   const OMR_TOTAL_LETRAS = 5;
-  const omrRadio = 5;
-  const omrPasoY = 12;
-  const omrPadding = 6;
-  const omrExtraTitulo = 14;
+  const omrRadio = 4.5;
+  const omrPasoY = 11;
+  const omrPadding = 4;
+  const omrExtraTitulo = 16;
 
   const anchoColRespuesta = 120;
   const gutterRespuesta = 10;
@@ -576,7 +576,7 @@ export async function generarPdfExamen({
 
     const yTop = ALTO_CARTA - margen;
     const esPrimera = numeroPagina === 1;
-    const altoEncabezado = 118;
+    const altoEncabezado = 104;
     const xCaja = margen + 2;
     const wCaja = ANCHO_CARTA - 2 * margen - 4;
     const yCaja = yTop - altoEncabezado;
@@ -593,9 +593,11 @@ export async function generarPdfExamen({
     agregarMarcasRegistro(page, margen);
     const { x: xQr, y: yQr, padding: qrPadding } = await agregarQr(pdfDoc, page, qrTextoPagina, margen);
 
-    // Folio impreso debajo del QR (sin invadir el quiet-zone)
-    page.drawText(qrTexto, { x: xQr, y: yQr - 14, size: 9, font: fuenteBold, color: colorPrimario });
-    page.drawText(`PAG ${numeroPagina}`, { x: xQr, y: yQr - 26, size: 8.5, font: fuente, color: colorGris });
+    // Folio impreso debajo del QR (sin invadir el quiet-zone) y dentro del encabezado.
+    const yFolio = Math.max(yQr - 14, yCaja + 16);
+    const yPag = Math.max(yFolio - 12, yCaja + 6);
+    page.drawText(qrTexto, { x: xQr, y: yFolio, size: 9, font: fuenteBold, color: colorPrimario });
+    page.drawText(`PAG ${numeroPagina}`, { x: xQr, y: yPag, size: 8.5, font: fuente, color: colorGris });
 
     // Numero de pagina discreto (no es encabezado): pie.
     page.drawText(`Pagina ${numeroPagina}`, {
@@ -646,35 +648,31 @@ export async function generarPdfExamen({
       }
 
       const metaY = yTop - 72;
+      const lineaMeta = 11;
       const meta = [materia ? `Materia: ${materia}` : '', docente ? `Docente: ${docente}` : ''].filter(Boolean).join('   |   ');
-      const metaLineas = partirEnLineas({ texto: meta, maxWidth: maxWidthEnc, font: fuente, size: sizeMeta });
-      if (metaLineas[0]) page.drawText(metaLineas[0], { x: xTexto, y: metaY, size: sizeMeta, font: fuente, color: colorGris });
+      const metaLineas = partirEnLineas({ texto: meta, maxWidth: maxWidthEnc, font: fuente, size: sizeMeta }).slice(0, 2);
+      metaLineas.forEach((linea, idx) => {
+        if (!linea) return;
+        page.drawText(linea, { x: xTexto, y: metaY - idx * lineaMeta, size: sizeMeta, font: fuente, color: colorGris });
+      });
 
       // Campos alumno/grupo
-      const yCampos = metaY - 12;
+      const yCampos = metaY - metaLineas.length * lineaMeta - 8;
       page.drawText('Alumno:', { x: xTexto, y: yCampos, size: 10, font: fuenteBold, color: rgb(0.15, 0.15, 0.15) });
-      const alumnoLineaEnd = Math.min(xTexto + 300, xMaxEnc);
-      if (alumnoLineaEnd > xTexto + 70) {
-        page.drawLine({ start: { x: xTexto + 52, y: yCampos + 3 }, end: { x: alumnoLineaEnd, y: yCampos + 3 }, color: colorLinea, thickness: 1 });
-      }
+      const alumnoLineaEnd = Math.min(xTexto + 260, xMaxEnc);
+      page.drawLine({ start: { x: xTexto + 52, y: yCampos + 3 }, end: { x: alumnoLineaEnd, y: yCampos + 3 }, color: colorLinea, thickness: 1 });
       if (alumnoNombre) {
         const maxAlumno = Math.max(40, alumnoLineaEnd - (xTexto + 56));
         const alumnoLinea = partirEnLineas({ texto: alumnoNombre, maxWidth: maxAlumno, font: fuente, size: 10 })[0] ?? '';
         page.drawText(alumnoLinea, { x: xTexto + 56, y: yCampos, size: 10, font: fuente, color: rgb(0.1, 0.1, 0.1) });
       }
 
-      let xGrupo = xTexto + 320;
-      let yGrupo = yCampos;
-      const anchoMinGrupo = 90;
-      if (xGrupo + anchoMinGrupo > xMaxEnc) {
-        xGrupo = xTexto;
-        yGrupo = yCampos - 12;
-      }
+      const xGrupo = xTexto;
+      const yGrupo = yCampos - 12;
+      const anchoMinGrupo = 70;
       page.drawText('Grupo:', { x: xGrupo, y: yGrupo, size: 10, font: fuenteBold, color: rgb(0.15, 0.15, 0.15) });
-      const grupoLineaEnd = Math.min(xGrupo + 150, xMaxEnc);
-      if (grupoLineaEnd > xGrupo + 60) {
-        page.drawLine({ start: { x: xGrupo + 45, y: yGrupo + 3 }, end: { x: grupoLineaEnd, y: yGrupo + 3 }, color: colorLinea, thickness: 1 });
-      }
+      const grupoLineaEnd = Math.min(xGrupo + 70, xMaxEnc);
+      page.drawLine({ start: { x: xGrupo + 45, y: yGrupo + 3 }, end: { x: grupoLineaEnd, y: yGrupo + 3 }, color: colorLinea, thickness: 1 });
       if (alumnoGrupo) {
         const maxGrupo = Math.max(40, grupoLineaEnd - (xGrupo + 50));
         const grupoLinea = partirEnLineas({ texto: alumnoGrupo, maxWidth: maxGrupo, font: fuente, size: 10 })[0] ?? '';
@@ -683,12 +681,12 @@ export async function generarPdfExamen({
     }
 
     // Zona segura inferior del QR (incluye folio debajo).
-    const yZonaSeguraQr = yQr - 32;
+    const yZonaSeguraQr = yQr - 28;
     const altoZonaSuperior = esPrimera ? altoEncabezado : yTop - yZonaSeguraQr;
-    const cursorYInicio = yTop - altoZonaSuperior - 10;
+    const cursorYInicio = yTop - altoZonaSuperior - 6;
     let cursorY = cursorYInicio;
 
-  const alturaDisponibleMin = margen + 60;
+  const alturaDisponibleMin = margen + 32;
 
     const calcularAlturaPregunta = (pregunta: PreguntaBase, numero: number) => {
       const lineasEnunciado = envolverTextoMixto({
@@ -707,7 +705,7 @@ export async function generarPdfExamen({
       let alto = lineasEnunciado.reduce((acc, l) => acc + l.lineHeight, 0);
       if (tieneImagen && emb) {
         const maxW = anchoTextoPregunta;
-        const maxH = 140;
+        const maxH = 120;
         const escala = Math.min(1, maxW / emb.width, maxH / emb.height);
         alto += emb.height * escala + 6;
       }
@@ -746,7 +744,7 @@ export async function generarPdfExamen({
       alto += Math.max(altoOpciones, altoOmrMin);
       alto += separacionPregunta;
       // Reserva extra para evitar quedar demasiado pegado al limite.
-      alto += 4;
+      alto += 2;
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       void numero;
       return alto;
@@ -755,20 +753,20 @@ export async function generarPdfExamen({
     // Indicaciones: SOLO en pagina 1, pero siempre completas.
     // Regla: si no caben, se reduce tipografia/leading; si aun asi son largas,
     // las preguntas se empujan a pagina 2 (no se parte el bloque).
-    if (esPrimera && indicacionesPendientes && cursorY > alturaDisponibleMin + 40) {
+    if (esPrimera && indicacionesPendientes && cursorY > alturaDisponibleMin + 30) {
       const xInd = margen + 10;
       const yTopInd = cursorY;
       const wInd = Math.min(ANCHO_CARTA - margen - xInd - (anchoColRespuesta + gutterRespuesta), maxWidthIndicaciones + 20);
 
-      const hDisponible = yTopInd - (alturaDisponibleMin + 10);
-      const hMin = 34;
+      const hDisponible = yTopInd - (alturaDisponibleMin + 6);
+      const hMin = 28;
       const hMax = Math.max(hMin, hDisponible);
 
       // Ajuste dinamico para asegurar que todas las lineas entren.
       let sizeIndicaciones = sizeIndicacionesBase;
       let lineaIndicaciones = lineaIndicacionesBase;
-      const hLabel = 24;
-      const paddingY = 10;
+      const hLabel = 20;
+      const paddingY = 8;
       const maxIter = 10;
       for (let i = 0; i < maxIter; i += 1) {
         const hNecesaria = hLabel + paddingY + lineasIndicaciones.length * lineaIndicaciones;
@@ -833,7 +831,7 @@ export async function generarPdfExamen({
       const emb = imagenesPregunta.get(pregunta.id);
       if (emb) {
         const maxW = anchoTextoPregunta;
-        const maxH = 140;
+        const maxH = 120;
         const escala = Math.min(1, maxW / emb.width, maxH / emb.height);
         const w = emb.width * escala;
         const h = emb.height * escala;
@@ -892,7 +890,15 @@ export async function generarPdfExamen({
       const bottom = yUltimaBurbuja - omrRadio - 6;
       const hCaja = Math.max(40, top - bottom);
 
-      page.drawRectangle({ x: xColRespuesta, y: bottom, width: anchoColRespuesta, height: hCaja, borderWidth: 1, borderColor: colorLinea, color: rgb(1, 1, 1) });
+      page.drawRectangle({
+        x: xColRespuesta,
+        y: bottom,
+        width: anchoColRespuesta,
+        height: hCaja,
+        borderWidth: 1.4,
+        borderColor: rgb(0, 0, 0),
+        color: rgb(1, 1, 1)
+      });
       // Etiqueta con numero de pregunta (recuadro).
       const hTag = 16;
       const wTag = 44;
@@ -904,16 +910,19 @@ export async function generarPdfExamen({
       for (let i = 0; i < letras.length; i += 1) {
         const letra = letras[i];
         const yBurbuja = yPrimeraBurbuja - i * omrPasoY;
-        page.drawCircle({ x: xBurbuja, y: yBurbuja, size: omrRadio, borderWidth: 1.1, borderColor: rgb(0, 0, 0) });
+        page.drawCircle({ x: xBurbuja, y: yBurbuja, size: omrRadio, borderWidth: 1.2, borderColor: rgb(0, 0, 0) });
         page.drawText(letra, { x: xBurbuja + 12, y: yBurbuja - 3.5, size: 9, font: fuente, color: rgb(0.12, 0.12, 0.12) });
         opcionesOmr.push({ letra, x: xBurbuja, y: yBurbuja });
       }
-      const fidSize = 4;
+      const fidSize = 5;
       const xFid = xColRespuesta + 6;
+      const xFidRight = xColRespuesta + anchoColRespuesta - 6;
       const yFidTop = yPrimeraBurbuja + omrPasoY * 0.6;
       const yFidBottom = yUltimaBurbuja - omrPasoY * 0.6;
       page.drawRectangle({ x: xFid - fidSize / 2, y: yFidTop - fidSize / 2, width: fidSize, height: fidSize, color: rgb(0, 0, 0) });
       page.drawRectangle({ x: xFid - fidSize / 2, y: yFidBottom - fidSize / 2, width: fidSize, height: fidSize, color: rgb(0, 0, 0) });
+      page.drawRectangle({ x: xFidRight - fidSize / 2, y: yFidTop - fidSize / 2, width: fidSize, height: fidSize, color: rgb(0, 0, 0) });
+      page.drawRectangle({ x: xFidRight - fidSize / 2, y: yFidBottom - fidSize / 2, width: fidSize, height: fidSize, color: rgb(0, 0, 0) });
 
       cursorY = Math.min(yCol1, yCol2, bottom - 6);
 

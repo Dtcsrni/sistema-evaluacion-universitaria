@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import '../App.css';
-import { getSession, login, logout } from './auth';
+import { getSession, login, logout } from './practica-05-react/src/app/auth';
 
 // Componente principal de la aplicación
 export default function App() {

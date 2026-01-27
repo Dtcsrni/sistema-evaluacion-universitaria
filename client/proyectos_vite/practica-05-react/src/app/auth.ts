@@ -1,5 +1,5 @@
 //Lógica para autenticar usuario almacenando datos en Local Storage
-//-Presustencia local en navegador
+//-Persistencia local en navegador
 //-Almacenamiento de strings
 export type Session = {
   email: string;

@@ -93,65 +93,75 @@ export default function Aplicacion() {
         setTareas([]);  
         setNuevaTarea('');
     };
-    return(
-        <div style={{ 
-            display: 'flex',
-            gap: '10px',
-            marginBottom: '14px',
-        }} >
-            <input
-            type="text"
-            value={nuevaTarea}
-            placeholder="Nueva tarea..."
-            onChange = {(e) => setNuevaTarea(e.target.value)}
-            onKeyDown={manejarKeyDown}
-            style={{ 
-                padding: '8px',
-                width: '200px',
-            }}
-            />
-            <button onClick={reset} style={{
-                padding: '10px 16px',
-                marginBottom: 10px
-            }}>Reiniciar panel </button>
+    return (
+        <div>
+            <div
+                style={{
+                    display: 'flex',
+                    gap: '10px',
+                    marginBottom: '14px',
+                }}
+            >
+                <input
+                    type="text"
+                    value={nuevaTarea}
+                    placeholder="Nueva tarea..."
+                    onChange={(e) => setNuevaTarea(e.target.value)}
+                    onKeyDown={manejarKeyDown}
+                    style={{
+                        padding: '8px',
+                        width: '200px',
+                    }}
+                />
+                <button
+                    onClick={reset}
+                    style={{
+                        padding: '10px 16px',
+                        marginBottom: 10,
+                    }}
+                >
+                    Reiniciar panel
+                </button>
             </div>
-            //Columnas
-            <div style={{
-                display: 'flex',
-                gap: '12px',
-                justifyContent: 'space-between',
-            }}>
+            {/* Columnas */}
+            <div
+                style={{
+                    display: 'flex',
+                    gap: '12px',
+                    justifyContent: 'space-between',
+                }}
+            >
                 <StatusTareas
-                tareas={tareas}
-                status='pendiente'
-                color='#d9f312'
-                onDragStart=onDragStart={}
-                onDragOver={onDragOver}
-                onDrop={onDrop}
-                onDelete={onDelete}
+                    tareas={tareas}
+                    status="pendiente"
+                    color="#d9f312"
+                    onDragStart={onDragStart}
+                    onDragOver={onDragOver}
+                    onDrop={onDrop}
+                    onDelete={onDelete}
                 />
                 <StatusTareas
-                tareas={tareas}
-                status='en-progreso'
-                color='#12caf3'
-                onDragStart=onDragStart={}
-                onDragOver={onDragOver}
-                onDrop={onDrop}
-                onDelete={onDelete}
-                />  
+                    tareas={tareas}
+                    status="en-progreso"
+                    color="#12caf3"
+                    onDragStart={onDragStart}
+                    onDragOver={onDragOver}
+                    onDrop={onDrop}
+                    onDelete={onDelete}
+                />
                 <StatusTareas
-                tareas={tareas}
-                status='completada'
-                color='#12f37e'
-                onDragStart={onDragStart}
-                onDragOver={onDragOver}
-                onDrop={onDrop}
-                onDelete={onDelete}
+                    tareas={tareas}
+                    status="completada"
+                    color="#12f37e"
+                    onDragStart={onDragStart}
+                    onDragOver={onDragOver}
+                    onDrop={onDrop}
+                    onDelete={onDelete}
                 />
             </div>
         </div>
     );
-}   
+}
 
 
           

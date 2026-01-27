@@ -2270,6 +2270,12 @@ function SeccionBanco({
     });
   }, [preguntas, periodoId]);
 
+  const preguntasTemaActual = useMemo(() => {
+    const nombre = normalizarNombreTema(tema);
+    if (!nombre) return [];
+    return preguntasMateria.filter((p) => normalizarNombreTema(p.tema) === nombre);
+  }, [preguntasMateria, tema]);
+
   const preguntasSinTema = useMemo(() => {
     const lista = Array.isArray(preguntasMateria) ? preguntasMateria : [];
     return lista.filter((p) => !normalizarNombreTema(p.tema));
@@ -2305,6 +2311,11 @@ function SeccionBanco({
     }
     return mapa;
   }, [preguntasMateria]);
+
+  const paginasTemaActual = useMemo(() => {
+    if (!tema.trim()) return 0;
+    return preguntasTemaActual.length ? estimarPaginasParaPreguntas(preguntasTemaActual) : 0;
+  }, [preguntasTemaActual, tema]);
 
   function estimarAltoPregunta(pregunta: Pregunta): number {
     const mmAPuntos = (mm: number) => mm * (72 / 25.4);
@@ -2526,7 +2537,7 @@ function SeccionBanco({
       );
       emitToast({ level: 'ok', title: 'Banco', message: `Asignadas ${ids.length} preguntas`, durationMs: 2200 });
       setSinTemaSeleccion(new Set());
-      onRefrescar();
+      await Promise.all([refrescarTemas(), Promise.resolve().then(() => onRefrescar())]);
     } catch (error) {
       const msg = mensajeDeError(error, 'No se pudieron asignar las preguntas');
       setMensaje(msg);
@@ -2849,6 +2860,28 @@ function SeccionBanco({
           </li>
         </ul>
       </AyudaFormulario>
+      <div className="banco-resumen" aria-live="polite">
+        <div className="banco-resumen__item" data-tooltip="Total de preguntas activas en la materia seleccionada.">
+          <span>Preguntas</span>
+          <b>{preguntasMateria.length}</b>
+        </div>
+        <div className="banco-resumen__item" data-tooltip="Cantidad de temas activos en la materia.">
+          <span>Temas</span>
+          <b>{temasBanco.length}</b>
+        </div>
+        <div className="banco-resumen__item" data-tooltip="Preguntas sin tema asignado.">
+          <span>Sin tema</span>
+          <b>{preguntasSinTema.length}</b>
+        </div>
+        <div className="banco-resumen__item" data-tooltip="Cantidad de preguntas que pertenecen al tema seleccionado.">
+          <span>Tema actual</span>
+          <b>{tema.trim() ? preguntasTemaActual.length : '-'}</b>
+        </div>
+        <div className="banco-resumen__item" data-tooltip="Estimacion de paginas segun el layout real del PDF.">
+          <span>Paginas est.</span>
+          <b>{tema.trim() ? paginasTemaActual : '-'}</b>
+        </div>
+      </div>
       <label className="campo">
         Materia
         <select value={periodoId} onChange={(event) => setPeriodoId(event.target.value)} disabled={bloqueoEdicion}>
@@ -2863,7 +2896,13 @@ function SeccionBanco({
       </label>
       <label className="campo">
         Enunciado
-        <textarea value={enunciado} onChange={(event) => setEnunciado(event.target.value)} disabled={bloqueoEdicion} />
+        <textarea
+          value={enunciado}
+          onChange={(event) => setEnunciado(event.target.value)}
+          disabled={bloqueoEdicion}
+          placeholder="Escribe el texto completo de la pregunta…"
+          data-tooltip="Redacta el enunciado completo de la pregunta."
+        />
       </label>
       <label className="campo">
         Tema
@@ -2877,6 +2916,11 @@ function SeccionBanco({
         </select>
         {periodoId && !cargandoTemas && temasBanco.length === 0 && (
           <span className="ayuda">Primero crea un tema (seccion “Temas”) para poder asignarlo a preguntas.</span>
+        )}
+        {tema.trim() && (
+          <span className="ayuda">
+            En este tema: {preguntasTemaActual.length} pregunta(s) · {paginasTemaActual} pagina(s) estimada(s).
+          </span>
         )}
       </label>
 
@@ -3569,7 +3613,7 @@ function SeccionPeriodos({
       setMensaje('Materia eliminada');
       emitToast({ level: 'ok', title: 'Materias', message: 'Materia eliminada', durationMs: 2200 });
       registrarAccionDocente('eliminar_periodo', true, Date.now() - inicio);
-      onRefrescar();
+      await Promise.all([refrescarTemas(), Promise.resolve().then(() => onRefrescar())]);
     } catch (error) {
       const msg = mensajeDeError(error, 'No se pudo eliminar la materia');
       setMensaje(msg);

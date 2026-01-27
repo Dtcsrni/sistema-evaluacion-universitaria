@@ -1035,6 +1035,34 @@ p {
   color: var(--peligroTexto);
 }
 
+.banco-resumen {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+  margin: 12px 0 18px;
+}
+
+.banco-resumen__item {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--campoBorde);
+  background: var(--card);
+  box-shadow: 0 10px 18px rgba(15, 23, 42, 0.06);
+  text-align: left;
+}
+
+.banco-resumen__item span {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.banco-resumen__item b {
+  font-size: 1.05rem;
+  color: var(--texto);
+}
+
 .campo input[aria-invalid="true"],
 .campo textarea[aria-invalid="true"],
 .campo select[aria-invalid="true"] {

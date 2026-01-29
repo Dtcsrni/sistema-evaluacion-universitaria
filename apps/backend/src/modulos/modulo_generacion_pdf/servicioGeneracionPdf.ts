@@ -474,15 +474,12 @@ export async function generarPdfExamen({
   const sizeMeta = 8.3;
   const sizePregunta = 8.6;
   const sizeOpcion = 7.6;
-  const sizeNota = 7.2;
-
   // Codigo: monospace ligeramente mas pequeno.
   const sizeCodigoInline = 8.5;
   const sizeCodigoBloque = 8;
 
   const lineaPregunta = 9.3;
   const lineaOpcion = 8.4;
-  const lineaNota = 8.6;
   // Reduce el “aire” entre preguntas para compactar.
   const separacionPregunta = 0;
 
@@ -678,7 +675,6 @@ export async function generarPdfExamen({
 
       const xGrupo = alumnoLineaEnd + 10;
       const yGrupo = yCampos;
-      const anchoMinGrupo = 70;
       page.drawText('Grupo:', { x: xGrupo, y: yGrupo, size: 10, font: fuenteBold, color: rgb(0.15, 0.15, 0.15) });
       const grupoLineaEnd = Math.min(xGrupo + 65, xMaxEnc);
       page.drawLine({ start: { x: xGrupo + 45, y: yGrupo + 3 }, end: { x: grupoLineaEnd, y: yGrupo + 3 }, color: colorLinea, thickness: 1 });

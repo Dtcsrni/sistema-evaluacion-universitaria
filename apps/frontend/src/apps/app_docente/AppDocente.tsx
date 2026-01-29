@@ -1734,7 +1734,7 @@ function SeccionCuenta({
     }
   }
 
-  async function cargarPapelera() {
+  const cargarPapelera = useCallback(async () => {
     if (!esAdmin || !esDev) return;
     setCargandoPapelera(true);
     try {
@@ -1746,7 +1746,7 @@ function SeccionCuenta({
     } finally {
       setCargandoPapelera(false);
     }
-  }
+  }, [esAdmin, esDev]);
 
   async function restaurarPapelera(id: string) {
     setRestaurandoId(id);
@@ -1764,9 +1764,8 @@ function SeccionCuenta({
   }
 
   useEffect(() => {
-    if (!esAdmin || !esDev) return;
     void cargarPapelera();
-  }, [esAdmin, esDev]);
+  }, [cargarPapelera]);
 
   function formatearFechaPapelera(valor?: unknown) {
     if (!valor) return '-';
@@ -2220,7 +2219,7 @@ function SeccionBanco({
 
   useEffect(() => {
     setTema('');
-  }, [periodoId]);
+  }, [periodoId, puedeLeer]);
 
   const refrescarTemas = useCallback(async () => {
     if (!periodoId) {
@@ -2243,7 +2242,7 @@ function SeccionBanco({
     } finally {
       setCargandoTemas(false);
     }
-  }, [periodoId]);
+  }, [periodoId, puedeLeer]);
 
   useEffect(() => {
     void refrescarTemas();
@@ -2539,7 +2538,7 @@ function SeccionBanco({
       );
       emitToast({ level: 'ok', title: 'Banco', message: `Asignadas ${ids.length} preguntas`, durationMs: 2200 });
       setSinTemaSeleccion(new Set());
-      await Promise.all([refrescarTemas(), Promise.resolve().then(() => onRefrescar())]);
+      await Promise.resolve().then(() => onRefrescar());
     } catch (error) {
       const msg = mensajeDeError(error, 'No se pudieron asignar las preguntas');
       setMensaje(msg);
@@ -2597,7 +2596,7 @@ function SeccionBanco({
     const maxBytes = 1024 * 1024 * 1.5;
     if (file.size > maxBytes) {
       emitToast({
-        level: 'warning',
+        level: 'warn',
         title: 'Imagen grande',
         message: 'La imagen supera 1.5MB. Usa una mas ligera para evitar PDFs pesados.',
         durationMs: 4200
@@ -3744,7 +3743,7 @@ function SeccionPeriodos({
       setMensaje('Materia eliminada');
       emitToast({ level: 'ok', title: 'Materias', message: 'Materia eliminada', durationMs: 2200 });
       registrarAccionDocente('eliminar_periodo', true, Date.now() - inicio);
-      await Promise.all([refrescarTemas(), Promise.resolve().then(() => onRefrescar())]);
+      await Promise.resolve().then(() => onRefrescar());
     } catch (error) {
       const msg = mensajeDeError(error, 'No se pudo eliminar la materia');
       setMensaje(msg);
@@ -4638,7 +4637,7 @@ function SeccionPlantillas({
         setDescargandoExamenId(null);
       }
     },
-    [avisarSinPermiso, cargarExamenesGenerados, puedeDescargarExamenes]
+    [avisarSinPermiso, cargarExamenesGenerados, descargandoExamenId, puedeDescargarExamenes]
   );
 
   const regenerarPdfExamen = useCallback(
@@ -4686,7 +4685,7 @@ function SeccionPlantillas({
         setRegenerandoExamenId(null);
       }
     },
-    [avisarSinPermiso, cargarExamenesGenerados, enviarConPermiso, puedeRegenerarExamenes]
+    [avisarSinPermiso, cargarExamenesGenerados, enviarConPermiso, puedeRegenerarExamenes, regenerandoExamenId]
   );
 
   const archivarExamenGenerado = useCallback(
@@ -4728,7 +4727,7 @@ function SeccionPlantillas({
         setArchivandoExamenId(null);
       }
     },
-    [avisarSinPermiso, cargarExamenesGenerados, enviarConPermiso, puedeArchivarExamenes]
+    [avisarSinPermiso, cargarExamenesGenerados, enviarConPermiso, puedeArchivarExamenes, archivandoExamenId]
   );
 
   const preguntasDisponibles = useMemo(() => {
@@ -6719,16 +6718,14 @@ function QrAccesoMovil({ vista }: { vista: 'entrega' | 'calificaciones' }) {
   }, []);
 
   useEffect(() => {
-    if (esMovil) {
-      setUrlMovil('');
-      setCargando(false);
-      setError('');
-      return;
-    }
+    if (esMovil) return;
     let activo = true;
-    setQrFallo(false);
-    setError('');
-    setCargando(true);
+    queueMicrotask(() => {
+      if (!activo) return;
+      setQrFallo(false);
+      setError('');
+      setCargando(true);
+    });
     const params = new URLSearchParams(window.location.search);
     params.set('vista', vista);
     const qs = params.toString();
@@ -6804,7 +6801,7 @@ function QrAccesoMovil({ vista }: { vista: 'entrega' | 'calificaciones' }) {
     return () => {
       activo = false;
     };
-  }, [vista, hostManual, esMovil]);
+  }, [vista, hostManual, esMovil, usarHttps]);
 
   if (esMovil) return null;
 
@@ -7378,7 +7375,17 @@ function SeccionCalificar({
   examenId: string | null;
   alumnoId: string | null;
   respuestasDetectadas: Array<{ numeroPregunta: number; opcion: string | null }>;
-  onCalificar: (payload: Record<string, unknown>) => Promise<unknown>;
+  onCalificar: (payload: {
+    examenGeneradoId: string;
+    alumnoId?: string | null;
+    aciertos?: number;
+    totalReactivos?: number;
+    bonoSolicitado?: number;
+    evaluacionContinua?: number;
+    proyecto?: number;
+    retroalimentacion?: string;
+    respuestasDetectadas?: Array<{ numeroPregunta: number; opcion: string | null; confianza?: number }>;
+  }) => Promise<unknown>;
   puedeCalificar: boolean;
   avisarSinPermiso: (mensaje: string) => void;
 }) {

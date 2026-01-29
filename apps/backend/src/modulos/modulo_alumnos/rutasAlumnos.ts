@@ -5,6 +5,7 @@ import { Router } from 'express';
 import { validarCuerpo } from '../../compartido/validaciones/validar';
 import { actualizarAlumno, crearAlumno, eliminarAlumnoDev, listarAlumnos } from './controladorAlumnos';
 import { esquemaActualizarAlumno, esquemaCrearAlumno } from './validacionesAlumnos';
+import { esquemaBodyVacioOpcional } from './validacionesPeriodos';
 import { requerirPermiso } from '../modulo_autenticacion/middlewarePermisos';
 
 const router = Router();
@@ -20,6 +21,7 @@ router.post(
 router.post(
   '/:alumnoId/eliminar',
   requerirPermiso('alumnos:eliminar_dev'),
+  validarCuerpo(esquemaBodyVacioOpcional, { strict: true }),
   eliminarAlumnoDev
 );
 

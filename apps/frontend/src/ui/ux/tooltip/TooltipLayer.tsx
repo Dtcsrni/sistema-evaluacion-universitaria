@@ -137,10 +137,10 @@ export function TooltipLayer() {
       return base;
     };
 
-    const posicionPorElemento = (target: HTMLElement, texto: string) => {
+    const posicionPorElemento = (target: HTMLElement) => {
       const rect = target.getBoundingClientRect();
       const ancho = Math.max(180, Math.min(320, rect.width + 40));
-      let x = rect.left + rect.width / 2;
+      const x = rect.left + rect.width / 2;
       let y = rect.top;
       let placement: TooltipState['placement'] = 'top';
       if (rect.top < 70) {
@@ -167,7 +167,7 @@ export function TooltipLayer() {
         return;
       }
       targetRef.current = target;
-      const info = preferCursor ? posicionPorCursor(texto) : posicionPorElemento(target, texto);
+      const info = preferCursor ? posicionPorCursor(texto) : posicionPorElemento(target);
       setState((prev) => ({
         ...prev,
         visible: true,
@@ -219,7 +219,7 @@ export function TooltipLayer() {
     const onScroll = () => {
       if (!targetRef.current) return;
       if (state.placement === 'cursor') return;
-      const info = posicionPorElemento(targetRef.current, state.text);
+      const info = posicionPorElemento(targetRef.current);
       setState((prev) => ({ ...prev, x: info.x, y: info.y, placement: info.placement }));
       document.documentElement.style.setProperty('--tooltip-w', `${info.width}px`);
     };
@@ -241,7 +241,7 @@ export function TooltipLayer() {
       window.removeEventListener('scroll', onScroll, true);
       window.removeEventListener('resize', onScroll);
     };
-  }, [state.visible, state.placement]);
+  }, [state.visible, state.placement, state.text]);
 
   if (!state.visible) return null;
 

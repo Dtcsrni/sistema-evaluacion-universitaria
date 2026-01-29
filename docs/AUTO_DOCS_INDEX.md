@@ -13,6 +13,7 @@ No editar a mano: los cambios se pisan al regenerar.
 - [GUIA_FORMULARIOS.md](GUIA_FORMULARIOS.md) — Guía para llenar formularios (UI)
 - [PRUEBAS.md](PRUEBAS.md) — Pruebas automatizadas
 - [README.md](README.md) — docs/
+- [ROLES_PERMISOS.md](ROLES_PERMISOS.md) — Roles, accesos y permisos (RBAC)
 - [SEGURIDAD.md](SEGURIDAD.md) — Seguridad (OWASP API Top 10 2023)
 - [SINCRONIZACION_ENTRE_COMPUTADORAS.md](SINCRONIZACION_ENTRE_COMPUTADORAS.md) — Sincronización entre computadoras (paquete)
 - [VERSIONADO.md](VERSIONADO.md) — Versionado (alpha / beta / estable)

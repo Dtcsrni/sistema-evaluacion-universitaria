@@ -2,6 +2,7 @@
  * Controlador de papelera (borrado suave).
  */
 import type { Response } from 'express';
+import type { Model } from 'mongoose';
 import { configuracion } from '../../configuracion';
 import { ErrorAplicacion } from '../../compartido/errores/errorAplicacion';
 import { obtenerDocenteId, type SolicitudDocente } from '../modulo_autenticacion/middlewareAutenticacion';
@@ -23,15 +24,15 @@ function validarAdminDev() {
   }
 }
 
-async function restaurarDocs(Model: { findOneAndUpdate: Function }, docs: Array<Record<string, unknown>>) {
+async function restaurarDocs<T extends Record<string, unknown>>(Model: Model<T>, docs: T[]) {
   for (const doc of docs) {
     const id = (doc as { _id?: unknown })._id;
     if (!id) continue;
-    await Model.findOneAndUpdate(
-      { _id: id },
-      doc,
-      { upsert: true, overwrite: true, setDefaultsOnInsert: true }
-    );
+    type Args = Parameters<Model<T>['findOneAndUpdate']>;
+    const filtro = ({ _id: id } as unknown) as Args[0];
+    const update = doc as Args[1];
+    const opciones = { upsert: true, overwrite: true, setDefaultsOnInsert: true } as Args[2];
+    await Model.findOneAndUpdate(filtro, update, opciones);
   }
 }
 

@@ -97,7 +97,6 @@ async function localizarQrRegion(file: string) {
   }
 
   if (best.score < 0.15) return null;
-  const scale = info.width / search.width;
   const invScale = search.width / info.width;
   const x = search.left + Math.floor(best.x * invScale);
   const y = search.top + Math.floor(best.y * invScale);

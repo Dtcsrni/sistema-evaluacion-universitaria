@@ -348,27 +348,6 @@ function detectarOpcion(
   return { ratio, ratioRing, contraste, score, ringContrast };
 }
 
-function buscarMejorScore(
-  gray: Uint8ClampedArray,
-  integral: Uint32Array,
-  width: number,
-  height: number,
-  centro: Punto
-) {
-  let mejor = { score: 0, ratio: 0, contraste: 0 };
-  const rango = 10;
-  for (let dy = -rango; dy <= rango; dy += 1) {
-    for (let dx = -rango; dx <= rango; dx += 1) {
-      const punto = { x: centro.x + dx, y: centro.y + dy };
-      const resultado = detectarOpcion(gray, integral, width, height, punto);
-      if (resultado.score > mejor.score) {
-        mejor = resultado;
-      }
-    }
-  }
-  return mejor;
-}
-
 function evaluarConOffset(
   gray: Uint8ClampedArray,
   integral: Uint32Array,
@@ -607,8 +586,6 @@ export async function analizarOmr(
     let mejorOpcion: string | null = null;
     let mejorScore = 0;
     let segundoScore = 0;
-    let mejorDelta = 0;
-
     const centrosBase = pregunta.opciones.map((opcion) => ({
       letra: opcion.letra,
       punto: transformar({ x: opcion.x, y: opcion.y })
@@ -644,7 +621,6 @@ export async function analizarOmr(
     mejorOpcion = resultado.mejorOpcion;
     mejorScore = resultado.mejorScore;
     segundoScore = resultado.segundoScore;
-    mejorDelta = resultado.mejorScore - resultado.segundoScore;
 
     const delta = mejorScore - segundoScore;
     const candidatosFuertes = resultado.scores.filter((item) => item.score >= 0.12);

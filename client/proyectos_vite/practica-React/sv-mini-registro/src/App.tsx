@@ -16,10 +16,10 @@ export default function App() {
   // Radio buttons: selección única (solo un valor posible)
   const [turno, setTurno] = useState<'matutino' | 'vespertino'>('matutino');
 
-  // Checkbox: booleano (activado/desactivado)
+  // Checkbox: acepta términos y condiciones
   const [aceptaTerminos, setAceptaTerminos] = useState<boolean>(false);
-
-  // Lista desplegable (select): permite elegir una opción de varias
+ 
+  // Carrera: lista desplegable (select)
   const [carrera, setCarrera] = useState<string>('ISC');
 
   // Menú simulado: controla qué sección/pantalla se muestra
@@ -192,7 +192,7 @@ export default function App() {
       </ul>
     </section>
   );
-        setProgreso(0); // Reinicia el progreso a 0
+
   const SeccionRegistro = (
     // Frame + Formulario:
     // - Frame: contenedor visual con borde y padding
